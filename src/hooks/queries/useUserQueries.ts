@@ -177,6 +177,41 @@ export const useAddToWishlist = () => {
     })
 }
 
+/** Wishlist a truck rather than a product — `POST /api/wishlist {fleetId}`. */
+export const useAddFleetToWishlist = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (fleetId: string) => userService.addFleetToWishlist(fleetId),
+        onSuccess: () => {
+             toast.success("Fleet added to wishlist");
+             queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+             queryClient.invalidateQueries({ queryKey: ["profile"] });
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onError: (error: any) => {
+             const message = error?.response?.data?.error || error?.response?.data?.message || "Failed to add fleet to wishlist";
+             toast.error(message);
+        }
+    })
+}
+
+export const useRemoveFleetFromWishlist = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (fleetId: string) => userService.removeFleetFromWishlist(fleetId),
+        onSuccess: () => {
+             toast.success("Fleet removed from wishlist");
+             queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+             queryClient.invalidateQueries({ queryKey: ["profile"] });
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onError: (error: any) => {
+             const message = error?.response?.data?.error || error?.response?.data?.message || "Failed to remove fleet from wishlist";
+             toast.error(message);
+        }
+    })
+}
+
 export const useRemoveFromWishlist = () => {
     const queryClient = useQueryClient();
     return useMutation({

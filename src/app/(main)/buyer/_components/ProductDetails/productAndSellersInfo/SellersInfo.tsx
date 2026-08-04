@@ -75,6 +75,17 @@ export const SellersInfo: React.FC<SellersInfoProps> = ({ owner, onRefresh }) =>
     setSeeMore(!seeMore); // See More Reviews visibility
   };
 
+  /**
+   * Seller rating as the API reports it. Note `??` rather than `||`: a genuine
+   * 0 (unrated seller) is falsy, and the previous `|| 4` fallback turned every
+   * unrated seller into a 4.0-star one on the product page.
+   */
+  const sellerRating: number =
+    sellerDetails?.averageRating ??
+    sellerDetails?.rating ??
+    owner?.rating ??
+    0;
+
   return (
     <div className="relative w-[100%] lg:w-[50%] flex flex-col gap-[10px]">
       <div className="flex flex-col gap-[12px] bg-[#fefefe] px-4 pt-2 pb-6 rounded-[5px] shadow-[0px_0px_10px_rgba(0,0,0,0.1)]">
@@ -133,16 +144,15 @@ export const SellersInfo: React.FC<SellersInfoProps> = ({ owner, onRefresh }) =>
             
             <div className="flex items-center flex-wrap gap-x-4 gap-y-2 mt-1">
               <div className="flex items-center gap-1.5">
-                {[...Array(5)].map((_, index) => {
-                  const rating = sellerDetails?.averageRating || sellerDetails?.rating || owner?.rating || 4;
-                  return index < Math.floor(rating) ? (
+                {[...Array(5)].map((_, index) =>
+                  index < Math.floor(sellerRating) ? (
                     <YellowStarIcon key={index} />
                   ) : (
                     <StarIcon key={index} />
-                  );
-                })}
+                  ),
+                )}
                 <span className="font-montserrat font-medium text-[11px] sm:text-[12px] md:text-[13px] text-[#2b2b2b] ml-1">
-                  {(sellerDetails?.averageRating || sellerDetails?.rating || owner?.rating || 4.0).toFixed(1)}
+                  {sellerRating.toFixed(1)}
                 </span>
                 {sellerDetails?.totalReviews !== undefined && (
                   <span className="font-montserrat text-[10px] sm:text-[11px] text-gray-500">

@@ -3,6 +3,7 @@ import React from "react";
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { BidResponse } from "@/services/bidService";
+import { useWithdrawBid } from "@/hooks/queries/useBidQueries";
 import { getAgentName } from "./bidHelpers";
 
 interface PendingProductBidsProps {
@@ -22,6 +23,7 @@ export const PendingProductBids: React.FC<PendingProductBidsProps> = ({
   onPageChange,
   isFetching,
 }) => {
+  const withdrawBid = useWithdrawBid();
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const startIndex = total === 0 ? 0 : (page - 1) * limit + 1;
   const endIndex = Math.min(page * limit, total);
@@ -85,6 +87,20 @@ export const PendingProductBids: React.FC<PendingProductBidsProps> = ({
                       {submittedAgo}
                     </span>
                   )}
+                  {/* A pending bid is a live offer the agent can still accept,
+                      so the buyer needs a way out of it. */}
+                  <button
+                    type="button"
+                    onClick={() => withdrawBid.mutate(bid._id)}
+                    disabled={
+                      withdrawBid.isPending && withdrawBid.variables === bid._id
+                    }
+                    className="font-montserrat text-[10px] text-[#d32f2f] hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {withdrawBid.isPending && withdrawBid.variables === bid._id
+                      ? "Withdrawing…"
+                      : "Withdraw"}
+                  </button>
                 </div>
               </div>
               {index < visible.length - 1 && (

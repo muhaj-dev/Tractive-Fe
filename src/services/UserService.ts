@@ -137,6 +137,20 @@ export const userService = {
     }
   },
 
+  // Add a fleet (truck) to the wishlist. Same route as products, keyed on
+  // `fleetId` instead — the response comes back with `fleet` populated and
+  // `product: null`.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  addFleetToWishlist: async (fleetId: string): Promise<any> => {
+    try {
+      const response = await api.post(`/api/wishlist`, { fleetId });
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error adding fleet ${fleetId} to wishlist:`, error);
+      throw error;
+    }
+  },
+
   // Remove product from wishlist
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   removeFromWishlist: async (productId: string): Promise<any> => {
@@ -151,6 +165,21 @@ export const userService = {
         `❌ Error removing product ${productId} from wishlist:`,
         error
       );
+      throw error;
+    }
+  },
+
+  // Remove a fleet from the wishlist. Must go in the request body — the
+  // `?fleetId=` query form answers 500 on the backend.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  removeFleetFromWishlist: async (fleetId: string): Promise<any> => {
+    try {
+      const response = await api.delete(`/api/wishlist`, {
+        data: { fleetId },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error removing fleet ${fleetId} from wishlist:`, error);
       throw error;
     }
   },

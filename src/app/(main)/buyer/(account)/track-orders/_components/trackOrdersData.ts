@@ -34,9 +34,9 @@ export interface TrackOrder {
     id: string;
     image: string;
   };
-  // The agent who owns the ordered product — products are agent-owned, so the
-  // populated `product.owner` is the agent user. Empty string when the backend
-  // returns `owner` as a bare id (or omits it), in which case the review entry
+  // The agent who owns the ordered product. Read from the order's own `agent`
+  // field, falling back to the populated `product.owner` for older orders.
+  // Empty string when neither resolves to an id, in which case the review entry
   // point stays hidden rather than posting against a guessed id.
   agentId: string;
   agentName: string;
@@ -73,6 +73,8 @@ export const asObject = (v: unknown): ApiObject =>
 export const asArray = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
 const NA = "N/A";
+/** Shown in the transporter slot before a carrier has been assigned. */
+const UNASSIGNED = "Transporter not assigned";
 
 export const asString = (v: unknown, fallback: string = NA): string =>
   typeof v === "string" && v ? v : fallback;
@@ -121,6 +123,14 @@ export const orderToTrackOrder = (raw: OrderRecord): TrackOrder => {
   // Seller of the first product — used as a display fallback while no
   // transporter has been assigned to the order yet.
   const owner = asObject(firstProduct.owner);
+  // The order now carries its own populated `agent` ({_id, name, businessName,
+  // image}). `product.owner` stays as the fallback for orders written before
+  // that field existed.
+  const agent = asObject(o.agent);
+  // The backend leaves `transporter` null until one is actually assigned. Until
+  // then the transporter identity must stay empty — falling back to the seller
+  // told the buyer their goods were with a carrier that does not exist yet.
+  const hasTransporter = Object.keys(transporter).length > 0;
   const productImages = asArray(firstProduct.images);
   const status = mapTransportStatus(o.transportStatus);
 
@@ -160,29 +170,27 @@ export const orderToTrackOrder = (raw: OrderRecord): TrackOrder => {
   return {
     id,
     transporter: {
-      name: firstString(
-        transporter.name,
-        transporter.businessName,
-        owner.businessName,
-        owner.name,
-      ),
-      // No placeholder here: the card falls back to its branded box when
-      // the transporter has no logo (firstString yields "N/A").
-      logo: firstString(transporter.logo, transporter.image, owner.image),
+      name: hasTransporter
+        ? firstString(transporter.name, transporter.businessName)
+        : UNASSIGNED,
+      // No placeholder here: the card falls back to a neutral badge when the
+      // transporter has no logo (firstString yields "N/A").
+      logo: hasTransporter
+        ? firstString(transporter.logo, transporter.image)
+        : NA,
       rating: asNumber(transporter.rating, 0),
-      avatar: firstString(
-        transporter.avatar,
-        transporter.image,
-        owner.image,
-        "/images/profileSettingImage.png",
-      ),
+      avatar: hasTransporter
+        ? firstString(
+            transporter.avatar,
+            transporter.image,
+            "/images/profileSettingImage.png",
+          )
+        : "/images/profileSettingImage.png",
       // Strictly the business name — no fallback to the personal name, so the
       // line stays empty until a real businessName exists, then shows on its own.
-      company: firstString(
-        transporter.businessName,
-        transporter.company,
-        owner.businessName,
-      ),
+      company: hasTransporter
+        ? firstString(transporter.businessName, transporter.company)
+        : NA,
       location: asString(
         transporter.location,
         asString(firstLine.localTransportFrom),
@@ -210,8 +218,14 @@ export const orderToTrackOrder = (raw: OrderRecord): TrackOrder => {
       id: asString(firstProduct._id ?? firstProduct.id),
       image: asString(productImages[0], "/images/foodTracked.png"),
     },
-    agentId: asString(owner._id ?? owner.id, ""),
-    agentName: firstString(owner.businessName, owner.name, "the agent"),
+    agentId: asString(agent._id ?? agent.id ?? owner._id ?? owner.id, ""),
+    agentName: firstString(
+      agent.businessName,
+      agent.name,
+      owner.businessName,
+      owner.name,
+      "the agent",
+    ),
     status,
     pickedAt,
     onTransitAt,

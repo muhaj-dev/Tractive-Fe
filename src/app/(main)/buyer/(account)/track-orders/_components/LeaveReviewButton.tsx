@@ -23,6 +23,10 @@ export const LeaveReviewButton: React.FC<Props> = ({ agentId, agentName }) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  // Set when the backend answers 409 `hasReviewed` — the buyer already rated
+  // this agent, so the button collapses to a reviewed state instead of
+  // re-offering a form that can only fail.
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
 
   const createReview = useCreateReview();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -105,6 +109,15 @@ export const LeaveReviewButton: React.FC<Props> = ({ agentId, agentName }) => {
           setRating(0);
           setComment("");
         },
+        onError: (error: unknown) => {
+          const status = (error as { response?: { status?: number } })?.response
+            ?.status;
+          if (status !== 409) return;
+          setIsOpen(false);
+          setAlreadyReviewed(true);
+          setRating(0);
+          setComment("");
+        },
       },
     );
   };
@@ -120,10 +133,12 @@ export const LeaveReviewButton: React.FC<Props> = ({ agentId, agentName }) => {
     }
   };
 
-  if (submitted) {
+  if (submitted || alreadyReviewed) {
     return (
       <div className="bg-[#eaf3ea] rounded-[10px] p-3 text-center font-montserrat text-[12px] font-medium text-[#538e53]">
-        Thanks for your review!
+        {submitted
+          ? "Thanks for your review!"
+          : `You have already reviewed ${agentName}.`}
       </div>
     );
   }

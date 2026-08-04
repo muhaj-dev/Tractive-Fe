@@ -165,7 +165,7 @@ const BookingTransport: React.FC = () => {
         />
         <OwnersInfo owner={owner} />
       </div>
-      <SimilarFleet />
+      <SimilarFleet fleetId={truckId || undefined} />
     </div>
   );
 };

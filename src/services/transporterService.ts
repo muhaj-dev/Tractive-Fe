@@ -292,6 +292,22 @@ export const transporterService = {
   },
 
   /**
+   * Fleets comparable to the one being viewed — same route/size class.
+   * GET /api/transporters/fleet/{id}/similar
+   */
+  getSimilarFleets: async (id: string): Promise<ApiTruck[]> => {
+    try {
+      const response = await api.get(`/api/transporters/fleet/${id}/similar`);
+      const data = response.data?.data ?? response.data;
+      return Array.isArray(data) ? (data as ApiTruck[]) : [];
+    } catch (error) {
+      console.error(`[TransporterService] getSimilarFleets ${id} error:`, error);
+      // A dead "similar" strip must not take down the booking page.
+      return [];
+    }
+  },
+
+  /**
    * Get truck by id
    * GET /api/transporters/trucks/{id}
    */

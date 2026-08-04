@@ -62,9 +62,19 @@ export const useCreateReview = () => {
       });
     },
     onError: (error: {
-      response?: { data?: { message?: string } };
+      response?: { status?: number; data?: { message?: string } };
       message?: string;
     }) => {
+      // 409 + `hasReviewed` is the backend's duplicate guard, not a failure:
+      // the buyer already reviewed this user. Report it as information so the
+      // caller can switch the button to its reviewed state.
+      if (error?.response?.status === 409) {
+        toast(
+          error.response.data?.message || "You have already reviewed this user",
+          { duration: 3000, position: "top-center" },
+        );
+        return;
+      }
       toast.error(
         error?.response?.data?.message ||
           error?.message ||

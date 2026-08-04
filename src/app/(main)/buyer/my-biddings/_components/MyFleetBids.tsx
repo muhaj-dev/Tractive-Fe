@@ -43,7 +43,13 @@ const ExpandableMessage: React.FC<{
 };
 
 export const MyFleetBids: React.FC = () => {
-  const { data: bids, isLoading } = useBuyerFleetBids();
+  const {
+    data: bids,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useBuyerFleetBids();
   const {
     mutate: respondToBid,
     isPending: isResponding,
@@ -58,6 +64,27 @@ export const MyFleetBids: React.FC = () => {
     return (
       <div className="w-full flex justify-center items-center py-12">
         <div className="w-6 h-6 border-3 border-[#538e53] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // A failed request is not an empty list — saying "No fleet bids yet" when the
+  // endpoint 500s tells the buyer their bids are gone. Show the failure and a
+  // way to retry instead.
+  if (isError) {
+    return (
+      <div className="w-full flex flex-col items-center justify-center gap-3 py-12">
+        <p className="font-montserrat text-[13px] text-[#808080]">
+          We couldn&apos;t load your fleet bids just now.
+        </p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="font-montserrat text-[12px] text-[#538e53] border border-[#538e53] rounded-[5px] px-4 py-[6px] cursor-pointer disabled:opacity-60"
+        >
+          {isFetching ? "Retrying…" : "Try again"}
+        </button>
       </div>
     );
   }

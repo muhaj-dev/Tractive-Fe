@@ -251,6 +251,17 @@ export const bidService = {
     }
   },
 
+  // DELETE /api/bids/{id} - Withdraw a bid the buyer placed. Pending bids only;
+  // the backend rejects the call once the bid has been accepted.
+  withdrawBid: async (id: string) => {
+    try {
+      const response = await api.delete(`/api/bids/${id}`);
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, "withdraw bid");
+    }
+  },
+
   // GET /api/buyers/biddings - Get my biddings
   getMyBids: async (): Promise<BidResponse[]> => {
     try {

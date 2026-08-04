@@ -7,6 +7,7 @@ import {
 import {
   OrdersApiService,
   OrdersQueryParams,
+  OrderRecord,
   CreateOrderPayload,
   UpdateTransportStatusPayload,
 } from "@/services/OrderService";
@@ -225,10 +226,30 @@ export const useUpdateTransportStatus = () => {
   });
 };
 
+/**
+ * Orders that are actually in transit or delivered — the "Shipping & Delivered"
+ * tab on `/buyer/my-orders`.
+ *
+ * The backend currently ignores `paidForTransport=true` and returns every order
+ * for the buyer, so the tab would otherwise list the whole "Awaiting Transport"
+ * set plus unpaid orders. We re-apply the filter client-side: an order has moved
+ * into shipping once it is paid AND transport has been arranged — the backend
+ * signals that with a `fleetTripId`/`transporter` and a `transportStatus` past
+ * `pending`. Drop this `select` once the server honours the param.
+ */
+const hasShippingStarted = (order: OrderRecord): boolean => {
+  if (order.status !== "paid") return false;
+  if (order.fleetTripId) return true;
+  if (order.transporter) return true;
+  const ts = order.transportStatus;
+  return !!ts && ts !== "pending";
+};
+
 export const usePaidShippingOrders = () => {
   return useQuery({
     queryKey: orderKeys.list({ paidForTransport: true }),
     queryFn: () => OrdersApiService.getOrders({ paidForTransport: true }),
+    select: (orders: OrderRecord[]) => orders.filter(hasShippingStarted),
     staleTime: 1000 * 60 * 3,
     retry: (failureCount, error: { response?: { status?: number } }) => {
       if (error?.response?.status === 401 || error?.response?.status === 403)

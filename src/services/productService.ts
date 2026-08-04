@@ -419,10 +419,13 @@ export const productService = {
     }
   },
 
-  // Get Pending Products
+  // Get Pending Products. `/api/farmers/products/pending` never existed (404) —
+  // `/api/products/pending` is the only path. It currently answers with an empty
+  // array plus a message: products are available / out_of_stock / discontinued,
+  // so nothing is ever pending until a pending status is introduced.
   getPendingProducts: async (): Promise<ProductsResponse> => {
     try {
-      const response = await api.get("/api/farmers/products/pending");
+      const response = await api.get("/api/products/pending");
       return response.data;
     } catch (error) {
       console.error("Error fetching pending products:", error);

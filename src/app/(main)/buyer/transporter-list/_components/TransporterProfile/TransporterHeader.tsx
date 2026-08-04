@@ -25,20 +25,39 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
     "09034145972": false,
   });
 
-  // Memoize ratings to prevent re-creation on every render
-  const ratings = useMemo(
-    () => [
-      { stars: "5 star", count: 8, percentage: 100 },
-      { stars: "4 star", count: 6, percentage: 75 },
-      { stars: "3 star", count: 4, percentage: 50 },
-      { stars: "2 star", count: 2, percentage: 25 },
-      { stars: "1 star", count: 1, percentage: 10 },
-    ],
-    []
-  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const t = transporter as any;
 
-  // Phone number data (replace with actual data)
-  const phoneNumbers = ["09034145971", "09034145972"];
+  /**
+   * Star breakdown straight from the API — `GET /api/transporters/{id}` now
+   * returns `ratingDistribution` as a full 5→1 set of `{rating, count,
+   * percentage}`. The all-zero fallback stays for transporters with no reviews
+   * yet; it never renders the placeholder 8/6/4/2/1 counts this used to show,
+   * which were identical for every transporter and read as real review data.
+   */
+  const ratings = useMemo(() => {
+    const dist: { rating?: number; count?: number; percentage?: number }[] =
+      Array.isArray(t?.ratingDistribution) ? t.ratingDistribution : [];
+    const byStar = new Map(dist.map((d) => [Number(d.rating), d]));
+    return [5, 4, 3, 2, 1].map((star) => {
+      const entry = byStar.get(star);
+      return {
+        stars: `${star} star`,
+        count: Number(entry?.count ?? 0),
+        percentage: Number(entry?.percentage ?? 0),
+      };
+    });
+  }, [t?.ratingDistribution]);
+
+  /** Real contact numbers only — no placeholder digits for a live "call" menu. */
+  const phoneNumbers: string[] = useMemo(() => {
+    const list: unknown[] = Array.isArray(t?.phoneNumbers)
+      ? t.phoneNumbers
+      : [t?.phone];
+    return list.filter(
+      (n): n is string => typeof n === "string" && n.trim().length > 0
+    );
+  }, [t?.phoneNumbers, t?.phone]);
 
   // Initialize individual animation controls for each rating
   const control1 = useAnimation();
@@ -95,17 +114,19 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const t = transporter as any;
   const businessName = t.businessName || t.name || t.transporterName || "Unknown Transporter";
   const avatar: string = t.image || t.profilePicture || "/images/sellerprofile.png";
   const isVerified = t.isVerified ?? true;
   const ratingValue = t.rating || 0;
   const followersCount = t.followersCount || 0;
   const stateLocation = t.state || t.locationFrom || "Various";
-  const deliveriesCount = t.successfulDeliveries || t.customerNumber || 0;
+  // Field names as the API actually returns them (`deliveriesCount`,
+  // `customersCount`, `reviewsCount`); the previous spellings never matched, so
+  // these tiles were pinned at 0 regardless of the transporter's real history.
+  const deliveriesCount =
+    t.deliveriesCount ?? t.successfulDeliveries ?? t.customersCount ?? 0;
   const yearsOfSales = t.transporterYear ?? t.yearsOfExperience ?? 0;
-  const reviewCount = t.reviewCount || 0;
+  const reviewCount = t.reviewsCount ?? t.totalReviews ?? t.reviewCount ?? 0;
 
   return (
     <div className="w-[90%] relative mx-auto pt-6 pb-6">
@@ -184,6 +205,11 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
                     <XIcon />
                   </div>
                   <div className="flex items-start gap-2 w-full">
+                    {phoneNumbers.length === 0 && (
+                      <span className="font-montserrat font-normal text-[12px] text-[#808080] whitespace-nowrap">
+                        No contact number listed
+                      </span>
+                    )}
                     {phoneNumbers.map((number) => (
                       <div
                         key={number}

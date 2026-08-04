@@ -54,6 +54,24 @@ const VALID_STATUSES: BuyerTransactionStatus[] = [
   "delivered",
 ];
 
+/**
+ * Human label for the order's `paymentMethod`. This column used to be
+ * hardcoded to "Bank transfer", which mislabelled every card payment.
+ */
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  card: "Card",
+  bank_transfer: "Bank transfer",
+  transfer: "Bank transfer",
+  deposit: "Deposit",
+  cheque: "Cheque",
+};
+
+const paymentMethodLabel = (raw: unknown): string => {
+  const key = typeof raw === "string" ? raw.toLowerCase() : "";
+  if (!key) return "—";
+  return PAYMENT_METHOD_LABELS[key] ?? key.replace(/_/g, " ");
+};
+
 const orderToRow = (raw: OrderRecord): BuyerTransactionRow | null => {
   const o = raw as ApiObject;
   const id = asString(o._id ?? o.id);
@@ -69,7 +87,9 @@ const orderToRow = (raw: OrderRecord): BuyerTransactionRow | null => {
   }, 0);
   const unit = asString(firstLine.unit ?? firstProduct.unit, "");
   const status = (typeof o.status === "string" ? o.status : "") as string;
-  const buyer = asObject(o.buyer);
+  // The seller is the owner of the ordered product. `o.buyer` is this buyer's
+  // own id (a bare string), so reading it here left the column permanently "—".
+  const seller = asObject(firstProduct.owner);
 
   return {
     id,
@@ -78,8 +98,8 @@ const orderToRow = (raw: OrderRecord): BuyerTransactionRow | null => {
     image: asString(productImages[0], "/images/maize.png"),
     quantity: totalQty ? `${totalQty}${unit ? ` ${unit}` : ""}` : "—",
     amount: asNumber(o.totalAmount, 0),
-    seller: asString(buyer.name ?? buyer.businessName, "—"),
-    method: "Bank transfer",
+    seller: asString(seller.businessName ?? seller.name, "—"),
+    method: paymentMethodLabel(o.paymentMethod),
     date: formatDate(o.createdAt),
     status: VALID_STATUSES.includes(status as BuyerTransactionStatus)
       ? (status as BuyerTransactionStatus)

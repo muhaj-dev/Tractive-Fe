@@ -108,6 +108,32 @@ export const useWonBidsCheckout = () => {
   });
 };
 
+/**
+ * Withdraw a pending bid the buyer placed (`DELETE /api/bids/{id}`). Fleet bids
+ * have no equivalent route yet, so this covers product bids only.
+ */
+export const useWithdrawBid = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => bidService.withdrawBid(id),
+    onSuccess: () => {
+      toast.success("Bid withdrawn", {
+        duration: 4000,
+        position: "top-center",
+      });
+      queryClient.invalidateQueries({ queryKey: ["myBids"] });
+      queryClient.invalidateQueries({ queryKey: ["wonBids"] });
+      queryClient.invalidateQueries({ queryKey: ["wonBidsCheckout"] });
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, "Failed to withdraw bid."), {
+        duration: 4000,
+        position: "top-center",
+      });
+    },
+  });
+};
+
 export const useBuyerUpdateBidStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({

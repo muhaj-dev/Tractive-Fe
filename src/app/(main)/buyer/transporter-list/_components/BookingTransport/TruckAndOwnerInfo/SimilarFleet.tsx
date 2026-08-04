@@ -1,107 +1,94 @@
 "use client";
 import TruckCard from "@/components/cards/TruckCard";
 import React from "react";
+import { useSimilarFleets } from "@/hooks/queries/useTransporterQueries";
+import type { ApiTruck } from "@/services/transporterService";
 
 interface AlmostFullTruckProps {
+  /** Fleet currently on screen — the one we're finding neighbours for. */
+  fleetId?: string;
   fromState?: string;
   toState?: string;
   sortOption?: string;
 }
 
-export const TruckData = [
-  {
-    id: "BookingCode0021234110",
-    image: "/images/transportTruck.png",
-    rating: "4.0",
-    truckName: "Monster Truck",
-    amountPerKg: "₦40",
-    fullLoad: "₦100",
-    spaceRemaining: "100 kg",
-    locationFrom: "Lagos",
-    locationTo: "Abuja",
-  },
-  {
-    id: "BookingCode0021234120",
-    image: "/images/transportTruck.png",
-    rating: "4.5",
-    truckName: "Heavy Duty Hauler",
-    amountPerKg: "₦50",
-    fullLoad: "₦150",
-    spaceRemaining: "0 kg",
-    locationFrom: "Kano",
-    locationTo: "Ibadan",
-  },
-  {
-    id: "BookingCode0021234129",
-    image: "/images/transportTruck.png",
-    rating: "4.2",
-    truckName: "Freight Master",
-    amountPerKg: "₦45",
-    fullLoad: "₦120",
-    spaceRemaining: "120kg",
-    locationFrom: "Jos",
-    locationTo: "Enugu",
-  },
-  {
-    id: "BookingCode0021234130",
-    image: "/images/transportTruck.png",
-    rating: "4.8",
-    truckName: "Cargo King",
-    amountPerKg: "₦60",
-    fullLoad: "₦200",
-    spaceRemaining: "500 kg",
-    locationFrom: "Owerri",
-    locationTo: "Kano",
-  },
-];
-
+const naira = (v?: number) =>
+  typeof v === "number" ? `₦${v.toLocaleString()}` : "—";
 
 export const SimilarFleet = ({
+  fleetId,
   fromState = "",
   toState = "",
   sortOption = "All",
 }: AlmostFullTruckProps) => {
-  const filteredTruckData = TruckData.filter((truck) => {
-    // Route filtering
-    const matchesFrom = fromState ? truck.locationFrom === fromState : true;
-    const matchesTo = toState ? truck.locationTo === toState : true;
+  const { data: fleets = [], isLoading } = useSimilarFleets(fleetId);
 
-    // Sort option filtering
-    const fullLoadNum = parseFloat(truck.fullLoad);
-    const spaceRemainingNum = parseFloat(truck.spaceRemaining);
+  const filtered = fleets.filter((truck: ApiTruck) => {
+    const route = truck.route ?? {};
+    const matchesFrom = fromState ? route.fromState === fromState : true;
+    const matchesTo = toState ? route.toState === toState : true;
+
+    // Capacity comes back in kg, so "Empty" means nothing loaded and
+    // "Almost Full" means partially loaded but not yet at capacity.
+    const capacity = truck.capacityKg ?? 0;
+    const remaining = truck.remainingCapacityKg ?? 0;
     let matchesSort = true;
-
     if (sortOption === "Empty") {
-      matchesSort = spaceRemainingNum === fullLoadNum;
+      matchesSort = capacity > 0 && remaining === capacity;
     } else if (sortOption === "Almost Full") {
-      matchesSort = spaceRemainingNum > 0 && spaceRemainingNum < fullLoadNum;
+      matchesSort = remaining > 0 && remaining < capacity;
     }
 
     return matchesFrom && matchesTo && matchesSort;
   });
+
+  // Nothing to compare against is a normal state for a one-truck transporter —
+  // render nothing rather than an empty heading.
+  if (!isLoading && filtered.length === 0) return null;
 
   return (
     <div className="py-1">
       <p className="text-[15px] text-[#141414] font-normal font-montserrat mb-4">
         Similar Fleet
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredTruckData.map((card) => (
-          <TruckCard
-            isEmptyTruck={false}
-            key={card.id}
-            id={card.id}
-            image={card.image}
-            truckName={card.truckName}
-            rating={card.rating}
-            amountPerKg={card.amountPerKg}
-            fullLoad={card.fullLoad}
-            locationFrom={card.locationFrom}
-            locationTo={card.locationTo}
-            spaceRemaining={card.spaceRemaining}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-55 rounded-lg bg-[#f1f1f1] animate-pulse"
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filtered.map((truck: ApiTruck) => (
+            <TruckCard
+              isEmptyTruck={(truck.remainingCapacityKg ?? 0) === (truck.capacityKg ?? 0)}
+              key={truck._id}
+              id={truck._id}
+              image={truck.images?.[0] || "/images/transportTruck.png"}
+              images={truck.images}
+              truckName={truck.fleetName || truck.model || truck.plateNumber}
+              model={truck.model}
+              plateNumber={truck.plateNumber}
+              fleetDescription={truck.fleetDescription}
+              amountPerKg={naira(truck.price)}
+              fullLoad={naira(truck.price)}
+              totalPrice={truck.price}
+              priceNegotiation={truck.priceNegotiation}
+              capacityKg={truck.capacityKg}
+              remainingCapacityKg={truck.remainingCapacityKg}
+              locationFrom={truck.route?.fromState}
+              locationTo={truck.route?.toState}
+              spaceRemaining={
+                truck.remainingCapacityDisplay ??
+                `${truck.remainingCapacityKg ?? 0} kg`
+              }
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

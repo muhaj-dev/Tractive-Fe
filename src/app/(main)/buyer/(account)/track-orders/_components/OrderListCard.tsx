@@ -18,6 +18,21 @@ const STATUS_LABEL: Record<TrackOrder["status"], string> = {
   delivered: "Notify",
 };
 
+/**
+ * Placeholder badge text when the transporter has no logo. A real carrier's
+ * branding here would misattribute the delivery, so we use initials — and a
+ * dash while no transporter has been assigned to the order yet.
+ */
+const initials = (name: string): string => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (!words.length || name === "N/A" || name.startsWith("Transporter not"))
+    return "—";
+  return words
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+};
+
 const Stars: React.FC<{ rating: number }> = ({ rating }) => (
   <div className="flex items-center gap-[2px]">
     {Array.from({ length: 5 }).map((_, i) =>
@@ -71,9 +86,9 @@ export const OrderListCard: React.FC<Props> = ({ order, selected, onSelect }) =>
               className="w-[44px] h-[36px] object-cover rounded-[4px] flex-shrink-0"
             />
           ) : (
-            <div className="bg-[#e63327] flex items-center justify-center w-[44px] h-[36px] rounded-[4px] flex-shrink-0">
-              <span className="font-montserrat font-bold text-[10px] text-[#fefefe]">
-                GIGM
+            <div className="bg-[#e2e2e2] flex items-center justify-center w-[44px] h-[36px] rounded-[4px] flex-shrink-0">
+              <span className="font-montserrat font-bold text-[11px] text-[#808080]">
+                {initials(order.transporter.name)}
               </span>
             </div>
           )}

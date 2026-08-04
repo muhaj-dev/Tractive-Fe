@@ -81,6 +81,18 @@ export const useGetFleetById = (id: string, options?: { enabled?: boolean }) => 
   });
 };
 
+/** Fleets similar to the one on screen — powers the "Similar Fleet" strip. */
+export const useSimilarFleets = (
+  id: string | undefined,
+  options?: { enabled?: boolean },
+) => {
+  return useQuery<ApiTruck[]>({
+    queryKey: [...transporterKeys.fleet(id || ""), "similar"],
+    queryFn: () => transporterService.getSimilarFleets(id!),
+    enabled: !!id && options?.enabled !== false,
+  });
+};
+
 export const useGetTruckById = (id: string | null, options?: { enabled?: boolean }) => {
   return useQuery<ApiTruck>({
     queryKey: transporterKeys.truck(id || ""),
