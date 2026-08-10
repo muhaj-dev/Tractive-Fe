@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import { ArrowDownIcon, ArrowUpIcon, SearchIcon } from "@/icons/Icons";
 import { AddToStoreIcon, CalenderIcon } from "@/icons/DashboardIcons";
 import { TableList } from "../_components/table/TableList";
@@ -35,13 +35,7 @@ const driverColumns: ColumnConfig<Driver>[] = [
     minWidth: "min-w-[150px]",
     render: (driver) => (
       <div className="flex items-center gap-2">
-        <Image
-          src={driver.image || "/images/bidder1.png"}
-          alt={driver.name}
-          width={25}
-          height={25}
-          className="rounded-full w-[25px] h-[25px] sm:w-[35px] sm:h-[35px] object-cover"
-        />
+        <UserAvatar src={driver.image} name={driver.name} size={32} />
         <span className="text-[10px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-normal font-montserrat text-[#2b2b2b]">
           {driver.name || "--"}
         </span>

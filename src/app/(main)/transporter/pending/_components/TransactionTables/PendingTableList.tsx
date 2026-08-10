@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowDownIcon, ArrowUpIcon, SearchIcon } from "@/icons/Icons";
 import { CalenderIcon } from "@/icons/DashboardIcons";
 import { TableList } from "../../../_components/table/TableList";
@@ -10,11 +9,8 @@ import { copyToClipboard } from "@/utils/Clipboard";
 import { CustomerCareModal } from "../CustomerCareModal";
 import { TransactionActionMenu } from "../TransactionAction/TransactionActionMenu";
 import { IdCopyIcon } from "../../../_components/Icons/TransporterIcons";
-import {
-  TransporterTransaction,
-  mapTransporterTransaction,
-} from "@/utils/TransporterTransactionData";
-import { transporterService } from "@/services/transporterService";
+import { TransporterTransaction } from "@/utils/TransporterTransactionData";
+import { useTransporterTransactions } from "@/hooks/queries/useFleetQueries";
 
 interface ColumnConfig<T> {
   header: string;
@@ -156,11 +152,8 @@ export const PendingTableList = () => {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const { data: transactions = [], isLoading, isError } = useQuery({
-    queryKey: ["transporter-transactions"],
-    queryFn: () => transporterService.getTransactions(),
-    select: (data) => data.map(mapTransporterTransaction),
-  });
+  const { data: transactions = [], isLoading, isError } =
+    useTransporterTransactions();
 
   const filteredTransactions = useMemo(
     () =>

@@ -25,6 +25,7 @@ import {
   formatDate,
   isReached,
   normalizeTripStatus,
+  tripEffectiveStatus,
   tripCurrentCoords,
   tripRoute,
 } from "./tripHelpers";
@@ -35,7 +36,7 @@ const TripMapTimeline: React.FC<{
   data: FleetTripTracking;
   compact?: boolean;
 }> = ({ data, compact }) => {
-  const status = normalizeTripStatus(data.status);
+  const status = tripEffectiveStatus(data);
   const picked = isReached(status, "picked");
   const onTransit = isReached(status, "on_transit");
   const delivered = isReached(status, "delivered");
@@ -558,7 +559,15 @@ export const TripTrackingDetails: React.FC<TripTrackingDetailsProps> = ({
         </div>
       </div>
 
-      <StatusUpdateForm tripId={tripId} status={data.status} trip={data} />
+      {/* Effective status, not the raw one: the backend leaves `status` on
+          "loaded" after a pick and only advances `transportStatus`. Reading the
+          raw field made the form offer "Mark as Picked" on an already-picked
+          trip, which re-sent the status it was already in. */}
+      <StatusUpdateForm
+        tripId={tripId}
+        status={tripEffectiveStatus(data)}
+        trip={data}
+      />
     </>
   );
 };

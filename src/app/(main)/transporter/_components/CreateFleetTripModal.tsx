@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { XModalIcon } from "./Icons/TransporterIcons";
@@ -90,6 +91,10 @@ export const CreateFleetTripModal: React.FC<CreateFleetTripModalProps> = ({
 
   const { mutate: createTrip, isPending } = useCreateFleetTrip();
 
+  // Keyboard/screen-reader behaviour: focus into the dialog, trap Tab, lock body scroll.
+  // Escape is already handled by the effect below, so it is not passed here.
+  useModalA11y(isOpen, modalRef);
+
   useEffect(() => {
     if (isOpen) {
       setFleetId(initialFleetId || "");
@@ -158,6 +163,9 @@ export const CreateFleetTripModal: React.FC<CreateFleetTripModalProps> = ({
         >
           <motion.div
             ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Create trip"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
@@ -190,11 +198,24 @@ export const CreateFleetTripModal: React.FC<CreateFleetTripModalProps> = ({
                   disabled={!!initialFleetId}
                 >
                   <option value="">Select fleet…</option>
-                  {(fleets || []).map((f) => (
-                    <option key={f._id} value={f._id}>
-                      {f.fleetName || f.plateNumber || f._id}
-                    </option>
-                  ))}
+                  {/* Two fleets can share a name — this account has two called
+                      "North Route Fleet" on different routes. Qualify each with its
+                      plate/IOT and route so the transporter knows which truck they are
+                      dispatching. */}
+                  {(fleets || []).map((f) => {
+                    const name = f.fleetName || f.plateNumber || f._id;
+                    const ident = f.plateNumber || f.iot;
+                    const route =
+                      f.route?.fromState && f.route?.toState
+                        ? `${f.route.fromState} → ${f.route.toState}`
+                        : null;
+                    const qualifier = [ident, route].filter(Boolean).join(", ");
+                    return (
+                      <option key={f._id} value={f._id}>
+                        {qualifier ? `${name} (${qualifier})` : name}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 

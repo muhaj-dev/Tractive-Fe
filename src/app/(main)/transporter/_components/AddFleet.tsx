@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { GalleryAddIcon, XModalIcon } from "./Icons/TransporterIcons";
@@ -84,6 +85,8 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
   const { uploadToCloudinary } = useCloudinaryUpload();
   const [uploadingCount, setUploadingCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Keyboard/screen-reader behaviour: focus into the dialog, trap Tab, lock body scroll.
+  useModalA11y(isOpen, modalRef);
 
   // Initialize form with edit data if provided
   useEffect(() => {
@@ -122,10 +125,39 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
     }
   }, [editFleetData, isOpen]);
 
+  // The backend accepts anything, which is how a fleet ended up advertising
+  // "Full Load: 400,000,000,000 tons" at "Per Kg: ₦0". Bound both here.
+  // MAX_CAPACITY_TONNES is deliberately generous — the largest road freight in
+  // use is well under this — but it stops an obvious typo becoming a listing.
+  const MAX_CAPACITY_TONNES = 100;
+
+  const capacityTonnes = (() => {
+    const match = formData.size.match(/-?[\d.]+/);
+    return match ? Number(match[0]) : NaN;
+  })();
+  const capacityError =
+    formData.size.trim() === ""
+      ? ""
+      : !Number.isFinite(capacityTonnes) || capacityTonnes <= 0
+        ? "Enter a capacity greater than 0, e.g. 20 tons"
+        : capacityTonnes > MAX_CAPACITY_TONNES
+          ? `That is ${capacityTonnes.toLocaleString()} tons — the maximum is ${MAX_CAPACITY_TONNES}`
+          : "";
+  const priceError =
+    formData.price === ""
+      ? ""
+      : !Number.isFinite(Number(formData.price)) || Number(formData.price) <= 0
+        ? "Enter a price greater than ₦0"
+        : "";
+
   // Form Validation
-  const isFormValid = editFleetData 
-    ? formData.model.trim() !== "" && formData.size.trim() !== ""
-    : formData.fleetName.trim() !== "" &&
+  const isFormValid = editFleetData
+    ? formData.model.trim() !== "" &&
+      formData.size.trim() !== "" &&
+      capacityError === ""
+    : capacityError === "" &&
+      priceError === "" &&
+      formData.fleetName.trim() !== "" &&
       formData.fleetNumber.trim() !== "" &&
       formData.iot.trim() !== "" &&
       formData.model.trim() !== "" &&
@@ -207,7 +239,13 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
     e.preventDefault();
 
     if (!isFormValid) {
-      toast.error(editFleetData ? "Please fill in Model and Size" : "Please fill in all required fields and upload at least one image.");
+      toast.error(
+        capacityError ||
+          priceError ||
+          (editFleetData
+            ? "Please fill in Model and Size"
+            : "Please fill in all required fields and upload at least one image."),
+      );
       return;
     }
 
@@ -302,6 +340,9 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
         >
           <motion.div
             ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={editFleetData ? "Edit fleet" : "Add fleet"}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
@@ -459,8 +500,15 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
                     disabled={!!editFleetData}
                     className="w-full border border-[#d9d9d9] outline-none rounded-[4px] px-3 py-2 text-[13px] placeholder:text-[#a0a0a0] font-montserrat focus:border-[#538e53] transition-colors disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                     placeholder="Enter price"
+                    aria-invalid={!!priceError}
+                    min="1"
                     required={!editFleetData}
                   />
+                  {priceError && (
+                    <p className="text-red-500 text-[11px] font-montserrat mt-1">
+                      {priceError}
+                    </p>
+                  )}
                 </div>
                 <div className="w-full sm:w-1/2">
                   <label className="text-[12px] font-medium text-[#2b2b2b] font-montserrat mb-1 block">
@@ -473,8 +521,14 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
                     onChange={handleInputChange}
                     className="w-full border border-[#d9d9d9] outline-none rounded-[4px] px-3 py-2 text-[13px] placeholder:text-[#a0a0a0] font-montserrat focus:border-[#538e53] transition-colors"
                     placeholder="e.g., 20 tons"
+                    aria-invalid={!!capacityError}
                     required
                   />
+                  {capacityError && (
+                    <p className="text-red-500 text-[11px] font-montserrat mt-1">
+                      {capacityError}
+                    </p>
+                  )}
                 </div>
               </div>
 

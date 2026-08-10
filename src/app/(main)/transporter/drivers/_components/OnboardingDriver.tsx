@@ -1,9 +1,12 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import { toast } from "sonner";
 import { XModalIcon } from "../../_components/Icons/TransporterIcons";
 import { Driver } from "@/utils/DriverData";
+import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload";
+import UserAvatar from "@/components/UserAvatar";
 
 interface AddDriverProps {
   isOpen: boolean;
@@ -29,7 +32,7 @@ export const OnboardingDriver: React.FC<AddDriverProps> = ({
     trackingNumber: "",
     fleetId: "",
     iot: "",
-    image: "/images/bidder1.png",
+    image: "",
   });
 
   const [errors, setErrors] = useState({
@@ -43,6 +46,10 @@ export const OnboardingDriver: React.FC<AddDriverProps> = ({
   });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Keyboard/screen-reader behaviour: focus into the dialog, trap Tab, lock body scroll.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, panelRef);
+  const { uploadToCloudinary, isUploading } = useCloudinaryUpload();
 
   useEffect(() => {
     if (isOpen) {
@@ -58,7 +65,7 @@ export const OnboardingDriver: React.FC<AddDriverProps> = ({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             fleetId: (editDriver as any).fleetId || editDriver.assignedTruck?._id || "",
             iot: editDriver.iot || "",
-            image: editDriver.image || "/images/bidder1.png",
+            image: editDriver.image || "",
         });
       } else {
         setFormData({
@@ -69,7 +76,7 @@ export const OnboardingDriver: React.FC<AddDriverProps> = ({
             trackingNumber: "",
             fleetId: "",
             iot: "",
-            image: "/images/bidder1.png",
+            image: "",
         });
       }
       setErrors({ fullName: "", licenseNumber: "", phoneNumber: "", phone: "", trackingNumber: "", fleetId: "", iot: "" });
@@ -120,14 +127,19 @@ export const OnboardingDriver: React.FC<AddDriverProps> = ({
     return isValid;
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /** Upload straight to Cloudinary — the API stores a URL, so a base64 preview
+   * alone would never persist. */
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFormData({ ...formData, image: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    try {
+      const url = await uploadToCloudinary(file);
+      setFormData((prev) => ({ ...prev, image: url }));
+    } catch {
+      toast.error("Couldn't upload the photo. Please try again.");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -138,6 +150,10 @@ export const OnboardingDriver: React.FC<AddDriverProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUploading) {
+      toast.error("Please wait for the photo to finish uploading.");
+      return;
+    }
     if (validateForm()) {
         if (isEdit) {
             const payload: Record<string, string> = {};
@@ -147,12 +163,16 @@ export const OnboardingDriver: React.FC<AddDriverProps> = ({
             if (formData.trackingNumber.trim()) payload.trackingNumber = formData.trackingNumber;
             if (formData.fleetId.trim()) payload.fleetId = formData.fleetId;
             if (formData.iot.trim()) payload.iot = formData.iot;
+            if (formData.image.trim() !== (editDriver?.image || "")) {
+              payload.image = formData.image;
+            }
             onSubmit(payload);
         } else {
-            onSubmit({ 
-                fullName: formData.fullName, 
-                phoneNumber: formData.phoneNumber, 
-                licenseNumber: formData.licenseNumber 
+            onSubmit({
+                fullName: formData.fullName,
+                phoneNumber: formData.phoneNumber,
+                licenseNumber: formData.licenseNumber,
+                ...(formData.image.trim() ? { image: formData.image } : {}),
             });
         }
       onClose();
@@ -172,9 +192,11 @@ export const OnboardingDriver: React.FC<AddDriverProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       role="dialog"
+      aria-modal="true"
       aria-labelledby="onboard-driver-title"
     >
       <motion.div
+        ref={panelRef}
         className="bg-[#fefefe] p-8 rounded-[8px] w-full max-w-[500px] relative"
         initial={{ scale: 0.8 }}
         animate={{ scale: 1 }}
@@ -197,33 +219,36 @@ export const OnboardingDriver: React.FC<AddDriverProps> = ({
           {editDriver ? "Edit Driver" : "Onboard Driver"}
         </h2>
         
-        {/* Image upload only in create mode if needed? User didn't specify. Left it but might not use it in payload. */}
+        {/* Photo is uploaded to Cloudinary and sent as `image` on create/update. */}
         <div className="flex justify-center mb-2">
           <div className="relative w-20 h-20 group">
-            <Image
+            <UserAvatar
               src={formData.image}
-              alt="Driver profile"
-              width={86}
-              height={86}
-              className="w-20 h-20 rounded-[100px] object-cover border-2 border-gray-300"
+              name={formData.fullName || editDriver?.name}
+              size={80}
+              className="border-2 border-gray-300"
             />
-            {!editDriver && (
-                <>
-                <div className="absolute inset-0 bg-[#2b2b2b] bg-opacity-50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <span className="text-[#fefefe] text-[9px] text-center font-montserrat">
-                    Change Image
+            <div className="absolute inset-0 bg-[#2b2b2b]/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <span className="text-[#fefefe] text-[9px] text-center font-montserrat">
+                {formData.image ? "Change Image" : "Add Image"}
+              </span>
+            </div>
+            {isUploading && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-[#2b2b2b]/60">
+                <span className="text-[#fefefe] text-[9px] font-montserrat">
+                  Uploading…
                 </span>
-                </div>
-                <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={handleImageChange}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                aria-label="Upload profile image"
-                />
-                </>
+              </div>
             )}
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleImageChange}
+              disabled={isUploading}
+              className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+              aria-label="Upload profile image"
+            />
           </div>
         </div>
         

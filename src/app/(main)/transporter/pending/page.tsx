@@ -1,10 +1,9 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
 import { PendingTableList } from "./_components/TransactionTables/PendingTableList";
 import { ApprovedTableList } from "./_components/TransactionTables/ReceivedTableList";
-import { transporterService } from "@/services/transporterService";
+import { useTransporterTransactions } from "@/hooks/queries/useFleetQueries";
 
 interface SideProps {
   switchSides: "Pending" | "Approved";
@@ -12,10 +11,7 @@ interface SideProps {
 }
 
 export default function PendingTransactionListPage() {
-  const { data: transactions = [] } = useQuery({
-    queryKey: ["transporter-transactions"],
-    queryFn: () => transporterService.getTransactions(),
-  });
+  const { data: transactions = [] } = useTransporterTransactions();
   const pendingCount = transactions.filter(
     (t) => !t.status || t.status === "pending",
   ).length;

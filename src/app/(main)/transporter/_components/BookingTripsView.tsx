@@ -22,7 +22,7 @@ import {
   TABS,
   TAB_TO_STATUS,
   isReached,
-  normalizeTripStatus,
+  tripEffectiveStatus,
   tripFleetIot,
   tripFleetImage,
   tripFleetName,
@@ -94,7 +94,7 @@ const TripCard: React.FC<TripCardProps> = ({
   onAdvance,
   isAdvancing,
 }) => {
-  const status = normalizeTripStatus(trip.status);
+  const status = tripEffectiveStatus(trip);
   const next = NEXT_STATUS[status];
   const picked = isReached(status, "picked");
   const onTransit = isReached(status, "on_transit");
@@ -274,7 +274,7 @@ const ConfirmAdvanceModal: React.FC<ConfirmAdvanceModalProps> = ({
   onConfirm,
   onClose,
 }) => {
-  const next = NEXT_STATUS[normalizeTripStatus(trip.status)];
+  const next = NEXT_STATUS[tripEffectiveStatus(trip)];
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -380,8 +380,19 @@ export const BookingTripsView: React.FC<BookingTripsViewProps> = ({
     [trips],
   );
 
-  // The backend already filtered by ?search=; render the list as-is.
-  const filteredTrips = tripsList;
+  // The backend already filtered by ?search=, but its ?status= filter is not
+  // trustworthy: `?status=picked` comes back with trips that are already
+  // `delivered`, so the Picked tab would list finished trips. It also emits
+  // statuses outside the documented enum (e.g. `loaded` after a pick), which
+  // `normalizeTripStatus` folds back onto a lifecycle state. Re-apply the tab's
+  // status here so a tab only ever shows trips actually in that state.
+  const filteredTrips = useMemo(
+    () =>
+      tripsList.filter(
+        (t) => tripEffectiveStatus(t) === TAB_TO_STATUS[activeTab],
+      ),
+    [tripsList, activeTab],
+  );
 
   // Auto-select the first trip for the inline panel (desktop only).
   useEffect(() => {
@@ -424,7 +435,7 @@ export const BookingTripsView: React.FC<BookingTripsViewProps> = ({
   // Clicking "Mark …" only opens the confirmation; the status update runs
   // after the user confirms.
   const handleAdvance = (trip: FleetTripSummary) => {
-    const next = NEXT_STATUS[normalizeTripStatus(trip.status)];
+    const next = NEXT_STATUS[tripEffectiveStatus(trip)];
     if (!tripId(trip) || !next) return;
     setConfirmTrip(trip);
   };
@@ -432,7 +443,7 @@ export const BookingTripsView: React.FC<BookingTripsViewProps> = ({
   const confirmAdvance = () => {
     if (!confirmTrip) return;
     const id = tripId(confirmTrip);
-    const next = NEXT_STATUS[normalizeTripStatus(confirmTrip.status)];
+    const next = NEXT_STATUS[tripEffectiveStatus(confirmTrip)];
     if (!id || !next) {
       setConfirmTrip(null);
       return;

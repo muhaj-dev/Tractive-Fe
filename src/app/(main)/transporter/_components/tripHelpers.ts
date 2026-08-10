@@ -74,6 +74,10 @@ export const normalizeTripStatus = (s?: string): FleetTripStatus => {
     case "picked":
     case "pickup":
     case "picked_up":
+    // The backend writes `status: "loaded"` when a trip is marked picked — it
+    // only updates `transportStatus` to "picked". Without this alias the trip
+    // falls through to "planned" and reappears in the New tab.
+    case "loaded":
       return "picked";
     case "on_transit":
     case "in_transit":
@@ -105,6 +109,16 @@ export const formatDate = (iso?: string | null) => {
     year: "numeric",
   });
 };
+
+/**
+ * The lifecycle state a trip is really in.
+ *
+ * `transportStatus` is the field the backend keeps correct on every transition;
+ * `status` lags on a pick (it stays `"loaded"`). Prefer the former and fall
+ * back to the latter for older trips that predate it.
+ */
+export const tripEffectiveStatus = (trip: FleetTripSummary): FleetTripStatus =>
+  normalizeTripStatus(trip.transportStatus ?? trip.status);
 
 /** Whether `target` has already been reached given the trip's `current` status. */
 export const isReached = (

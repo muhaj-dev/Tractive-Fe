@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { XModalIcon } from "../../_components/Icons/TransporterIcons";
 import { Driver } from "@/utils/DriverData";
+import UserAvatar from "@/components/UserAvatar";
 
 interface DriverDetailsModalProps {
   isOpen: boolean;
@@ -68,14 +69,12 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
           </button>
 
           <div className="flex flex-col sm:flex-row items-center gap-6 mb-8">
-            <div className="relative w-24 h-24 sm:w-32 sm:h-32">
-              <Image
-                src={driver.image || "/images/bidder1.png"}
-                alt={driver.name}
-                fill
-                className="rounded-full object-cover border-4 border-[#faf7f7] shadow-sm"
-              />
-            </div>
+            <UserAvatar
+              src={driver.image}
+              name={driver.name}
+              size={112}
+              className="border-4 border-[#faf7f7] shadow-sm"
+            />
             <div className="text-center sm:text-left">
               <h2 id="driver-details-title" className="text-xl sm:text-2xl font-montserrat font-bold text-[#2b2b2b]">
                 {driver.name}
