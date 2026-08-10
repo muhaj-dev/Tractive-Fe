@@ -139,8 +139,9 @@ modals.
 | 14c | ~~15~~ **11 dead internal links** — Chat and Help are now built for both agent and transporter (§16). Remaining: `/agents`, `/transporters`, `/contact-us`, `/account-settings`, `/bid` and the 5 footer links | Medium — **decision needed** |
 | ~~14c-a~~ | ~~**15 dead internal links.**~~ Chat and Help 404 for **both** agents and transporters (sidebar, desktop + mobile); 5 footer links 404 on every page; plus `/agents`, `/transporters`, `/contact-us`, `/account-settings`, `/bid`. These are missing *pages* — build or remove is a **product call** | Medium — **decision needed** |
 | 14d | **Password reset does not exist.** `/forgot-password` and `/reset-password` both 404 and nothing links to them. With signup's mailer broken and refresh never working, account recovery has no path at all | Medium — **product gap** |
-| 15d | **Single-row destructive admin actions have no confirmation.** One click on *Suspended* / *Remove* / *Reactivate* / *Onboard* in a row's action menu and the write is already sent. The **bulk** versions of the same actions on the same page all confirm, as do transaction approve/reject and fleet-payment approval. The easier path to hit by accident is the unguarded one; `ConfirmActionModal` is already imported | **Medium — safety** |
-| 15f | **An entire admin page is unreachable.** `/admin/all-users/[id]` exists with 8 components, but clicking a user row does nothing (no navigation, no request) and nothing else links to it. Wiring looks right and `_id` is present — not yet root-caused | Medium |
+| ~~15d~~ | ~~Single-row destructive admin actions have no confirmation~~ — ✅ **FIXED 10 Aug** (§17b). All three ASR pages now confirm, naming the person: *"Suspend Tobi? … They will lose access until reactivated."* | ✅ |
+| ~~15f~~ | ~~An entire admin page is unreachable~~ — ❌ **WITHDRAWN, not a bug** (§17a). The row click works; the `[id]` route just takes ~10s to compile on first hit in dev, and the probes waited 4s. A real a11y gap was found and fixed alongside it (the identity cell is now a keyboard-reachable `<Link>`, and clickable rows are keyboard-operable) | — |
+| 17f | **Admin Trip Details modal has no dialog semantics and no buttons at all** — so no focusable close control; it cannot be dismissed from the keyboard. A step worse than 15g | Low (a11y) |
 | 15b | A rejected transaction displays as **"Failed"** — the transactions screen has no *Rejected* tab, while fleet-payments does. The same concept is named differently on two adjacent screens | Low |
 | 15g | `TransactionDetailModal` has no `role="dialog"` and does not close on Escape — the overlay stays up and swallows the next click. Same one-line `useModalA11y` fix as the others. The `/admin/new` modal next to it *does* have a dialog role, so the two disagree | Low (a11y) |
 | 13e | Remaining modals still without focus management: `EditProductModal`, `BiddersModal`, `CustomerInfoModal`, the `CustomerCareModal`s, `TripDetailsModal`. Now a one-line `useModalA11y(isOpen, ref)` each | Low (a11y) |
@@ -194,14 +195,16 @@ Five of the nine items are now done (10 Aug, bug report §15). Remaining:
   the only way in. It also already reads *"Approved / ACCOUNT STATUS active / Approved by
   admin"* while still sitting in the pending queue, which looks like a backend bug worth
   raising before pressing anything. Needs either a throwaway *application* or a decision.
-- ☐ **refunds** — the `Refunded` tab exists on both payment screens; the refund action is
-  untested. Note the spec exposes **two** routes for each (`…/transactions/{id}/refund` and
-  `…/transactions/refund`); the app calls the second.
-- ☐ **settings / banners** — `GET /api/admin/banners` 200s and returns 2 banners; create /
-  edit / delete untested
-- ☑ ~~user detail page `/admin/all-users/[id]`~~ — **it is unreachable**; see 15f. The page
-  itself still needs testing once the row click works
-- ☐ **`track-agent` / `track-transporter` row actions** and their detail modals
+- ☑ ~~refunds~~ — **done** (§17c). `POST /api/admin/transactions/refund` → 200, row moves to
+  *Refunded*, and Received Payment fell by exactly ₦1,300 back to its pre-approval figure.
+  **Both directions of the order money path are now verified on the same transaction.**
+- ☑ ~~settings / banners~~ — **done, net zero** (§17d). Create → 201, delete → 200. Caveat:
+  the image went through the Cloudinary stub, so real banner upload is still untested here.
+- ☑ ~~user detail page `/admin/all-users/[id]`~~ — **reachable and renders** (§17a); the row
+  click was never broken. Its internals (history panel, activity modals) are still untested.
+- ☑ ~~`track-agent` / `track-transporter` row actions~~ — **done** (§17e). Correct paths are
+  `/admin/track-orders/track-agent|track-transporter`. track-agent uses a per-row action
+  menu; track-transporter opens a Trip Details modal (see the new 17f a11y finding).
 - ☐ admin search / filters / pagination on all list screens (search *is* exercised
   incidentally by `x5-user-lifecycle.js`, which filters by email and works)
 

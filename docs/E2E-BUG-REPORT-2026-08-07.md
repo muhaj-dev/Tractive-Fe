@@ -1774,7 +1774,7 @@ removedUsers 1`.
 Worth a follow-up: four separate readers for one payload is why this drifted.
 One shared helper would prevent the next copy from diverging.
 
-### 15f. Clicking a user row does not open the user detail page — MEDIUM
+### 15f. ~~Clicking a user row does not open the user detail page~~ — WITHDRAWN, not a bug
 
 `/admin/all-users/[id]` exists as a complete page — eight components including
 `UserProfileBar`, `UserHistoryPanel`, `UserOverviewStrip` and three modals.
@@ -1961,6 +1961,156 @@ One support ticket is stuck open in live data, because closing it is the very
 thing that is broken: `6a7956050a2280f3467d2b58`, *"QA sweep — Help page smoke
 test"*, priority `low`, raised by the shared test account. Safe to delete
 server-side.
+
+---
+
+## 17. Admin §3.1 completed, and 15f withdrawn — 10 Aug 2026
+
+Scripts: `y1-rowclick.js`, `y2-eventpath.js`, `y4-verify-and-sweep.js`,
+`y5-nav-and-track.js`, `y6-final-sweep.js`.
+
+### 17a. 15f was not a bug — WITHDRAWN
+
+Reported earlier as *"an entire admin page is unreachable"*. It is not. The row
+click works; it is just **very slow the first time in dev**, because Turbopack
+is compiling the `/admin/all-users/[id]` route on demand.
+
+Instrumenting the real click settled it. A capture-phase listener showed the
+event reaching the `<tr>` from **every** cell, and watching navigation events
+over 15 seconds instead of 4 showed:
+
+```
+t+3s   url=/admin/all-users
+t+6s   url=/admin/all-users
+t+9s   url=/admin/all-users
+       [nav] /admin/all-users/6a7499a7c5c0651227008a1c     <- ~10s in
+t+12s  url=/admin/all-users/6a7499a7c5c0651227008a1c
+final: h1 "Tobi", real user detail, no error
+```
+
+The earlier probes waited 2.5–4s and concluded the click was dead. **The lesson
+is the one already in the handoff — never assert on a fixed sleep** — and it
+applies to navigation, not just to data loading. A first-hit route compile in
+this project can exceed 10 seconds.
+
+**What was kept.** The investigation still found a genuine a11y gap, so the
+change stays, reframed as an improvement rather than a fix:
+
+- the identity cell is now a real `<Link>` with an `aria-label`
+  (*"Open Tobi's profile"*) instead of text inside a click handler. It is
+  keyboard reachable, shows a focus ring, offers a real target, and navigates
+  natively — which also means it works before React hydrates.
+- the row itself, which is click-only by design, now carries `tabIndex={0}`,
+  `role="link"` and Enter/Space handling in `AdminTableList`, so every admin
+  table that opts into `onRowClick` becomes keyboard-operable at once. This is
+  the same bare-click-handler pattern already fixed at 11h, 11h-2 and 12f.
+
+### 17b. 15d fixed — row actions now confirm — ✅
+
+Single-row *Suspend* / *Remove* / *Reactivate* / *Onboard* on `/admin/active`,
+`/admin/suspended` and `/admin/removed` previously sent their write on one
+click, while the bulk versions of the same actions confirmed.
+
+All three pages now route row actions through the `ConfirmActionModal` they
+already imported, and the copy names the person rather than saying "1 selected
+user". Verified in the UI:
+
+> **Suspend Tobi?** This will suspend Tobi. They will lose access until
+> reactivated.  `Cancel` `Suspend`
+
+A row action still uses the **single-user** endpoints — it is not rewritten as
+a one-element bulk call.
+
+`/admin/all-users` already had its own confirmation, so the gap was confined to
+those three pages.
+
+### 17c. Refunds — ✅ VERIFIED, and the money path closes
+
+`/admin/transactions` → open an approved transaction → **Refund** → reason
+field → **Confirm Refund**.
+
+```
+POST /api/admin/transactions/refund
+  {"transactionId":"6a7641ae2b8e56022e704c00","reason":"QA sweep ..."}   200
+```
+
+Row moved to **Refunded**, and the dashboard moved with it:
+
+| | Received Payment |
+|---|---|
+| before this session | 218,641,380 |
+| after approving the ₦1,300 payment (§15a) | 218,642,680 |
+| after refunding it | **218,641,380** |
+
+Approve `+₦1,300`, refund `−₦1,300`, back to the start. Both directions of the
+order money path are now verified against the same transaction.
+
+The app calls the collection route `POST /api/admin/transactions/refund` with
+the id in the body, which **is** the documented one.
+
+### 17d. Banners CRUD — ✅ VERIFIED, net zero
+
+`/admin/settings` → **+ New banner** opens a proper `role="dialog"` with image
+upload, title, link, position, alt text, start/end dates and an active toggle.
+
+```
+POST   /api/admin/banners                        201   list 2 -> 3
+DELETE /api/admin/banners/6a796f01555d2b10f22b29ae 200   list 3 -> 2
+```
+
+Created *"QA Sweep Banner 10Aug"* and deleted it again, with a delete
+confirmation in between. Nothing left behind.
+
+Two caveats: the image had to go through the harness's **Cloudinary stub**, so
+real banner image upload is still untested here (same limit as product images
+and receipts); and none of the form's inputs carry a `required` attribute, so
+field validation was not probed in depth.
+
+### 17e. Track-orders row actions — ✅ COVERED
+
+The routes are `/admin/track-orders/track-agent` and
+`/admin/track-orders/track-transporter` — there is no `/admin/track-agent`,
+which is what an earlier probe in this session wrongly requested and got a 404
+from. (The parent `/admin/track-orders` still has no page of its own, which is
+bug 14b, already fixed in the mobile nav.)
+
+| Screen | Rows | Tabs | Row click |
+|---|---|---|---|
+| track-agent | 10 | Paid (14) · Delivered (2) | no modal — the per-row action menu is the affordance (10 present) |
+| track-transporter | 6 | Picked (6) · On Transit (1) · Delivered (5) | opens **Trip Details** with route, tracking code, weight, packages, buyers, GPS |
+
+`Paid (14)` is independent confirmation that the §15a approval landed — it was
+13 before.
+
+### 17f. Admin Trip Details modal has no dialog semantics — LOW (a11y)
+
+Found opening the track-transporter row modal. It renders real content, but:
+
+- no `role="dialog"`
+- **no `<button>` elements at all** — so there is no focusable close control;
+  it cannot be dismissed or operated from the keyboard
+
+That is a step worse than 15g (the transaction modal), which at least has
+buttons. Both want the same one-line `useModalA11y(isOpen, ref)`.
+
+### 17g. Avatar migration (§3.6) — partially done
+
+Migrated to the resilient `Avatar`, which survives a URL that 404s and not just
+a missing one:
+
+- `UserProfileBar` (the user detail header)
+- `FleetPaymentDetailModal` — buyer avatar, **and the transporter avatar, which
+  was hardcoded to `/images/placeholder-avatar.png`** and so never showed a real
+  photo even when the transporter had one
+
+Still on the plain `src || placeholder` form, all low risk now the asset exists:
+the mappers in `/admin/active`, `/admin/suspended`, `/admin/removed`,
+`/admin/transactions`, `/admin/fleet-payments`, plus `agent/bids`,
+`BiddersModal`, `OtherStoreProduct`, `BiddingProduct` and `WishList`.
+
+Also noted: `AllUserType` defines its own local `UserAvatar` that shadows the
+shared component. It is not broken — it renders coloured initials — but it is a
+third avatar implementation alongside `Avatar` and `UserAvatar`.
 
 ---
 
