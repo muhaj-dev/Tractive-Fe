@@ -87,6 +87,8 @@ const BookingTransport: React.FC = () => {
         remainingCapacityKg: apiTruck.remainingCapacityKg,
         pricePerKg: apiTruck.pricePerKgEquivalent,
         totalPrice: apiTruck.price,
+        wholeTruckOnly: apiTruck.wholeTruckOnly,
+        pricingModel: apiTruck.pricingModel,
       }
     : null;
 
@@ -137,7 +139,7 @@ const BookingTransport: React.FC = () => {
               {pendingOrderIds.length} selected order
               {pendingOrderIds.length > 1 ? "s" : ""}
             </span>{" "}
-            are pre-selected below. Review, then Negotiate or Pay.
+            are shown and pre-selected below. Review, then Negotiate or Pay.
           </p>
         </div>
       )}

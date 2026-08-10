@@ -4,21 +4,38 @@ import { AnimatePresence, motion } from "framer-motion";
 import { XIcon } from "@/icons/Icon1";
 import { StarIcon, YellowStarIcon } from "@/icons/Icons";
 import { useCreateReview } from "@/hooks/queries/useReviewQueries";
+import type { RevieweeType } from "@/services/reviewService";
 
 const MAX_COMMENT_LENGTH = 500;
 
 interface Props {
-  /** Agent being reviewed. The caller must not render this without a real id. */
+  /** User being reviewed. The caller must not render this without a real id. */
   agentId: string;
   agentName?: string;
+  /**
+   * What `agentId` refers to — drives the dialog copy only. A user has a single
+   * rating shared across their agent/seller/transporter profiles, so the request
+   * body is the same whichever surface this is rendered on.
+   */
+  revieweeType?: RevieweeType;
+  /** Label on the opener — the seller/transporter pages want their own wording. */
+  buttonLabel?: string;
+  /** Opener styling. `inline` suits a profile header, `block` a card footer. */
+  variant?: "block" | "inline";
 }
 
 /**
- * Shown on delivered orders next to "Confirm receipt": lets the buyer rate the
- * agent they bought from. `POST /api/reviews` existed in the service layer but
- * had no caller — there was no way for a buyer to leave a review at all.
+ * Lets a buyer rate an agent, seller or transporter. Rendered on delivered
+ * orders (next to "Confirm receipt"), on the seller store header and on the
+ * transporter profile header.
  */
-export const LeaveReviewButton: React.FC<Props> = ({ agentId, agentName }) => {
+export const LeaveReviewButton: React.FC<Props> = ({
+  agentId,
+  agentName,
+  revieweeType = "agent",
+  buttonLabel = "Leave a review",
+  variant = "block",
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -138,7 +155,7 @@ export const LeaveReviewButton: React.FC<Props> = ({ agentId, agentName }) => {
       <div className="bg-[#eaf3ea] rounded-[10px] p-3 text-center font-montserrat text-[12px] font-medium text-[#538e53]">
         {submitted
           ? "Thanks for your review!"
-          : `You have already reviewed ${agentName}.`}
+          : `You have already reviewed ${agentName || `this ${revieweeType}`}.`}
       </div>
     );
   }
@@ -149,9 +166,13 @@ export const LeaveReviewButton: React.FC<Props> = ({ agentId, agentName }) => {
         ref={openerRef}
         type="button"
         onClick={open}
-        className="w-full border border-[#538e53] text-[#538e53] rounded-[10px] py-2.5 font-montserrat text-[13px] font-medium hover:bg-[#eaf3ea] transition-colors cursor-pointer"
+        className={
+          variant === "inline"
+            ? "border border-[#538e53] text-[#538e53] rounded-md px-3 py-1.5 font-montserrat text-[12px] font-medium hover:bg-[#eaf3ea] transition-colors cursor-pointer"
+            : "w-full border border-[#538e53] text-[#538e53] rounded-[10px] py-2.5 font-montserrat text-[13px] font-medium hover:bg-[#eaf3ea] transition-colors cursor-pointer"
+        }
       >
-        Leave a review
+        {buttonLabel}
       </button>
 
       <AnimatePresence>
@@ -186,7 +207,7 @@ export const LeaveReviewButton: React.FC<Props> = ({ agentId, agentName }) => {
                   id={titleId}
                   className="font-montserrat font-medium text-[14px] text-[#2b2b2b]"
                 >
-                  Rate {agentName || "the agent"}
+                  Rate {agentName || `the ${revieweeType}`}
                 </h2>
                 <button
                   type="button"

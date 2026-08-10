@@ -33,7 +33,7 @@ export const AlmostFullTruck = ({
 
     return {
       id: truck._id || truck.id || `truck-${index}`,
-      image: (truck.images && truck.images.length > 0) ? truck.images[0] : truck.image || "/images/AlmostFull.png",
+      image: (truck.images && truck.images.length > 0) ? truck.images[0] : truck.image || "/images/transportTruck.png",
       images: truck.images || [],
       truckName: truck.fleetName || truck.model || truck.truckName || truck.name || "Unknown Truck",
       rating: String(truck.rating || 0),

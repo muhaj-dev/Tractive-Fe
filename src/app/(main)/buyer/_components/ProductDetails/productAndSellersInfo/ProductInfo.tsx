@@ -79,11 +79,14 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                   ({item.reviewSummary?.count ?? item.reviews ?? 0} Reviews)
                 </p>
               </div>
-              <button 
+              <button
+                type="button"
                 onClick={toggleWishlist}
                 disabled={isPending}
-                className={`bg-[#f1f1f1] cursor-pointer flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-transform hover:scale-110 ${isPending ? 'opacity-50' : ''}`}
+                className={`bg-[#f1f1f1] cursor-pointer flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2A942A] ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
                 title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                aria-pressed={isWishlisted}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -92,6 +95,8 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                   viewBox="0 0 22 21"
                   fill={isWishlisted ? "#2A942A" : "none"}
                   className="w-5 h-5 sm:w-6 sm:h-6"
+                  aria-hidden="true"
+                  focusable="false"
                 >
                   <path
                     d="M11.454 19.21C11.114 19.33 10.554 19.33 10.214 19.21C7.31398 18.22 0.833984 14.09 0.833984 7.09C0.833984 4 3.32398 1.5 6.39398 1.5C8.21398 1.5 9.82398 2.38 10.834 3.74C11.3478 3.04588 12.017 2.48173 12.788 2.09274C13.559 1.70376 14.4104 1.50076 15.274 1.5C18.344 1.5 20.834 4 20.834 7.09C20.834 14.09 14.354 18.22 11.454 19.21Z"

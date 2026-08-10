@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { TruckItem } from "@/utils/TruckData";
+import { computeTransportCost } from "@/utils/transportPricing";
 import { useCreateFleetBid } from "@/hooks/queries/useTransporterQueries";
 import { DisplayProduct } from "./TruckDetailsAndShipProduct";
 
@@ -34,8 +35,9 @@ export const Negotiate: React.FC<NegotiateProps> = ({
     0
   );
 
-  // Calculate total amount based on pricePerKg
-  const totalAmount = totalWeight * (item.pricePerKg || 0);
+  // The asking price the buyer is negotiating against — flat for a whole-truck fleet,
+  // weight × rate otherwise. See transportPricing.ts.
+  const totalAmount = computeTransportCost(item, totalWeight).amount;
 
   // Handle input change for negotiated amount
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

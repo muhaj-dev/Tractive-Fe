@@ -3,22 +3,25 @@ import React, { useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { PhoneCallFill } from "@/app/(main)/transporter/_components/Icons/TransporterIcons";
+import { useSupportHotlines } from "@/hooks/queries/useSupportQueries";
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** Overrides the numbers from `GET /api/support/contacts` when supplied. */
   hotlines?: string[];
   onLiveChat?: () => void;
 }
 
-const DEFAULT_HOTLINES = ["+2349034145971", "+2349034145971"];
-
 export const LiveChatModal: React.FC<Props> = ({
   open,
   onClose,
-  hotlines = DEFAULT_HOTLINES,
+  hotlines,
   onLiveChat,
 }) => {
+  const { hotlines: supportHotlines, isLoading: isLoadingHotlines } =
+    useSupportHotlines();
+  const numbers = hotlines ?? supportHotlines;
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -91,21 +94,27 @@ export const LiveChatModal: React.FC<Props> = ({
               Live Chat
             </button>
 
-            <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1 font-montserrat text-[12px] text-[#2b2b2b]">
-                <PhoneCallFill />
-                Hotlines:
-              </span>
-              {hotlines.map((h, i) => (
-                <a
-                  key={`${h}-${i}`}
-                  href={`tel:${h.replace(/\s+/g, "")}`}
-                  className="font-montserrat text-[12px] text-[#538e53] hover:underline"
-                >
-                  {h}
-                </a>
-              ))}
-            </div>
+            {(isLoadingHotlines || numbers.length > 0) && (
+              <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
+                <span className="flex items-center gap-1 font-montserrat text-[12px] text-[#2b2b2b]">
+                  <PhoneCallFill />
+                  Hotlines:
+                </span>
+                {isLoadingHotlines && numbers.length === 0 ? (
+                  <span className="h-[14px] w-[110px] rounded bg-[#f1f1f1] animate-pulse" />
+                ) : (
+                  numbers.map((h, i) => (
+                    <a
+                      key={`${h}-${i}`}
+                      href={`tel:${h.replace(/\s+/g, "")}`}
+                      className="font-montserrat text-[12px] text-[#538e53] hover:underline"
+                    >
+                      {h}
+                    </a>
+                  ))
+                )}
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

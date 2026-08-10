@@ -1,17 +1,13 @@
 // _components/BidsCheckout.tsx
 "use client";
 import React, { useState } from "react";
-import { WarningIcon, XIcon } from "@/icons/Icon1";
+import { WarningIcon } from "@/icons/Icon1";
 import { Button } from "@/components/Button";
-import { AccountDetails } from "./AccountDetails";
-import { DeliveryDetailsAndPaymentMethod } from "./DeliveryDetailsAndPaymentMethod";
 import { PaymentMethod } from "./PaymentMethod";
-import { PaymentSuccessModal } from "./PaymentSuccessModal";
+import { OrderPaymentModal } from "./OrderPaymentModal";
 import { useCreateOrder } from "@/hooks/queries/useOrderQueries";
-import { useCreateTransaction } from "@/hooks/queries/useTransactionQueries";
 import { useProfile } from "@/hooks/queries/useUserQueries";
 import { BidResponse } from "@/services/bidService";
-import { paymentMethodMap } from "@/utils/paymentMethods";
 import { toast } from "sonner";
 
 const BouncingDots = () => (
@@ -26,12 +22,6 @@ const BouncingDots = () => (
   </span>
 );
 
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  children: React.ReactNode;
-}
-
 interface BidsCheckoutProps {
   productsSubtotal: number;
   localTransportTotal: number;
@@ -41,32 +31,6 @@ interface BidsCheckoutProps {
   checkoutData: BidResponse[];
   onTransactionSuccess?: () => void;
 }
-
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div
-      className="fixed inset-0 bg-[#2b2b2bd4] flex items-center justify-center z-50"
-      onClick={onClose}
-    >
-      <div
-        className="bg-[#fefefe] rounded-[8px] w-[90%] max-w-[400px] max-h-[90vh] overflow-y-auto relative z-60"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 text-[#2b2b2b] font-montserrat text-[16px] font-medium cursor-pointer z-70"
-          title="Close"
-          aria-label="Close"
-        >
-          <XIcon />
-        </button>
-        {children}
-      </div>
-    </div>
-  );
-};
 
 
 export const BidsCheckout: React.FC<BidsCheckoutProps> = ({
@@ -78,14 +42,11 @@ export const BidsCheckout: React.FC<BidsCheckoutProps> = ({
   checkoutData,
   onTransactionSuccess,
 }) => {
-  // Modal step: "payment" | "bank-details" | null
-  const [modalStep, setModalStep] = useState<"payment" | "bank-details" | null>(null);
-  const [orderId, setOrderId] = useState<string>("");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
-  const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState<boolean>(false);
+  // The payment steps themselves live in OrderPaymentModal so that an order
+  // left unpaid can be picked up again later from My Orders.
+  const [payingOrderId, setPayingOrderId] = useState<string>("");
 
   const createOrderMutation = useCreateOrder();
-  const createTransactionMutation = useCreateTransaction();
   const { data: profile } = useProfile();
 
   const handleCheckoutClick = () => {
@@ -136,62 +97,19 @@ export const BidsCheckout: React.FC<BidsCheckoutProps> = ({
             d?._id ||
             d?.id;
           if (createdOrderId) {
-            setOrderId(createdOrderId);
+            setPayingOrderId(createdOrderId);
           } else {
             console.error("Could not extract order ID from response:", data);
             toast.error("Order created but could not get order ID. Please try again.");
             return;
           }
           toast.success(data.message || "Order created successfully!");
-          setModalStep("payment");
         },
       }
     );
   };
 
-  const handlePaymentContinue = (paymentMethod: string) => {
-    setSelectedPaymentMethod(paymentMethod);
-    setModalStep("bank-details");
-  };
-
-  const handleBackToPayment = () => {
-    setModalStep("payment");
-  };
-
-  const handleConfirmTransfer = () => {
-    if (!orderId) {
-      toast.error("Order ID is missing. Please try checking out again.");
-      return;
-    }
-    if (!selectedPaymentMethod) {
-      toast.error("Payment method is missing. Please go back and select one.");
-      return;
-    }
-
-    createTransactionMutation.mutate(
-      {
-        order: orderId,
-        amount: totalAmount,
-        paymentMethod: paymentMethodMap[selectedPaymentMethod] || selectedPaymentMethod,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Transaction confirmed successfully!");
-          setModalStep(null);
-          setOrderId("");
-          setSelectedPaymentMethod("");
-          onTransactionSuccess?.();
-          setIsPaymentSuccessOpen(true);
-        },
-      }
-    );
-  };
-
-  const handleCloseModal = () => {
-    if (!createTransactionMutation.isPending) {
-      setModalStep(null);
-    }
-  };
+  const handleCloseModal = () => setPayingOrderId("");
 
   return (
     <div className="w-full md:w-[50%] bg-[#fefefe] h-fit shadow-md my-8 rounded-[5px] mx-auto">
@@ -261,29 +179,16 @@ export const BidsCheckout: React.FC<BidsCheckoutProps> = ({
         disabled={!hasSelection || createOrderMutation.isPending}
       />
 
-      {/* Step 1: Payment method selection */}
-      <Modal isOpen={modalStep === "payment"} onClose={handleCloseModal}>
-        <DeliveryDetailsAndPaymentMethod
-          totalAmount={totalAmount}
-          onContinue={handlePaymentContinue}
-        />
-      </Modal>
-
-      {/* Step 2: Bank account details + confirm button */}
-      <Modal isOpen={modalStep === "bank-details"} onClose={handleCloseModal}>
-        <AccountDetails
-          onBack={handleBackToPayment}
-          onConfirm={handleConfirmTransfer}
-          isConfirming={createTransactionMutation.isPending}
-        />
-      </Modal>
-
       <PaymentMethod />
 
-      {/* Step 3: Post-payment success — prompt buyer to find a transporter or keep shopping */}
-      <PaymentSuccessModal
-        isOpen={isPaymentSuccessOpen}
-        onClose={() => setIsPaymentSuccessOpen(false)}
+      {/* Payment steps + success prompt. Closing this no longer strands the
+          order — it can be paid later from My Orders → Pending payment. */}
+      <OrderPaymentModal
+        orderId={payingOrderId}
+        totalAmount={totalAmount}
+        isOpen={!!payingOrderId}
+        onClose={handleCloseModal}
+        onPaid={() => onTransactionSuccess?.()}
       />
     </div>
   );

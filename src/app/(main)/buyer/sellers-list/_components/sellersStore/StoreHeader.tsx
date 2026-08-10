@@ -14,6 +14,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { toast } from "sonner";
 import { Reviews } from "@/components/Reviews";
+import { LeaveReviewButton } from "@/app/(main)/buyer/(account)/track-orders/_components/LeaveReviewButton";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
   useFollowFarmer,
@@ -356,6 +357,18 @@ export const StoreHeader = ({
                       : `${reviewCount} review${reviewCount === 1 ? "" : "s"}`}
                   </p>
                 </div>
+                {/* Rate the seller directly from their store. The backend
+                    rejects a second review with 409, which the button renders
+                    as an already-reviewed state. */}
+                {sellerId && (
+                  <LeaveReviewButton
+                    agentId={sellerId}
+                    agentName={seller?.name || "this seller"}
+                    revieweeType="seller"
+                    buttonLabel="Write a review"
+                    variant="inline"
+                  />
+                )}
                 <div
                   className="flex items-center gap-1 cursor-pointer"
                   onClick={handleReviewsToggle} // Add click handler

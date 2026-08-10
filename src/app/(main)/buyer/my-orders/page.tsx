@@ -5,28 +5,36 @@ import { useSearchParams } from "next/navigation";
 import {
   useTransportReadyOrders,
   usePaidShippingOrders,
+  useUnpaidOrders,
 } from "@/hooks/queries/useOrderQueries";
 import { OrderRecord } from "@/services/OrderService";
 import { AwaitingTransportList } from "./_components/AwaitingTransportList";
 import { ShippingList } from "./_components/ShippingList";
+import { PendingPaymentList } from "./_components/PendingPaymentList";
 
-type TabKey = "awaiting" | "shipping";
+type TabKey = "pending" | "awaiting" | "shipping";
 
 const Page: React.FC = () => {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState<TabKey>(
-    tabParam === "shipping" ? "shipping" : "awaiting"
+    tabParam === "shipping"
+      ? "shipping"
+      : tabParam === "pending"
+        ? "pending"
+        : "awaiting"
   );
   const [borderStyle, setBorderStyle] = useState<{ width: number; left: number }>({
     width: 0,
     left: 0,
   });
   const tabRefs = useRef<Record<TabKey, HTMLButtonElement | null>>({
+    pending: null,
     awaiting: null,
     shipping: null,
   });
 
+  const { data: unpaid } = useUnpaidOrders();
   const { data: awaiting } = useTransportReadyOrders();
   const { data: shipping } = usePaidShippingOrders();
 
@@ -35,6 +43,7 @@ const Page: React.FC = () => {
     return (raw as { data?: OrderRecord[] } | null)?.data ?? [];
   };
 
+  const unpaidCount = useMemo(() => extractList(unpaid).length, [unpaid]);
   const awaitingCount = useMemo(
     () => extractList(awaiting).length,
     [awaiting]
@@ -49,7 +58,7 @@ const Page: React.FC = () => {
     if (ref) {
       setBorderStyle({ width: ref.offsetWidth, left: ref.offsetLeft });
     }
-  }, [activeTab, awaitingCount, shippingCount]);
+  }, [activeTab, unpaidCount, awaitingCount, shippingCount]);
 
   return (
     <div className="w-full bg-[#f1f1f1] min-h-screen">
@@ -65,6 +74,21 @@ const Page: React.FC = () => {
 
         <div className="relative flex flex-col gap-2">
           <div className="flex relative gap-8">
+            <button
+              type="button"
+              ref={(el) => {
+                tabRefs.current.pending = el;
+              }}
+              onClick={() => setActiveTab("pending")}
+              className={`py-2 flex items-center gap-[6px] text-sm font-normal cursor-pointer ${
+                activeTab === "pending" ? "text-[#538e53]" : "text-[#2b2b2b]"
+              }`}
+            >
+              Pending Payment
+              <span className="text-[#fefefe] bg-[#538e53] px-[5px] py-[1px] text-[9px] rounded-[3px] min-w-[16px] flex items-center justify-center">
+                {unpaidCount}
+              </span>
+            </button>
             <button
               type="button"
               ref={(el) => {
@@ -105,7 +129,9 @@ const Page: React.FC = () => {
         </div>
 
         <div className="mt-6">
-          {activeTab === "awaiting" ? (
+          {activeTab === "pending" ? (
+            <PendingPaymentList />
+          ) : activeTab === "awaiting" ? (
             <AwaitingTransportList />
           ) : (
             <ShippingList />

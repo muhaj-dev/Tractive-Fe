@@ -27,11 +27,26 @@ const BankLogo = ({ account }: { account: BankAccount }) => {
   );
 };
 
-export const BankAccounts = () => {
+interface BankAccountsProps {
+  /**
+   * When set, each account becomes selectable and the chosen bank is reported
+   * back. The backend records it on the payment confirmation
+   * (`POST /api/payments/{ref}/confirm` → `bankUsed`) so an admin can match the
+   * transfer against a statement.
+   */
+  selectedBank?: string | null;
+  onSelectBank?: (bank: string) => void;
+}
+
+export const BankAccounts: React.FC<BankAccountsProps> = ({
+  selectedBank,
+  onSelectBank,
+}) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   const { data: accounts = [], isLoading, isError } = useBankAccounts();
+  const selectable = typeof onSelectBank === "function";
 
   const handleCopy = async (number: string, index: number) => {
     try {
@@ -67,7 +82,18 @@ export const BankAccounts = () => {
             {accounts.map((account, index) => (
               <div
                 key={account.id}
-                className="relative flex items-center w-full p-2.5 border border-[#e2e2e2] rounded-md gap-2.5"
+                onClick={
+                  selectable ? () => onSelectBank!(account.bank) : undefined
+                }
+                role={selectable ? "radio" : undefined}
+                aria-checked={selectable ? selectedBank === account.bank : undefined}
+                className={`relative flex items-center w-full p-2.5 border rounded-md gap-2.5 transition-colors ${
+                  selectable ? "cursor-pointer" : ""
+                } ${
+                  selectable && selectedBank === account.bank
+                    ? "border-[#538e53] bg-[#f2f8f2]"
+                    : "border-[#e2e2e2]"
+                }`}
               >
                 <BankLogo account={account} />
 

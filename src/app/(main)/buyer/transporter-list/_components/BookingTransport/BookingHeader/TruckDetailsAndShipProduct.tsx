@@ -5,6 +5,7 @@ import { LocationIcon } from "@/icons/Icon1";
 import Image from "next/image";
 import { Negotiate } from "./Negotiate";
 import { TruckItem } from "@/utils/TruckData";
+import { computeTransportCost } from "@/utils/transportPricing";
 import { useTransportReadyOrders } from "@/hooks/queries/useOrderQueries";
 import { useAppSelector } from "@/lib/hooks";
 
@@ -112,6 +113,7 @@ export const TruckDetailsAndShipProduct: React.FC<
   );
   const [capacityUnit, setCapacityUnit] = useState<CapacityUnit>("kg");
   const [hasPreselected, setHasPreselected] = useState(false);
+  const [showOtherOrders, setShowOtherOrders] = useState(false);
 
   const pendingOrderIds = useAppSelector(
     (state) => state.pendingTransport.orderIds
@@ -132,7 +134,30 @@ export const TruckDetailsAndShipProduct: React.FC<
 
   const products = flattenOrderProducts(orders);
 
-  // Sync products to parent for step 2
+  // The buyer arrives here having picked specific orders on My Orders, so the
+  // list must show *those* orders — showing every transport-ready order made the
+  // page impossible to trust at the moment money is committed. Products from
+  // other orders stay reachable behind an explicit toggle, because filling a
+  // truck with more than one order is a real flow.
+  const isScoped =
+    pendingOrderIds.length > 0 &&
+    products.some((p) => pendingOrderIds.includes(p.orderId));
+  const scopedProducts = isScoped
+    ? products.filter((p) => pendingOrderIds.includes(p.orderId))
+    : products;
+  const otherProducts = isScoped
+    ? products.filter((p) => !pendingOrderIds.includes(p.orderId))
+    : [];
+
+  // Never hide a row the buyer has already ticked — collapsing the section would
+  // otherwise drop it out of sight while it still counts toward the totals.
+  const hasSelectedOther = otherProducts.some((p) =>
+    selectedProductsState.includes(p.id)
+  );
+  const otherOrdersVisible = showOtherOrders || hasSelectedOther;
+
+  // Sync products to parent for step 2 — always the full list, so a selection
+  // from another order can still be resolved downstream.
   useEffect(() => {
     setAllProducts(products);
   }, [orders.length]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -164,8 +189,10 @@ export const TruckDetailsAndShipProduct: React.FC<
   const capacityKg = item.capacityKg || 0;
   const remainingCapacityKg = item.remainingCapacityKg ?? capacityKg;
 
-  // Calculate transport cost based on weight and truck's price per kg
-  const transportCost = totalWeight * pricePerKg;
+  // A whole-truck fleet is billed its flat price regardless of load — quoting
+  // pricePerKg × weight understated it by orders of magnitude. See transportPricing.ts.
+  const cost = computeTransportCost(item, totalWeight);
+  const transportCost = cost.amount;
 
   const isEmptyTruck = remainingCapacityKg >= capacityKg;
   const isTruckFull = remainingCapacityKg <= 0 || totalWeight > remainingCapacityKg;
@@ -190,6 +217,94 @@ export const TruckDetailsAndShipProduct: React.FC<
     if (selectedProductsState.length > 0 && !isTruckFull) {
       setIsNegotiating(true);
     }
+  };
+
+  const renderProductRow = (product: DisplayProduct) => {
+    const isSelected = selectedProductsState.includes(product.id);
+    return (
+      <div
+        key={product.id}
+        onClick={() => handleProductToggle(product.id)}
+        className={`flex items-center justify-between px-2 sm:px-3 py-2 sm:py-2.5 cursor-pointer rounded-md border transition-colors ${
+          isSelected
+            ? "bg-[#538e53] border-[#538e53]"
+            : "border-[#e2e2e2] hover:border-[#538e53] hover:bg-[#f5f5f5]"
+        }`}
+      >
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <Image
+            src={product.image}
+            alt={product.name}
+            width={65}
+            height={40}
+            className="object-cover w-12 h-8 sm:w-14 sm:h-9 md:w-16 md:h-10 rounded flex-shrink-0"
+            sizes="(max-width: 639px) 48px, (max-width: 767px) 56px, 64px"
+          />
+          <div className="flex flex-col gap-1 min-w-0">
+            <span
+              className={`font-montserrat text-[12px] sm:text-[13px] font-semibold truncate ${
+                isSelected ? "text-[#fefefe]" : "text-[#2b2b2b]"
+              }`}
+            >
+              {product.name}
+            </span>
+            <dl
+              className={`font-montserrat text-[11px] sm:text-[12px] flex flex-wrap items-center gap-x-2 gap-y-0.5 tabular-nums ${
+                isSelected ? "text-[#e8f4e8]" : "text-[#5a5a5a]"
+              }`}
+            >
+              <div className="flex items-center gap-1">
+                <dt className="font-normal opacity-80">Qty</dt>
+                <dd className="font-semibold">
+                  {product.quantity.toLocaleString()}
+                </dd>
+              </div>
+              {product.unitWeightKg > 0 && (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className={`hidden sm:inline-block w-1 h-1 rounded-full ${
+                      isSelected ? "bg-[#e8f4e8]" : "bg-[#a8a8a8]"
+                    }`}
+                  />
+                  <dd className="font-semibold">
+                    {formatWeight(product.unitWeightKg, capacityUnit)}
+                  </dd>
+                </>
+              )}
+            </dl>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 ml-2">
+          <div className="flex flex-col items-end leading-tight">
+            <span
+              className={`font-montserrat text-[9px] sm:text-[10px] font-normal uppercase tracking-wide ${
+                isSelected ? "text-[#e8f4e8]" : "text-[#808080]"
+              }`}
+            >
+              Total
+            </span>
+            <span
+              className={`font-montserrat text-[12px] sm:text-[13px] lg:text-[14px] font-bold whitespace-nowrap tabular-nums ${
+                isSelected ? "text-[#fefefe]" : "text-[#2b2b2b]"
+              }`}
+            >
+              {formatWeight(product.weightNum, capacityUnit)}
+            </span>
+          </div>
+          <span className="inline-flex items-center justify-center w-11 h-11 -mr-2">
+            <input
+              type="radio"
+              checked={isSelected}
+              onChange={() => handleProductToggle(product.id)}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Select ${product.name} for shipping`}
+              className="custom-radio"
+            />
+          </span>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -262,8 +377,21 @@ export const TruckDetailsAndShipProduct: React.FC<
             </p>
           </div>
           <span className="w-[2px] h-[1rem] bg-[#808080]" />
+          {/* A per-kg rate is meaningless on a whole-truck fleet — it is a derived
+              price/capacity figure the buyer is never charged. Show the flat price. */}
           <p className="font-montserrat text-[10px] sm:text-[11px] md:text-[12px] text-[#2b2b2b] font-normal">
-            Per Kg: <span className="font-medium">{item.amountPerKg}</span>
+            {cost.isWholeTruck ? (
+              <>
+                Whole truck:{" "}
+                <span className="font-medium">
+                  ₦{(item.totalPrice || 0).toLocaleString()}
+                </span>
+              </>
+            ) : (
+              <>
+                Per Kg: <span className="font-medium">{item.amountPerKg}</span>
+              </>
+            )}
           </p>
           <span className="w-[2px] h-[1rem] bg-[#808080]" />
           <p className="font-montserrat text-[10px] sm:text-[11px] md:text-[12px] text-[#2b2b2b] font-normal">
@@ -347,93 +475,37 @@ export const TruckDetailsAndShipProduct: React.FC<
               </p>
             ) : (
               <div className="flex flex-col gap-2 sm:gap-3 px-4 sm:px-5">
-                {products.map((product) => {
-                  const isSelected = selectedProductsState.includes(product.id);
-                  return (
-                    <div
-                      key={product.id}
-                      onClick={() => handleProductToggle(product.id)}
-                      className={`flex items-center justify-between px-2 sm:px-3 py-2 sm:py-2.5 cursor-pointer rounded-md border transition-colors ${
-                        isSelected
-                          ? "bg-[#538e53] border-[#538e53]"
-                          : "border-[#e2e2e2] hover:border-[#538e53] hover:bg-[#f5f5f5]"
+                {scopedProducts.map(renderProductRow)}
+
+                {otherProducts.length > 0 && (
+                  <div className="flex flex-col gap-2 sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowOtherOrders(!otherOrdersVisible)}
+                      disabled={hasSelectedOther}
+                      aria-expanded={otherOrdersVisible}
+                      className={`self-start font-montserrat text-[11px] sm:text-[12px] font-medium underline underline-offset-2 ${
+                        hasSelectedOther
+                          ? "text-[#808080] cursor-not-allowed"
+                          : "text-[#538e53] cursor-pointer hover:text-[#3a6b3a]"
                       }`}
                     >
-                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          width={65}
-                          height={40}
-                          className="object-cover w-12 h-8 sm:w-14 sm:h-9 md:w-16 md:h-10 rounded flex-shrink-0"
-                          sizes="(max-width: 639px) 48px, (max-width: 767px) 56px, 64px"
-                        />
-                        <div className="flex flex-col gap-1 min-w-0">
-                          <span
-                            className={`font-montserrat text-[12px] sm:text-[13px] font-semibold truncate ${
-                              isSelected ? "text-[#fefefe]" : "text-[#2b2b2b]"
-                            }`}
-                          >
-                            {product.name}
-                          </span>
-                          <dl
-                            className={`font-montserrat text-[11px] sm:text-[12px] flex flex-wrap items-center gap-x-2 gap-y-0.5 tabular-nums ${
-                              isSelected ? "text-[#e8f4e8]" : "text-[#5a5a5a]"
-                            }`}
-                          >
-                            <div className="flex items-center gap-1">
-                              <dt className="font-normal opacity-80">Qty</dt>
-                              <dd className="font-semibold">
-                                {product.quantity.toLocaleString()}
-                              </dd>
-                            </div>
-                            {product.unitWeightKg > 0 && (
-                              <>
-                                <span
-                                  aria-hidden="true"
-                                  className={`hidden sm:inline-block w-1 h-1 rounded-full ${
-                                    isSelected ? "bg-[#e8f4e8]" : "bg-[#a8a8a8]"
-                                  }`}
-                                />
-                                <dd className="font-semibold">
-                                  {formatWeight(product.unitWeightKg, capacityUnit)}
-                                </dd>
-                              </>
-                            )}
-                          </dl>
-                        </div>
+                      {otherOrdersVisible
+                        ? "Hide products from your other orders"
+                        : `Add products from your other orders (${otherProducts.length})`}
+                    </button>
+
+                    {otherOrdersVisible && (
+                      <div className="flex flex-col gap-2 sm:gap-3">
+                        <p className="font-montserrat text-[10px] sm:text-[11px] text-[#808080] font-normal">
+                          These are not part of the order you selected. Tick any
+                          you also want on this truck.
+                        </p>
+                        {otherProducts.map(renderProductRow)}
                       </div>
-                      <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 ml-2">
-                        <div className="flex flex-col items-end leading-tight">
-                          <span
-                            className={`font-montserrat text-[9px] sm:text-[10px] font-normal uppercase tracking-wide ${
-                              isSelected ? "text-[#e8f4e8]" : "text-[#808080]"
-                            }`}
-                          >
-                            Total
-                          </span>
-                          <span
-                            className={`font-montserrat text-[12px] sm:text-[13px] lg:text-[14px] font-bold whitespace-nowrap tabular-nums ${
-                              isSelected ? "text-[#fefefe]" : "text-[#2b2b2b]"
-                            }`}
-                          >
-                            {formatWeight(product.weightNum, capacityUnit)}
-                          </span>
-                        </div>
-                        <span className="inline-flex items-center justify-center w-11 h-11 -mr-2">
-                          <input
-                            type="radio"
-                            checked={isSelected}
-                            onChange={() => handleProductToggle(product.id)}
-                            onClick={(e) => e.stopPropagation()}
-                            aria-label={`Select ${product.name} for shipping`}
-                            className="custom-radio"
-                          />
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -444,7 +516,7 @@ export const TruckDetailsAndShipProduct: React.FC<
               </p>
               <p className="font-montserrat text-[11px] sm:text-[12px] md:text-[13px] text-[#808080] font-normal">
                 Transport Cost: <span className="text-[#2b2b2b]">₦{transportCost.toLocaleString()}</span>
-                <span className="text-[#808080]"> (₦{pricePerKg}/kg)</span>
+                <span className="text-[#808080]"> {cost.basisLabel}</span>
               </p>
             </div>
 

@@ -14,6 +14,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Reviews } from "@/components/Reviews";
 import { useGetTransporter } from "@/hooks/queries/useTransporterQueries";
+import { LeaveReviewButton } from "@/app/(main)/buyer/(account)/track-orders/_components/LeaveReviewButton";
 import { Loader2 } from "lucide-react";
 
 export const TransporterHeader = ({ transporterId }: { transporterId: string }) => {
@@ -328,17 +329,31 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
                     + {reviewCount > 0 ? reviewCount.toLocaleString() : "0"}
                   </p>
                 </div>
-                <div
-                  className="flex items-center gap-1 cursor-pointer"
-                  onClick={handleReviewsToggle} // Add click handler
-                >
-                  <span className="font-montserrat font-normal text-[10px] sm:text-[11px] text-[#538e53]">
-                    See reviews
-                  </span>
-                  <ArrowRightIcon
-                    stroke="#538e53"
-                    className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]"
-                  />
+                <div className="flex items-center gap-3">
+                  {/* Rate the transporter from their profile. Reviews posted
+                      here recompute the transporter's own rating and
+                      ratingDistribution. */}
+                  {transporterId && (
+                    <LeaveReviewButton
+                      agentId={transporterId}
+                      agentName={t?.name || "this transporter"}
+                      revieweeType="transporter"
+                      buttonLabel="Write a review"
+                      variant="inline"
+                    />
+                  )}
+                  <div
+                    className="flex items-center gap-1 cursor-pointer"
+                    onClick={handleReviewsToggle} // Add click handler
+                  >
+                    <span className="font-montserrat font-normal text-[10px] sm:text-[11px] text-[#538e53]">
+                      See reviews
+                    </span>
+                    <ArrowRightIcon
+                      stroke="#538e53"
+                      className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { TruckItem } from "@/utils/TruckData";
+import { computeTransportCost } from "@/utils/transportPricing";
 import Image from "next/image";
 import { Button } from "@/components/Button";
 import { DisplayProduct } from "./TruckDetailsAndShipProduct";
@@ -59,9 +60,10 @@ export const DeliveryDetailsAndPaymentMethod: React.FC<
   const selectedItems = allProducts.filter((p) => selectedProducts.includes(p.id));
   const totalWeight = selectedItems.reduce((total, p) => total + p.weightNum, 0);
 
-  // Calculate transport cost based on truck's pricePerKg
-  const pricePerKg = item.pricePerKg || 0;
-  const transportCost = totalWeight * pricePerKg;
+  // Must match the quote on the previous step and what the backend bills — a whole-truck
+  // fleet is a flat charge, not weight × rate. See transportPricing.ts.
+  const cost = computeTransportCost(item, totalWeight);
+  const transportCost = cost.amount;
 
   // Handle payment method toggle
   const handlePaymentMethodToggle = (methodId: string) => {
@@ -155,7 +157,7 @@ export const DeliveryDetailsAndPaymentMethod: React.FC<
         <p className="font-montserrat text-[11px] sm:text-[12px] text-[#808080] font-normal">
           Transport Cost:
           <span className="text-[#2b2b2b]"> ₦{transportCost.toLocaleString()}</span>
-          <span className="text-[#808080]"> (₦{pricePerKg}/kg)</span>
+          <span className="text-[#808080]"> {cost.basisLabel}</span>
         </p>
       </div>
       <span className="w-full h-[1px] bg-[#e2e2e2]" />

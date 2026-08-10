@@ -68,7 +68,7 @@ export const BiddingProduct: React.FC<BiddingProductProps> = ({
             description={bid?.message}
             timeImage="/images/redclock.png" // Static asset
             crownImage="/images/leadingcrown.png" // Static asset
-            leadingProfileImage="/images/profile1.png" // Static asset - API doesn't provide leading bidder image
+            leadingProfileImage="/images/placeholder-avatar.png" // Static asset - API doesn't provide leading bidder image
             quantity={`${bid?.product?.quantity} ${bid?.product?.unit}`}
             // "amount" prop (Main price on card) -> My Bid Amount
             amount={`₦${bid?.amount?.toLocaleString()}`}
