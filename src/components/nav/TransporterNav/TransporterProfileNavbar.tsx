@@ -110,7 +110,7 @@ export const TransporterProfileNavbar = () => {
         >
           <div>
             {/* Logo */}
-            <Link href="/transporters" className="hidden md:flex items-center">
+            <Link href="/transporter" className="hidden md:flex items-center">
               <Image
                 src="/images/navLogo.png"
                 alt="Agrictech Logo"

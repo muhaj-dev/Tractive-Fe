@@ -39,7 +39,7 @@ export const Footer = () => {
               <ul className="flex flex-col gap-[10px] mt-4">
                 <li className="flex items-center gap-2">
                   <Link
-                    href="/help-center"
+                    href="/about-us/help-center"
                     className="font-montserrat font-normal text-[#f9f9f9] text-[14px]"
                   >
                     Help center
@@ -55,7 +55,7 @@ export const Footer = () => {
                 </li>
                 <li className="flex items-center gap-2">
                   <Link
-                    href="/hot-line"
+                    href="/about-us/help-center"
                     className="font-montserrat font-normal text-[#f9f9f9] text-[14px]"
                   >
                     Hot-line: +2349034145971 +2349034145971
@@ -72,7 +72,7 @@ export const Footer = () => {
                 </li>
                 <li className="flex items-center gap-2">
                   <Link
-                    href="/help-center/how-to-buy-on-agric-tech"
+                    href="/about-us/help-center/how-to-buy-on-agric-tech"
                     className="font-montserrat font-normal text-[#f9f9f9] text-[14px]"
                   >
                     How to purchase an item
@@ -80,7 +80,7 @@ export const Footer = () => {
                 </li>
                 <li className="flex items-center gap-2">
                   <Link
-                    href="/help-center/how-to-sell-on-agric-tech"
+                    href="/about-us/help-center/how-to-sell-on-agric-tech"
                     className="font-montserrat font-normal text-[#f9f9f9] text-[14px]"
                   >
                     How to sell on Agrictech

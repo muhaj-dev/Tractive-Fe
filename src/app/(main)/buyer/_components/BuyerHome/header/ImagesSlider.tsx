@@ -66,7 +66,7 @@ export const ImageSlider: React.FC<ImageSliderProps> = ({
         ))}
       </div>
       <Link
-        href="/bid"
+        href="/buyer/sellers-list"
         className="text-[#2B2B2B] flex items-center justify-center absolute bottom-[0] left-[0] bg-[#FEFEFE] px-[1.4rem] py-[0.6rem] md:py-[0.9rem] text-[0.6rem] md:text-[0.79rem] w-[6rem] md:w-[8rem] font-normal"
       >
         Bid Now

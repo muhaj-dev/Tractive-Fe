@@ -2114,6 +2114,132 @@ third avatar implementation alongside `Avatar` and `UserAvatar`.
 
 ---
 
+## 18. The rest of the dead links — 10 Aug 2026
+
+14c counted 15 dead internal links. Section 16 built Chat and Help for both
+roles. Working through the remainder produced a bigger correction than
+expected: **most of the "missing pages" were not missing at all — the links
+pointed at the wrong paths.**
+
+### 18a. Six were logo links pointing at nothing — ✅ FIXED
+
+`/agents` and `/transporters` were never meant to be listing pages. They are
+what the **logo** links to in six navbars, so clicking the logo 404'd on every
+admin, agent and transporter page:
+
+| File | Was | Now |
+|---|---|---|
+| `AdminProfileNavbar` | `/agents` | `/admin` |
+| `AdminMobileNavbar` | `/agents` | `/admin` |
+| `AdminAsideNavMobile` | `/agents` | `/admin` |
+| `AgentProfileNavbar` | `/agents` | `/agent` |
+| `TransporterProfileNavbar` | `/transporters` | `/transporter` |
+| `TransporterMobileNavbar` | `/transporters` | `/transporter` |
+
+Four of the six are **mobile** navbars — the third time in this effort a bug
+has been found only in a `*Mobile*` file (after 14b and the `/agent ` typo).
+§3.5 still lists mobile as entirely untested, and this keeps making the case.
+
+### 18b. Two pointed at real pages under the wrong name — ✅ FIXED
+
+- **`/bid`** — the *"Bid Now"* call to action on the buyer home slider, now
+  `/buyer/sellers-list`. A judgement call: bidding starts from a product, and
+  that is the browse page which leads there.
+- **`/account-settings`** — *"Want to change your role later? Go to settings"*
+  on `/register-as`. The page that does exactly that already exists:
+  `/add-role`.
+
+### 18c. The footer links were mostly not missing pages — ✅ FIXED
+
+This is the correction. There is a whole **`(Marketing)` route group** that the
+earlier audit did not account for, and it already contains most of what 14c
+listed as absent:
+
+```
+/(Marketing)/about-us
+/(Marketing)/about-us/help-center            + 4 sub-pages
+/(Marketing)/faqs
+/(Marketing)/privacy-policy
+/(Marketing)/cookies
+/(Marketing)/report
+```
+
+So `/faqs`, `/privacy-policy`, `/cookies` and `/report` were **never dead** —
+all four return 200 with real content. What was actually broken is that the
+footer pointed at `/help-center...` while the pages live under
+`/about-us/help-center...`:
+
+| Footer link | Was | Now |
+|---|---|---|
+| Help center | `/help-center` (404) | `/about-us/help-center` |
+| Hot-line | `/hot-line` (404, no page anywhere) | `/about-us/help-center` |
+| How to purchase an item | `/help-center/how-to-buy-on-agric-tech` (404) | `/about-us/help-center/how-to-buy-on-agric-tech` |
+| How to sell on Agrictech | `/help-center/how-to-sell-on-agric-tech` (404) | `/about-us/help-center/how-to-sell-on-agric-tech` |
+
+Verified after the change — every one 200s and renders:
+
+```
+/about-us/help-center                            200  "Help Center"
+/about-us/help-center/how-to-buy-on-agric-tech   200  "Help Center"
+/about-us/help-center/how-to-sell-on-agric-tech  200  "Help Center"
+/faqs                                            200  "Help Center"
+/report                                          200  "Report Guidelines"
+/privacy-policy                                  200  "Help Center"
+/cookies                                         200  "Help Center"
+```
+
+Also corrected: `/agent-profile`, `/buyer-profile` and `/transporter-profile`
+were listed as dead. **They are not** — all three exist under `(profiles)`.
+
+### 18d. A cautionary note — duplicating a route takes the whole app down
+
+The first attempt here built new `/help-center`, `/hot-line` and `/report`
+pages under `(main)`, on the reasoning that `/api/support/contacts` and
+`/api/help` were live and could back them. `(main)/report` then collided with
+the existing `(Marketing)/report`:
+
+```
+You cannot have two parallel pages that resolve to the same path.
+Please check /(Marketing)/report and /(main).
+```
+
+**Every route in the app returned 500** for as long as that collision existed —
+`/login` included. It looks exactly like the corrupted-`.next` symptom in the
+handoff (§3), which sent me looking for a second dev server that was not there.
+The real cause was in the build output all along.
+
+Two lessons worth carrying: **enumerate the route groups before adding a
+route** (`find src/app -name page.tsx` takes a second and would have prevented
+this), and a blanket 500 across every route can mean a route conflict, not a
+corrupted cache. All three pages were reverted.
+
+The one genuinely useful finding from that detour is kept: **`/api/support/contacts`
+is public** — 200 with no `Authorization` header — while `/api/help` 401s.
+Worth knowing if a public contact page is ever wanted.
+
+### 18e. What is actually left
+
+**One link:** `/our-location` in the footer. No page, and no endpoint in the
+spec — no location or branch resource exists. It needs an address to display,
+which is content, not code.
+
+`/forget-password` is also still dead and belongs to **D5**, untouched here.
+
+### Where 14c stands now
+
+| | Count |
+|---|---|
+| Originally reported dead | 15 |
+| Built (Chat + Help, both roles — §16) | 4 |
+| Repointed at pages that already existed | 10 |
+| Never actually dead (3 `*-profile`, plus faqs/privacy/cookies/report) | 7 |
+| **Genuinely still missing** | **`/our-location`** + `/forget-password` (D5) |
+
+The totals exceed 15 because the original audit counted link *sites*, and
+several sites shared one target.
+
+---
+
 ## Parked — signup (deferred by request, not fixed)
 
 Recorded so it isn't lost. **Signup is broken for every new user in production.**

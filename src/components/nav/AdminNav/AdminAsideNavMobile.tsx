@@ -264,9 +264,9 @@ export const AdminAsideNavMobile = ({
                 <ul className="mt-4 px-2">
                   <li>
                     <Link
-                      href="/agents"
+                      href="/admin"
                       className={`flex items-start w-16 flex-col bg-[#3a3a3a] gap-2 py-2 px-2 rounded-md transition-colors duration-200 ${
-                        pathname === "/agents"
+                        pathname === "/admin"
                           ? "bg-[#3a3a3a]"
                           : "hover:bg-[#4a4a4a]"
                       }`}

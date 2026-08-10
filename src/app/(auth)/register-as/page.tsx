@@ -218,7 +218,7 @@ export default function RegisterAs() {
           <p className="text-center text-[12px] text-[#808080] font-montserrat mt-6">
             Want to change your role later?{" "}
             <Link
-              href="/account-settings"
+              href="/add-role"
               className="text-[#538e53] hover:underline"
             >
               Go to settings

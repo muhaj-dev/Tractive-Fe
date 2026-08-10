@@ -100,7 +100,7 @@ export const AgentProfileNavbar = () => {
         >
           <div>
             {/* Logo */}
-            <Link href="/agents" className="hidden md:flex items-center">
+            <Link href="/agent" className="hidden md:flex items-center">
               <Image
                 src="/images/navLogo.png"
                 alt="Agrictech Logo"
