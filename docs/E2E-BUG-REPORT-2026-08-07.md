@@ -1642,6 +1642,263 @@ testing effort. Every script's guard allowed writes only to our own ids; none ev
 
 ---
 
+## 15. Admin interaction sweep — 10 Aug 2026
+
+The largest remaining gap in `STATUS.md` §3.1: every admin screen rendered
+cleanly, but only *fleet* payment approval had ever had a button pressed. This
+session drove the destructive controls for the first time.
+
+Scripts (this session's scratchpad): `x1-admin-recon.js` (read-only, all 10
+screens), `x2-admin-modals.js` (read-only, row detail modals),
+`x3-payloads.js` (raw payload shapes), `x4-txn-approve-reject.js`,
+`x5-user-lifecycle.js`, `x6-spec-check.js`, `x7-dashboard-numbers.js`.
+
+Every write went through an id allowlist that aborts anything else, and the
+read-only scripts abort *all* non-GET traffic outright.
+
+### 15a. Product payment approval and rejection — ✅ WORKS, the money path is verified
+
+The order money path — as opposed to the fleet money path — had never been
+exercised. Both halves work:
+
+| Action | Call | Result |
+|---|---|---|
+| Approve | `PATCH /api/admin/transactions/6a7641ae2b8e56022e704c00/status {"status":"approved"}` | 200, row moved Pending → Approved |
+| Reject | `PATCH /api/admin/transactions/6a763b37f1031c35596c3cdc/status {"status":"rejected"}` | 200, row left Pending |
+
+Both targets were created by this effort on 7 Aug from the shared test account
+(the ₦680 order is the one from the total-validation test, recorded at the
+bottom of this file). Both show a proper two-step `ConfirmActionModal` with a
+worded description before anything is sent.
+
+**The approval propagated correctly, end to end.** Measured immediately before
+and after:
+
+- dashboard *Received Payment* `218,641,380` → `218,642,680` — exactly `+₦1,300`
+- order breakdown `paid` `13` → `14`
+
+So approving a product payment really does flip the order to `paid`. That is
+the single most important untested path in §3.1 and it passes.
+
+**Note for whoever tests next: there are now no pending product payments left.**
+The status spread across all 20 transactions is `approved 18, rejected 1,
+refunded 1`. Another approval test needs a new order paid through the buyer UI
+first.
+
+### 15b. A rejected transaction displays as "Failed" — LOW (frontend, vocabulary)
+
+The API accepts `[approved, rejected, pending]` and we sent `rejected`, which
+the backend stored as `rejected`. The transactions screen has no *Rejected*
+tab — its tabs are All / Pending / Approved / **Failed** / Refunded — so the row
+now reads **Failed**.
+
+The fleet-payments screen next to it *does* have a Rejected tab. So the same
+concept is called "Rejected" on one payment screen and "Failed" on the other,
+and an admin who clicks *Reject* is told the payment "Failed". Cosmetic, but
+the two screens should agree.
+
+### 15c. User suspend / remove / restore — ✅ WORKS, full lifecycle, net zero
+
+The most destructive controls in the app, and previously untestable because
+there was no QA-only account and the shared login must never be suspended.
+
+**Resolved without needing signup** (which is still broken): earlier sessions
+left throwaway accounts behind, listed at the bottom of this file. One of them,
+`qa.flow.probe.8821@example.invalid`, uses the `.invalid` TLD reserved by
+RFC 2606, so it can never belong to a real person. That is the target.
+
+All four transitions pass, and the account finishes exactly where it started:
+
+| Step | Call | Result |
+|---|---|---|
+| Suspend | `PATCH /api/admin/users/{id} {"status":"suspended"}` | 200, left Active, appears in Suspended |
+| Reactivate | `POST /api/admin/users/{id}/reactivate` | 200, back in Active |
+| Remove | `PATCH /api/admin/users/{id} {"status":"removed"}` | 200, appears in Removed |
+| Restore (*Onboard*) | `POST /api/admin/users/{id}/reactivate` | 200, back in Active |
+
+`x5-user-lifecycle.js` resolves the target id from the API payload, refuses any
+write naming the shared or admin account, and blocks any write that does not
+name that one id. It is re-runnable and leaves no trace.
+
+### 15d. Single-row destructive actions have no confirmation — MEDIUM (safety)
+
+Measured during 15c, on every one of the four transitions: **the row action
+menu fires immediately.** One click on *Suspended*, *Remove*, *Reactivate* or
+*Onboard* and the `PATCH`/`POST` is already gone. No dialog, no undo.
+
+This is inconsistent with the app's own behaviour elsewhere:
+
+- the **bulk** versions of the very same actions, on the very same page, all
+  route through `ConfirmActionModal` with a worded description and a count
+  (*"This will suspend 2 selected users. They will lose access until
+  reactivated."*)
+- **transaction** approve and reject both confirm (15a)
+- **fleet-payment** approval confirms — it is a deliberate two-step
+- agent **product deletion** confirms, with a count
+
+So selecting a checkbox and choosing *Suspend* asks you to confirm, while
+opening the row's own menu and choosing *Suspended* does not. The single-row
+path is the easier one to hit by accident, and it is the one with no guard.
+`ConfirmActionModal` already exists and the page already imports it.
+
+### 15e. Admin `Active`/`Suspended` tab counts read (0) — ✅ FIXED
+
+`/admin/active` painted `Active (0) Suspended (0) Removed (1)` while the table
+under it listed 10 active users. The identical tabs on `/admin/suspended` and
+`/admin/removed` read `Active (18) Suspended (2) Removed (1)`. Stable after
+6 seconds, so not a race.
+
+**Root cause.** Three near-duplicate pages, each with its own stats reader.
+`/admin/suspended` and `/admin/removed` use `readStatusCount`, which checks the
+top-level key before `byStatus`. `/admin/active` used `readNumber` with only
+`["byStatus.active", "active"]`.
+
+The live payload is flat, with no `byStatus` object at all:
+
+```json
+{"totalUsers":21,"buyers":9,"agents":7,"transporters":2,"admins":1,
+ "activeUsers":18,"suspendedUsers":2,"removedUsers":1, ...}
+```
+
+Neither lookup matched, so both fell through to `?? 0`. `Removed` was correct
+only by accident, because `removedUsers` was already in its list.
+
+**Fix.** `/admin/active` now tries `activeUsers` / `suspendedUsers` /
+`removedUsers` first, matching what `AllUserOverview` already did — that
+component renders 18 / 2 / 1 correctly on the very same payload.
+
+**Verified** against the live payload, not inferred: `GET
+/api/admin/users/stats` returns `activeUsers 18, suspendedUsers 2,
+removedUsers 1`.
+
+Worth a follow-up: four separate readers for one payload is why this drifted.
+One shared helper would prevent the next copy from diverging.
+
+### 15f. Clicking a user row does not open the user detail page — MEDIUM
+
+`/admin/all-users/[id]` exists as a complete page — eight components including
+`UserProfileBar`, `UserHistoryPanel`, `UserOverviewStrip` and three modals.
+Clicking a row on `/admin/all-users` does nothing: the URL does not change and
+no request is made.
+
+The wiring looks correct (`onRowClick={openDetail}` →
+`router.push('/admin/all-users/' + id)`) and `_id` **is** present on every row
+in the payload, so the obvious explanation — an empty id producing
+`/admin/all-users/` — is not it. Not yet root-caused.
+
+Nothing else links to the route either, so **an entire admin page is currently
+unreachable through the UI.**
+
+### 15g. The admin transaction modal has no dialog semantics — LOW (a11y)
+
+Measured with the same probe used for 12f/14e. `TransactionDetailModal` has no
+`role="dialog"` and does not close on Escape — the overlay stays up and
+swallows the next click. It is the same pattern already fixed in five other
+modals, and `useModalA11y(isOpen, ref)` is one line.
+
+The `/admin/new` approval modal, by contrast, *does* have `role="dialog"` and a
+`Close` button, so the two admin modals disagree with each other.
+
+### 15h. Dashboard widgets report correct numbers — ✅ VERIFIED
+
+§3.1 asked whether the dashboard figures are actually right; they render, but
+nobody had cross-checked them. They are right.
+
+The spec documents a set of per-metric endpoints the app never calls, which
+makes them an independent second source for the same figures:
+
+| Card | Painted | `dashboard/overview` (app) | spec endpoint | Verdict |
+|---|---|---|---|---|
+| Users | 21 | 21 | 21 (`registered-users`) | agree |
+| Received Payment | ₦218,642,680 | 218642680 | 218642680 (`received-payments`) | agree |
+| Orders | 20 | 20 | 20 (`orders`) | agree |
+| Visitors | 17 | 17 | 17 (`visitors`) | agree |
+
+Independently, summing the 18 approved transactions from
+`/api/admin/transactions` gives **218,642,680** — matching both sources to the
+naira.
+
+### 15i. Spec vs implementation — the documentation is stale, the code is fine
+
+Prompted by a request to confirm every endpoint against the Swagger spec, all
+29 endpoints this sweep touches were probed directly against the live backend
+with an admin token (`x6-spec-check.js`). **Every one returned 200.** Nothing is
+broken — but the spec and the app have drifted apart in three places, which
+matters because the spec is what the backend team works from.
+
+**1. The dashboard section documents endpoints the app does not use, and omits
+the ones it does.** Both sets are live.
+
+| Documented in the spec | Actually called by the app |
+|---|---|
+| `/api/admin/dashboard/registered-users` | `/api/admin/dashboard/overview` |
+| `/api/admin/dashboard/received-payments` | `/api/admin/dashboard/revenue?period=` |
+| `/api/admin/dashboard/orders` | `/api/admin/dashboard/top-buyers?limit=` |
+| `/api/admin/dashboard/visitors` | `/api/admin/dashboard/top-agents?limit=` |
+| `/api/admin/dashboard/revenue-chart` | `/api/admin/dashboard/top-transporters?limit=` |
+| `/api/admin/top-buyers`, `/top-agents`, `/top-transporters` | |
+
+Note the spec puts top-buyers at `/api/admin/top-buyers` while the app calls
+`/api/admin/dashboard/top-buyers`. **Both work.**
+
+**2. Two endpoints the admin UI depends on are absent from the spec entirely:**
+
+- `/api/admin/approvals/transporters` (+ `/{id}`) — 200, returns 2 rows. Only
+  `approvals/agents` and `approvals/farmers` are documented, so there is no
+  documented way to approve a transporter, though the UI does it.
+- `/api/admin/banners` — 200, returns 2 banners. Backs the whole settings screen.
+- `/api/support/contacts` — 200, `{hotline, whatsapp, email}`.
+
+**3. Two overlapping routes for the same job, and the app picks the undocumented
+one.** For user status the spec has a purpose-built
+`PATCH /api/admin/users/{id}/status` with `enum: [active, suspended]`; the app
+instead sends `PATCH /api/admin/users/{id} {"status": ...}`. That generic route
+is documented only by example, with no enum — and the app sends
+`"removed"` through it, which appears in no enum anywhere but works.
+
+Similarly `POST /api/admin/users/{id}/onboard` is documented ("Onboard user
+(reactivate)") and never called: the button labelled **Onboard** calls
+`/reactivate` instead. Both return 200.
+
+**Requested of the backend team:** document the five dashboard endpoints the app
+actually uses (or tell us to migrate to the documented ones), add
+`approvals/transporters`, `banners` and `support/contacts`, add `removed` to a
+status enum, and say which of the two user-status routes is canonical.
+
+### 15j. Support APIs confirmed live — unblocks the Chat/Help decision (D4)
+
+Probed as part of 15i, because D4 hinged on whether these exist:
+
+| Endpoint | Status | Shape |
+|---|---|---|
+| `GET /api/chat` | 200 | `array(0)` |
+| `GET /api/help` | 200 | `array(0)` |
+| `GET /api/support/contacts` | 200 | `{hotline, whatsapp, email}` |
+| `GET /api/admin/live-chats` | 200 | `array(2)` — two conversations already exist |
+| `GET /api/admin/queries` | 200 | `array(0)` |
+
+`/api/help` is a support-ticket API (`POST {subject, message, priority,
+linkedOrderId, linkedTransactionId}`, `DELETE /api/help/{id}` to close) and
+`/api/chat` is a conversation API (`POST {initialMessage}`, then
+`GET`/`POST /api/chat/{conversationId}` for messages).
+
+So the 14 dead Chat/Help links (14c) can be backed by real endpoints rather than
+removed, and building them also gives the untested admin *Queries* and *Live
+chats* screens something to receive.
+
+### Test data touched by this session
+
+| Kind | Id / detail | State |
+|---|---|---|
+| Transaction | `6a7641ae2b8e56022e704c00` — QA CLEAN1 Yellow Maize, ₦1,300 | Pending → **Approved** (deliberate) |
+| Transaction | `6a763b37f1031c35596c3cdc` — Sweet Potatoes, ₦680 | Pending → **Rejected** (deliberate) |
+| User | `6a7493b8e0c1e1c4e3e11d7c` — QA Flow Probe, `qa.flow.probe.8821@example.invalid` | suspended → reactivated → removed → restored, **net zero, Active** |
+
+Nothing else was mutated. The pre-existing Garri order `69c1698467317734c348af91`
+was on the abort list in every script and was never touched.
+
+---
+
 ## Parked — signup (deferred by request, not fixed)
 
 Recorded so it isn't lost. **Signup is broken for every new user in production.**

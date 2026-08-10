@@ -1,8 +1,12 @@
 # Tractive — Test & Fix Status
 
-**As of 09 Aug 2026 (end of day).** Everything below was driven through the real UI (Playwright → Google
+**As of 10 Aug 2026.** Everything below was driven through the real UI (Playwright → Google
 Chrome → `localhost:3000`) against the live backend `https://tractive-be.vercel.app`.
-Nothing is committed; ~85 paths are modified/new on `dev`.
+
+**All prior work is now committed** — nine commits on `dev`, split by area
+(primitives · data layer · shared modal · buyer · agent · transporter · shared/nav/auth ·
+docs · admin count fix). The only thing left dirty is the three deleted repo-root `.md`
+files, held back pending **D6**.
 
 Detail lives in:
 - [`E2E-BUG-REPORT-2026-08-07.md`](E2E-BUG-REPORT-2026-08-07.md) — every bug, its fix, and how to re-test it
@@ -67,6 +71,23 @@ driven to delivered. That chain is what finally verified fix #7.
 | Fleet list | 5 fleets with IOT, route, status, price; `available` / `on_transit` / `under_maintenance` render distinctly |
 | **Trip lifecycle + fix #7** | New → Picked → On Transit → Delivered, every `PATCH` 200; the status dropdown always defaults to the **next** status and never re-offers the current one; delivered is terminal with no CTA |
 
+### Admin interactions — the destructive controls, driven 10 Aug
+
+Full write-up in §15 of the bug report.
+
+| Area | Evidence |
+|---|---|
+| **Product payment approval** | `PATCH …/transactions/{id}/status {approved}` → 200. **The order money path, verified end to end**: dashboard Received Payment `218,641,380` → `218,642,680` (exactly +₦1,300) and order breakdown `paid` 13 → 14 |
+| **Product payment rejection** | `PATCH …{rejected}` → 200, two-step confirmation on both actions |
+| **User suspend / reactivate / remove / restore** | All four transitions 200 on a throwaway `.invalid` QA account, **finishing net zero, back in Active** |
+| **Dashboard numbers are correct** | All four cards cross-checked against two independent API sources *and* against the sum of the 18 approved transactions — agree to the naira |
+| **All 29 endpoints confirmed live** | Probed directly with an admin token against the Swagger spec; every one 200 |
+
+Two blockers dissolved along the way: the "no QA-only user" problem (earlier sessions left
+throwaway accounts behind — `qa.flow.probe.8821@example.invalid` uses the RFC 2606 reserved
+`.invalid` TLD, so it can never be a real person), and **D4** (the Chat/Help APIs are real
+and answer — see §15j).
+
 ### Admin surface — 10 of 11 screens clean
 
 `/admin`, `all-users`, `active`, `suspended`, `removed`, `settings`, `transactions`,
@@ -116,6 +137,10 @@ modals.
 | 13d | **An expired session renders an empty page, not an error.** A 401 paints "no data" — a 5-row fleet list became 0 rows silently. Frontend half: treat 401 as an error state. Backend half is item 13 | Medium |
 | 14c | **15 dead internal links.** Chat and Help 404 for **both** agents and transporters (sidebar, desktop + mobile); 5 footer links 404 on every page; plus `/agents`, `/transporters`, `/contact-us`, `/account-settings`, `/bid`. These are missing *pages* — build or remove is a **product call** | Medium — **decision needed** |
 | 14d | **Password reset does not exist.** `/forgot-password` and `/reset-password` both 404 and nothing links to them. With signup's mailer broken and refresh never working, account recovery has no path at all | Medium — **product gap** |
+| 15d | **Single-row destructive admin actions have no confirmation.** One click on *Suspended* / *Remove* / *Reactivate* / *Onboard* in a row's action menu and the write is already sent. The **bulk** versions of the same actions on the same page all confirm, as do transaction approve/reject and fleet-payment approval. The easier path to hit by accident is the unguarded one; `ConfirmActionModal` is already imported | **Medium — safety** |
+| 15f | **An entire admin page is unreachable.** `/admin/all-users/[id]` exists with 8 components, but clicking a user row does nothing (no navigation, no request) and nothing else links to it. Wiring looks right and `_id` is present — not yet root-caused | Medium |
+| 15b | A rejected transaction displays as **"Failed"** — the transactions screen has no *Rejected* tab, while fleet-payments does. The same concept is named differently on two adjacent screens | Low |
+| 15g | `TransactionDetailModal` has no `role="dialog"` and does not close on Escape — the overlay stays up and swallows the next click. Same one-line `useModalA11y` fix as the others. The `/admin/new` modal next to it *does* have a dialog role, so the two disagree | Low (a11y) |
 | 13e | Remaining modals still without focus management: `EditProductModal`, `BiddersModal`, `CustomerInfoModal`, the `CustomerCareModal`s, `TripDetailsModal`. Now a one-line `useModalA11y(isOpen, ref)` each | Low (a11y) |
 | 11c | Follower count stays 0 after following — the button flips, the counter doesn't | Low |
 | 11e | Wishlist shows a product as "Available" with `Quantity: 0` | Low |
@@ -152,22 +177,31 @@ Ordered by value. `☐` = never exercised.
 
 ### 3.1 Admin interactions — the biggest gap
 
-All 11 screens render cleanly and fleet-payment approval is verified. Never exercised:
+Five of the nine items are now done (10 Aug, bug report §15). Remaining:
 
-- ☐ **suspend / remove / restore a user** (`/admin/active`, `/suspended`, `/removed`) — the
-  most destructive controls in the app. **There is no QA-only user account yet**, and the
-  shared test account must not be suspended (it is the only way in). Create a throwaway user
-  first, or leave this until one exists.
-- ☐ **product-payment approval + rejection** (`/admin/transactions`) — only *fleet* payments
-  have ever been approved. This is the money path for orders.
-- ☐ **agent / transporter approval + rejection** (`/admin/new` has 7 rows, `/admin/rejected`)
-- ☐ **refunds** — the `Refunded` tab exists on both payment screens; the refund action is untested
-- ☐ **settings / banners** — `GET /api/admin/banners` 200s; create / edit / delete untested
-- ☐ **user detail page** `/admin/all-users/[id]` and `UserProfileBar`
+- ☑ ~~suspend / remove / restore a user~~ — **done**, full lifecycle, net zero (§15c)
+- ☑ ~~product-payment approval + rejection~~ — **done**, and the money path is verified
+  end to end (§15a). **Note: no pending product payments remain** — the spread is now
+  `approved 18, rejected 1, refunded 1`. Testing another approval needs a fresh order paid
+  through the buyer UI first.
+- ☑ ~~whether the dashboard widgets report correct numbers~~ — **done, they are correct**
+  (§15h)
+- ☐ **agent / transporter approval + rejection** (`/admin/new` has 7 rows, `/admin/rejected`).
+  Started and deliberately stopped: the only row belonging to us is the **shared test
+  account's own agent application**, and rejecting it could cost us the agent role — i.e.
+  the only way in. It also already reads *"Approved / ACCOUNT STATUS active / Approved by
+  admin"* while still sitting in the pending queue, which looks like a backend bug worth
+  raising before pressing anything. Needs either a throwaway *application* or a decision.
+- ☐ **refunds** — the `Refunded` tab exists on both payment screens; the refund action is
+  untested. Note the spec exposes **two** routes for each (`…/transactions/{id}/refund` and
+  `…/transactions/refund`); the app calls the second.
+- ☐ **settings / banners** — `GET /api/admin/banners` 200s and returns 2 banners; create /
+  edit / delete untested
+- ☑ ~~user detail page `/admin/all-users/[id]`~~ — **it is unreachable**; see 15f. The page
+  itself still needs testing once the row click works
 - ☐ **`track-agent` / `track-transporter` row actions** and their detail modals
-- ☐ admin search / filters / pagination on all list screens
-- ☐ whether the admin dashboard widgets report *correct* numbers (they render; nobody has
-  cross-checked them against the data)
+- ☐ admin search / filters / pagination on all list screens (search *is* exercised
+  incidentally by `x5-user-lifecycle.js`, which filters by email and works)
 
 Two traps on these screens: `has-text("Approve")` also matches the **"Approved" tab** (it
 navigates away and silently dismisses the confirm dialog — use `button:text-is()` scoped to
@@ -257,12 +291,20 @@ column is why it matters that they get answered.
 | **D1** | **11a** — should a buyer be able to withdraw or cancel a fleet bid? | The Fleet Bids tab has **no actions at all**. Two bids have sat `Pending` for 20+ days with no way out. Cannot be built at all until the backend has a route | Product bids already have `DELETE /api/bids/{id}`; fleet bids have no equivalent. **If yes, the backend must add one first** — then it's a small frontend change |
 | **D2** | **11d** — should reviews be **per-order** or **per-seller**? | The *Leave a review* button is offered on every delivered order but only the first can ever succeed (409 `"You have already reviewed this user"`). Currently handled gracefully, so it looks fine while being wrong | **Per-order** = backend change (scope the uniqueness to the order). **Per-seller** = frontend change (hide the button once reviewed). Per-order is the more useful product; per-seller is the cheaper fix |
 | **D3** | **Legacy mispriced orders** — migrate, hand-correct, or write off? | Writing the migration for backend **A**. A blanket `× quantity` would *inflate* legacy rows placed with lot-total amounts, so it cannot be automated blindly | Needs a human pass over the affected orders. Related: every stored `commissionAmount` is wrong by the same factor |
-| **D4** | **14c** — the dead Chat / Help / footer links: build the pages, or remove the entries? | **Chat and Help 404 for every agent and every transporter** (sidebar, desktop *and* mobile), plus 5 footer links on every page. 14 dead links total | Removing the entries is minutes and stops users hitting 404s. Building them is a feature. **Recommend removing/disabling now and building later** — a visible dead link is worse than an absent one |
+| ~~**D4**~~ | ✅ **ANSWERED 10 Aug — build them.** The APIs exist and answer | — | See "Answered" below |
 | **D5** | **14d** — is password reset in scope? | It **does not exist**: `/forgot-password` and `/reset-password` both 404 and nothing links to them. Combined with the signup mailer being broken and `refresh` never working (13d), **account recovery has no working path at all** | If in scope this is a real feature (route + email). If not, say so and it comes off the list — but then a locked-out user has no recourse, which is worth a deliberate decision rather than a silent gap |
 | **D6** | **Restore the three deleted repo-root `.md` files?** `API_CHECKLIST.md`, `BACKEND_OUTSTANDING.md`, `BACKEND_RETEST_2026-07-29.md` | Nothing, but they still show as deleted in git and no command in these sessions touched them | Recoverable with `git restore <file>`. Someone deleted them deliberately or by accident — worth confirming which |
-| **D7** | **Commit strategy** — nothing has been committed | 94 modified/new paths on `dev`, covering ~25 fixes across five sessions. A single commit would be very large; the risk grows the longer it sits | Options: one commit, split by area (buyer / agent / transporter / admin / assets / a11y), or split by fix number. **Recommend splitting by area** — it keeps each reviewable |
+| ~~**D7**~~ | ✅ **ANSWERED 10 Aug — split by area, done** | — | See "Answered" below |
+| **D8** | **New.** Should the shared test account's own agent application be approved or rejected on `/admin/new`? | The last untested approval screen. It is the only row on it that belongs to us | Approving looks harmless; **rejecting risks the agent role on the only account that can log in**. Separately, it already reads *"Approved / active / Approved by admin"* while sitting in the *pending* queue — raise that with the backend first |
 
 **Answered so far:**
 
 - ✅ **A product must have at least one image** — enforced on the frontend 09 Aug (12h), and
   the backend has been asked for the server-side rule as item 12.
+- ✅ **D4 — build the Chat and Help pages** (10 Aug). Conditional on the APIs existing; they
+  do, and all five return 200 (§15j): `GET /api/chat`, `GET /api/help`,
+  `GET /api/support/contacts`, plus the admin `live-chats` (2 conversations already) and
+  `queries` screens they feed. `/api/help` is a support-ticket API, `/api/chat` a
+  conversation API. Building them also gives two untested admin screens real input.
+- ✅ **D7 — commit, split by area** (10 Aug). Nine commits on `dev`. The three deleted
+  repo-root `.md` files were deliberately left unstaged, pending **D6**.
