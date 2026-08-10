@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 import { Customer } from "@/services/customerService";
 
 interface CustomerInfoModalProps {
@@ -95,17 +95,14 @@ export const CustomerInfoModal: React.FC<CustomerInfoModalProps> = ({
           </div>
 
           {/* Customer Image */}
-          {customer.image && (
-            <div className="flex justify-center mb-6">
-              <Image
-                src={customer.image}
-                alt={customer.name}
-                width={80}
-                height={80}
-                className="rounded-full w-[80px] h-[80px] object-cover border-2 border-gray-200"
-              />
-            </div>
-          )}
+          <div className="flex justify-center mb-6">
+            <Avatar
+              src={customer.image}
+              alt={customer.name}
+              size={80}
+              className="rounded-full w-[80px] h-[80px] object-cover border-2 border-gray-200"
+            />
+          </div>
 
           {/* Customer Details */}
           <div className="space-y-4">

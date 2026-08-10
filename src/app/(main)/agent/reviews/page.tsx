@@ -7,7 +7,6 @@ import Image from "next/image";
 import {
   useReviews,
   useReviewsSummary,
-  useLikeReview,
   useReplyToReview,
 } from "@/hooks/queries/useReviewQueries";
 
@@ -47,7 +46,6 @@ const ReviewsPage: React.FC = () => {
     refetch: refetchSummary,
   } = useReviewsSummary();
 
-  const likeReview = useLikeReview();
   const replyToReview = useReplyToReview();
 
   const reviews = reviewsResponse?.reviews ?? [];
@@ -112,11 +110,6 @@ const ReviewsPage: React.FC = () => {
       );
     }
     return stars;
-  };
-
-  // Handle like review — mutation invalidates the list to resync the count.
-  const handleLikeReview = (reviewId: string) => {
-    likeReview.mutate(reviewId);
   };
 
   // Toggle the reply composer for a review.
@@ -316,19 +309,15 @@ const ReviewsPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-[46px] truncate mt-2">
-                  <button
-                    className="flex items-center gap-[6px] cursor-pointer hover:opacity-70 transition-opacity disabled:opacity-50"
-                    onClick={() => handleLikeReview(review._id)}
-                    disabled={
-                      likeReview.isPending &&
-                      likeReview.variables === review._id
-                    }
-                  >
+                  {/* Read-only here: `POST /api/reviews/{id}/like` requires
+                      activeRole `buyer`, and this page is the agent's own
+                      inbox — the like control lives on the buyer surfaces. */}
+                  <div className="flex items-center gap-[6px]">
                     <LikeIcon />
                     <span className="font-montserrat font-normal text-[11px] text-[#2b2b2b]">
                       {review.likes || 0} Likes
                     </span>
-                  </button>
+                  </div>
                   <button
                     className="flex items-center gap-[6px] cursor-pointer hover:opacity-70 transition-opacity"
                     onClick={() => toggleReply(review._id)}

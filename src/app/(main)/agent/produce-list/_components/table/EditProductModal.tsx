@@ -687,7 +687,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                         <div className="flex gap-4">
                           <div className="flex-1">
                             <label className="block text-sm font-medium text-[#2b2b2b] mb-1 font-montserrat">
-                              Price ($)
+                              Price (₦)
                             </label>
                             <input
                               type="number"

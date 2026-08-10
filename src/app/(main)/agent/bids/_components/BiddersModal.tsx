@@ -9,6 +9,12 @@ interface BiddersModalProps {
   isOpen: boolean;
   onClose: () => void;
   listingId: string;
+  /**
+   * Fired after a bid's status actually changed on the server. Accept closes the
+   * modal (which refetches anyway), but reject and counter leave it open — without
+   * this the row behind the modal kept showing the pre-action status until reload.
+   */
+  onBidUpdated?: () => void;
 }
 
 type ActionType = "accept" | "reject" | "counter";
@@ -23,6 +29,7 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
   isOpen,
   onClose,
   listingId,
+  onBidUpdated,
 }) => {
   const [bidders, setBidders] = useState<SingleBid[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -116,6 +123,7 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
         const updated = fresh.find((b) => b.id === selectedBidder.id);
         if (updated) setSelectedBidder(updated);
       }
+      onBidUpdated?.();
 
       closeAction();
       if (status === "accepted") {

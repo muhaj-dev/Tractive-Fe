@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { XModalIcon } from "../../_components/Icons/AgentIcons";
@@ -57,6 +58,10 @@ export const FarmerFormModal: React.FC<FarmerFormModalProps> = ({
   const [internalIsSubmitting, setInternalIsSubmitting] = useState(false);
 
   const isSubmitting = externalIsSubmitting ?? internalIsSubmitting;
+
+  // Keyboard/screen-reader behaviour: focus into the dialog, trap Tab, lock body scroll.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, panelRef);
 
   useEffect(() => {
     if (editFarmer && isOpen) {
@@ -192,9 +197,11 @@ export const FarmerFormModal: React.FC<FarmerFormModalProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       role="dialog"
+      aria-modal="true"
       aria-labelledby="farmer-modal-title"
     >
       <motion.div
+        ref={panelRef}
         className="bg-[#fefefe] p-4 md:p-6 rounded-lg w-full max-w-md mx-auto relative max-h-[90vh] overflow-y-auto"
         initial={{ scale: 0.8 }}
         animate={{ scale: 1 }}

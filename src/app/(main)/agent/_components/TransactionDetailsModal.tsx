@@ -104,7 +104,7 @@ export const TransactionDetailsModal: React.FC<
                         <Image
                           src={
                             product?.images?.[0] ||
-                            "/images/placeholder-product.jpg"
+                            "/images/placeholder.png"
                           }
                           alt={product?.name || "Product"}
                           width={64}

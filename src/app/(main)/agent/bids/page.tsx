@@ -445,6 +445,7 @@ const BidsListPage: React.FC = () => {
               setIsBiddersModalOpen(false);
               fetchBids();
             }}
+            onBidUpdated={fetchBids}
             listingId={selectedListingId}
           />
         )}

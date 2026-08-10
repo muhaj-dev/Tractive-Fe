@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 import { ArrowDownIcon, ArrowUpIcon, SearchIcon } from "@/icons/Icons";
 import { CalenderIcon } from "@/icons/DashboardIcons";
 import { TableList } from "../_components/table/TableList";
@@ -25,15 +25,12 @@ const customerColumns: ColumnConfig<Customer>[] = [
     minWidth: "min-w-[150px]",
     render: (customer) => (
       <div className="flex items-center gap-2">
-        {customer.image && (
-          <Image
-            src={customer.image}
-            alt={customer.name}
-            width={25}
-            height={25}
-            className="rounded-full w-[25px] h-[25px] sm:w-[35px] sm:h-[35px] object-cover"
-          />
-        )}
+        <Avatar
+          src={customer.image}
+          alt={customer.name}
+          size={35}
+          className="rounded-full w-[25px] h-[25px] sm:w-[35px] sm:h-[35px] object-cover"
+        />
         <span className="text-[10px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-normal font-montserrat text-[#2b2b2b]">
           {customer.name}
         </span>

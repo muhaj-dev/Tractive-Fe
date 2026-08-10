@@ -6,6 +6,11 @@ import { ArrowLeftIcon } from "./Icons/AgentIcons";
 import { toast } from "sonner";
 import { useCreateProduct } from "@/hooks/queries/useProductQueries";
 import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload";
+import {
+  CREATABLE_PRODUCT_UNITS,
+  getProductUnit,
+  requiresUnitWeight,
+} from "@/utils/productUnits";
 
 interface ItemDetailsFormProps {
   onBack: () => void;
@@ -49,7 +54,15 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
     unit?: string;
     description?: string;
     price?: string;
+    unitWeightKg?: string;
   }>({});
+
+  const selectedUnit = getProductUnit(unit);
+  const unitLabel = selectedUnit?.label ?? unit;
+  // The option labels carry their own parenthetical ("Kilogram (kg)"), which read as
+  // "Weight of one kilogram (kg) (kg)" once this field appended its own unit.
+  const unitNoun = unitLabel.replace(/\s*\([^)]*\)\s*$/, "");
+  const unitWeightRequired = requiresUnitWeight(unit);
 
   const { uploadToCloudinary } = useCloudinaryUpload();
 
@@ -86,6 +99,15 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
         nextErrors.price = "Enter a valid price";
       if (!quantity.trim() || isNaN(Number(quantity)) || Number(quantity) <= 0)
         nextErrors.quantity = "Enter a valid quantity";
+      // Without a unit weight, transport treats the quantity as kilograms — so
+      // it is required for any unit whose weight is not fixed by its name.
+      if (
+        requiresUnitWeight(unit) &&
+        (!unitWeightKg.trim() ||
+          isNaN(Number(unitWeightKg)) ||
+          Number(unitWeightKg) <= 0)
+      )
+        nextErrors.unitWeightKg = `Enter how many kg one ${unitNoun.toLowerCase()} weighs`;
 
       setErrors(nextErrors);
       if (Object.keys(nextErrors).length > 0) {
@@ -95,37 +117,56 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
 
       console.log("✅ Step 2: All fields validated");
 
-      // Upload images to Cloudinary
+      // Upload media to Cloudinary. Failures here are reported separately from
+      // failures creating the product — "Failed to create product" is the wrong
+      // thing to say when the product was never attempted because an image upload
+      // died, and `useCreateProduct` already surfaces the API's own message.
       let imageUrls: string[] = [];
       let videoUrls: string[] = [];
 
-      if (imageFiles.length > 0) {
-        setUploadProgress(20);
-        console.log(
-          `🔄 Step 3a: Uploading ${imageFiles.length} images to Cloudinary...`,
+      try {
+        if (imageFiles.length > 0) {
+          setUploadProgress(20);
+          console.log(
+            `🔄 Step 3a: Uploading ${imageFiles.length} images to Cloudinary...`,
+          );
+
+          const uploadPromises = imageFiles.map((file) =>
+            uploadToCloudinary(file),
+          );
+          imageUrls = await Promise.all(uploadPromises);
+
+          console.log("✅ Images uploaded:", imageUrls);
+        }
+
+        // Upload videos to Cloudinary
+        if (videoFiles.length > 0) {
+          setUploadProgress(40);
+          console.log(
+            `🔄 Step 3b: Uploading ${videoFiles.length} videos to Cloudinary...`,
+          );
+
+          const uploadPromises = videoFiles.map((file) =>
+            uploadToCloudinary(file),
+          );
+          videoUrls = await Promise.all(uploadPromises);
+
+          console.log("✅ Videos uploaded:", videoUrls);
+        }
+      } catch (uploadError) {
+        console.error("❌ Media upload failed:", uploadError);
+        const isFileReader =
+          uploadError instanceof Error &&
+          uploadError.message.includes("FileReader");
+        toast.error(
+          isFileReader
+            ? "Failed to process your files. Please try again with smaller files."
+            : "Your images could not be uploaded, so the product was not created. Please check your connection and try again.",
+          { duration: 5000, position: "top-center" },
         );
-
-        const uploadPromises = imageFiles.map((file) =>
-          uploadToCloudinary(file),
-        );
-        imageUrls = await Promise.all(uploadPromises);
-
-        console.log("✅ Images uploaded:", imageUrls);
-      }
-
-      // Upload videos to Cloudinary
-      if (videoFiles.length > 0) {
-        setUploadProgress(40);
-        console.log(
-          `🔄 Step 3b: Uploading ${videoFiles.length} videos to Cloudinary...`,
-        );
-
-        const uploadPromises = videoFiles.map((file) =>
-          uploadToCloudinary(file),
-        );
-        videoUrls = await Promise.all(uploadPromises);
-
-        console.log("✅ Videos uploaded:", videoUrls);
+        setIsLoading(false);
+        setUploadProgress(0);
+        return;
       }
 
       setUploadProgress(70);
@@ -177,22 +218,11 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
         onClose();
       }, 500);
     } catch (error) {
+      // Media failures are handled above. Anything reaching here came from
+      // `createProduct`, and `useCreateProduct.onError` has already shown the
+      // API's own message (e.g. "Unit must be one of kg, tonne, 50kg_bag, or
+      // 100kg_bag") — a second generic toast only buries it.
       console.error("❌ Error creating product:", error);
-      if (error instanceof Error && error.message.includes("FileReader")) {
-        toast.error(
-          "Failed to process files. Please try again with smaller files.",
-          {
-            duration: 5000,
-            position: "top-center",
-          },
-        );
-        return;
-      }
-
-      toast.error("Failed to create product. Please try again.", {
-        duration: 5000,
-        position: "top-center",
-      });
     } finally {
       setIsLoading(false);
       setUploadProgress(0);
@@ -314,9 +344,18 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
             id="unit"
             value={unit}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-              setUnit(e.target.value);
-              if (errors.unit)
-                setErrors((prev) => ({ ...prev, unit: undefined }));
+              const next = e.target.value;
+              setUnit(next);
+              // kg, 100kg_bag and tonne have a weight fixed by definition —
+              // fill it in rather than making the agent restate it.
+              const fixed = getProductUnit(next)?.fixedWeightKg;
+              if (fixed != null) setUnitWeightKg(String(fixed));
+              else setUnitWeightKg("");
+              setErrors((prev) => ({
+                ...prev,
+                unit: undefined,
+                unitWeightKg: undefined,
+              }));
             }}
             aria-invalid={!!errors.unit}
             className={`w-full border-[1px] rounded-[4px] px-3 py-2 text-[14px] font-normal text-[#2b2b2b] font-montserrat focus:outline-none focus:ring-[0.1px] cursor-pointer ${
@@ -327,8 +366,11 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
             disabled={isLoading}
           >
             <option value="">Select unit</option>
-            <option value="kg">Kilogram (kg)</option>
-            <option value="tonne">Tonne</option>
+            {CREATABLE_PRODUCT_UNITS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
           {errors.unit && (
             <p className="text-red-500 text-[12px] font-montserrat">
@@ -428,27 +470,52 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
           />
         </div>
 
-        {/* Unit Weight */}
+        {/* Unit Weight — kilograms in ONE unit, not a weight in that unit. */}
         <div className="flex flex-col gap-2">
           <label
             htmlFor="unitWeightKg"
             className="text-[14px] font-normal text-[#2b2b2b] font-montserrat"
           >
-            Unit Weight ({unit || "unit"})
+            Weight of one {unit ? unitNoun.toLowerCase() : "unit"} (kg)
+            {unitWeightRequired ? " *" : ""}
           </label>
           <input
             type="number"
             id="unitWeightKg"
             value={unitWeightKg}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setUnitWeightKg(e.target.value)
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setUnitWeightKg(e.target.value);
+              if (errors.unitWeightKg)
+                setErrors((prev) => ({ ...prev, unitWeightKg: undefined }));
+            }}
+            aria-invalid={!!errors.unitWeightKg}
+            className={`w-full border-[1px] rounded-[4px] px-3 py-2 text-[14px] font-normal text-[#2b2b2b] font-montserrat focus:outline-none focus:ring-[0.1px] ${
+              errors.unitWeightKg
+                ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                : "border-[#2b2b2b] focus:ring-[#538e53] focus:border-[#538e53]"
+            }`}
+            placeholder={
+              unit
+                ? `How many kg is one ${unitNoun.toLowerCase()}?`
+                : "Select a unit first"
             }
-            className="w-full border-[1px] border-[#2b2b2b] rounded-[4px] px-3 py-2 text-[14px] font-normal text-[#2b2b2b] font-montserrat focus:outline-none focus:ring-[0.1px] focus:ring-[#538e53] focus:border-[#538e53]"
-            placeholder={`Enter unit weight in ${unit || "selected unit"} (optional)`}
             min="0"
             step="0.1"
             disabled={isLoading || !unit}
           />
+          {unitWeightRequired && !errors.unitWeightKg && (
+            <p className="text-[12px] font-montserrat text-[#808080]">
+              Transport is priced by weight — without this, {quantity || "50"}{" "}
+              {unitNoun.toLowerCase()}
+              {Number(quantity) === 1 ? "" : "s"} would be shipped as if they
+              weighed {quantity || "50"} kg.
+            </p>
+          )}
+          {errors.unitWeightKg && (
+            <p className="text-red-500 text-[12px] font-montserrat">
+              {errors.unitWeightKg}
+            </p>
+          )}
         </div>
 
         {/* Local Transport */}

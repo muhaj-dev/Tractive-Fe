@@ -45,7 +45,7 @@ const transactionColumns: ColumnConfig<FrontendTransaction>[] = [
     render: (transaction) => (
       <div className="flex items-center gap-2">
         <Image
-          src={transaction.image || "/images/placeholder-product.jpg"}
+          src={transaction.image || "/images/placeholder.png"}
           alt={transaction.name || "Product"}
           width={40}
           height={40}

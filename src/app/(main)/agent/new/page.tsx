@@ -6,6 +6,7 @@ import { NewProductActionMenu } from "../_components/ActionMenu/NewProductAction
 import { PackedProductActionMenu } from "../_components/ActionMenu/PackedProductActionMenu";
 import { DeliveredProductActionMenu } from "../_components/ActionMenu/DeliveredProductActionMenu";
 import { useOrders } from "@/hooks/queries/useOrderQueries";
+import { isOrderDelivered } from "@/services/OrderService";
 
 interface SideProps {
   switchSides: "New" | "Packed" | "Delivered";
@@ -19,14 +20,18 @@ export default function ProduceListPage() {
     useState<SideProps["switchSides"]>("New");
 
   // React Query — each status is cached individually and shared with the table.
+  // Packed and Delivered read the same list: a delivered order keeps the
+  // backend status `paid` and only flips `transportStatus`, so the two tabs are
+  // split client-side by `isOrderDelivered` rather than by a separate query.
   const { data: newOrders } = useOrders({ status: "pending" });
-  const { data: packedOrders } = useOrders({ status: "parked" });
-  const { data: deliveredOrders } = useOrders({ status: "delivered" });
+  const { data: paidOrders } = useOrders({ status: "parked" });
 
   const newCount = Array.isArray(newOrders) ? newOrders.length : 0;
-  const packedCount = Array.isArray(packedOrders) ? packedOrders.length : 0;
-  const deliveredCount = Array.isArray(deliveredOrders)
-    ? deliveredOrders.length
+  const packedCount = Array.isArray(paidOrders)
+    ? paidOrders.filter((o) => !isOrderDelivered(o)).length
+    : 0;
+  const deliveredCount = Array.isArray(paidOrders)
+    ? paidOrders.filter(isOrderDelivered).length
     : 0;
 
   const newContainerRef = useRef<HTMLDivElement>(null);

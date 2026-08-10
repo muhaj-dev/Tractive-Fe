@@ -11,6 +11,11 @@ interface MediaUploadProps {
   onRemoveImage: (index: number) => void;
   onRemoveVideo: (index: number) => void;
   isUploading?: boolean;
+  /**
+   * Mark the images section as required. True when listing a new product (a listing
+   * needs a photograph); false when editing, where the product already has images.
+   */
+  imagesRequired?: boolean;
 }
 
 export const MediaUpload: React.FC<MediaUploadProps> = ({
@@ -21,6 +26,7 @@ export const MediaUpload: React.FC<MediaUploadProps> = ({
   onRemoveImage,
   onRemoveVideo,
   isUploading = false,
+  imagesRequired = false,
 }) => {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +51,7 @@ export const MediaUpload: React.FC<MediaUploadProps> = ({
       {/* Upload Images Section */}
       <div className="w-full">
         <label className="text-[14px] font-medium text-[#2b2b2b] font-montserrat mb-3 block">
-          Upload Images (Unlimited)
+          Upload Images (Unlimited){imagesRequired ? " *" : ""}
         </label>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">

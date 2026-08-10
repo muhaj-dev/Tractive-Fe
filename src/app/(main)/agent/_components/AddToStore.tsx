@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowDownIcon, ArrowUpIcon } from "@/icons/Icons";
 import {
@@ -17,8 +18,13 @@ interface AddToStoreProps {
   onClose: () => void;
 }
 
+const FOCUSABLE =
+  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
 export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const farmerDropdownRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -45,6 +51,7 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
     farmer?: string;
     productName?: string;
     category?: string;
+    images?: string;
   }>({});
   const [isCategoryOpen, setIsCategoryOpen] = useState<boolean>(false);
   const [isFarmerOpen, setIsFarmerOpen] = useState<boolean>(false);
@@ -53,6 +60,8 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
+  const [isConfirmingDiscard, setIsConfirmingDiscard] =
+    useState<boolean>(false);
 
   // Filter farmers
   const filteredFarmers = farmers.filter((farmer) =>
@@ -121,6 +130,8 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
 
       setImageFiles((prev) => [...prev, ...newFiles]);
       setImagePreviews((prev) => [...prev, ...newPreviews]);
+      if (newFiles.length > 0)
+        setErrors((prev) => ({ ...prev, images: undefined }));
     }
   };
 
@@ -178,6 +189,11 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
     if (!productName.trim())
       nextErrors.productName = "Please enter a product name";
     if (!selectedCategory) nextErrors.category = "Please select a category";
+    // A listing with no photograph is not usable in the marketplace — buyer cards
+    // fall back to a generic placeholder, so the product looks broken rather than
+    // absent. Enforced here because this is the step that owns the media picker.
+    if (imageFiles.length === 0)
+      nextErrors.images = "Please add at least one image of the product";
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -189,13 +205,63 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
     setCurrentStep(1);
   };
 
+  // Anything the agent has actually typed, picked or attached. Reaching step 2
+  // counts on its own — step 1 cannot be passed without a farmer, a name and a
+  // category, and step 2 holds further input this component cannot see.
+  const hasUnsavedInput =
+    currentStep === 2 ||
+    Boolean(selectedFarmerId) ||
+    farmerSearchQuery.trim() !== "" ||
+    productName.trim() !== "" ||
+    Boolean(selectedCategory) ||
+    subcategory.trim() !== "" ||
+    imageFiles.length > 0 ||
+    videoFiles.length > 0;
+
+  const resetForm = (): void => {
+    imagePreviews.forEach((url) => URL.revokeObjectURL(url));
+    videoPreviews.forEach((url) => URL.revokeObjectURL(url));
+    setFarmerSearchQuery("");
+    setSelectedFarmerId(null);
+    setSelectedCategory(null);
+    setSubcategory("");
+    setProductName("");
+    setErrors({});
+    setImageFiles([]);
+    setImagePreviews([]);
+    setVideoFiles([]);
+    setVideoPreviews([]);
+    setCurrentStep(1);
+  };
+
+  // A stray click on the backdrop used to throw away a part-filled form with no
+  // warning. Ask first whenever there is something to lose.
+  const requestClose = (): void => {
+    if (hasUnsavedInput) {
+      setIsConfirmingDiscard(true);
+      return;
+    }
+    onClose();
+  };
+
+  const confirmDiscard = (): void => {
+    setIsConfirmingDiscard(false);
+    resetForm();
+    onClose();
+  };
+
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (event: MouseEvent): void => {
+      // While the discard prompt is up it owns the interaction — a click on the
+      // backdrop must not close anything behind it.
+      if (isConfirmingDiscard) return;
       if (
         modalRef.current &&
         !modalRef.current.contains(event.target as Node)
       ) {
-        onClose();
+        requestClose();
       }
       if (
         categoryDropdownRef.current &&
@@ -212,11 +278,41 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
     };
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") {
-        onClose();
-        setIsCategoryOpen(false);
-        setIsFarmerOpen(false);
+      // Keep Tab inside the dialog. Without this, focus walks the whole obscured page
+      // behind the modal — measured at 57 tab stops before reaching the close button.
+      if (event.key === "Tab") {
+        const root = modalRef.current;
+        if (!root) return;
+        const items = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+          (el) => el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement,
+        );
+        if (items.length === 0) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        if (!root.contains(active)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+          return;
+        }
+        if (event.shiftKey && active === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && active === last) {
+          event.preventDefault();
+          first.focus();
+        }
+        return;
       }
+
+      if (event.key !== "Escape") return;
+      if (isConfirmingDiscard) {
+        setIsConfirmingDiscard(false);
+        return;
+      }
+      setIsCategoryOpen(false);
+      setIsFarmerOpen(false);
+      requestClose();
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -225,7 +321,26 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+    // `requestClose` is recreated each render; the effect re-registers with the
+    // current one whenever the inputs it reads change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, isOpen, isConfirmingDiscard, hasUnsavedInput]);
+
+  // Move focus into the dialog when it opens, lock the page behind it, and hand focus
+  // back to whatever opened it on close — otherwise a keyboard user is left where they
+  // started, with a dialog on screen they have to tab across the page to reach.
+  useEffect(() => {
+    if (!isOpen) return;
+    previouslyFocused.current = document.activeElement as HTMLElement | null;
+    const raf = requestAnimationFrame(() => closeButtonRef.current?.focus());
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      cancelAnimationFrame(raf);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused.current?.focus?.();
+    };
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -236,19 +351,65 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-[#2b2b2bbc] flex items-center justify-center z-50 p-4"
         >
+          {/* A static aria-label rather than aria-labelledby: step 1 is headed "Item
+              upload" and step 2 "Item Details", so any single heading id would dangle
+              on the other step. */}
           <motion.div
             ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add item to store"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
             className="relative bg-[#fefefe] rounded-lg w-full max-w-[600px] md:max-w-[721px] overflow-y-auto max-h-[90vh] hide-scrollbar"
           >
-            <div
-              onClick={onClose}
-              className="absolute top-4 right-4 cursor-pointer"
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={requestClose}
+              aria-label="Close item upload"
+              className="absolute top-4 right-4 cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#538e53]"
             >
               <XModalIcon className="w-5 h-5" />
-            </div>
+            </button>
+
+            {isConfirmingDiscard && (
+              <div className="absolute inset-0 z-20 bg-[#2b2b2bbc] flex items-center justify-center p-4 rounded-lg">
+                <div
+                  role="alertdialog"
+                  aria-modal="true"
+                  aria-labelledby="discard-item-title"
+                  className="bg-[#fefefe] rounded-lg w-full max-w-[360px] p-5 flex flex-col gap-3 shadow-lg"
+                >
+                  <h3
+                    id="discard-item-title"
+                    className="font-montserrat text-[15px] font-semibold text-[#2b2b2b]"
+                  >
+                    Discard this item?
+                  </h3>
+                  <p className="font-montserrat text-[12px] text-[#808080]">
+                    You have details filled in. Closing now will lose them.
+                  </p>
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsConfirmingDiscard(false)}
+                      className="font-montserrat text-[13px] text-[#2b2b2b] px-4 py-2 rounded-[4px] border border-[#e2e2e2] hover:bg-[#f5f5f5] cursor-pointer"
+                    >
+                      Keep editing
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmDiscard}
+                      className="font-montserrat text-[13px] text-[#fefefe] bg-[#c0392b] hover:bg-[#a93226] px-4 py-2 rounded-[4px] cursor-pointer"
+                    >
+                      Discard
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {currentStep === 1 && (
               <div className="p-4 md:p-6 space-y-4">
@@ -261,6 +422,24 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
                   <label className="text-[14px] font-normal text-[#2b2b2b] font-montserrat mb-1 block">
                     Select Farmer
                   </label>
+                  {/* A product cannot be listed without a farmer, and a brand new
+                      agent has none — previously the picker just sat there empty
+                      with no explanation of why nothing could be listed. */}
+                  {!isLoadingFarmers && farmers.length === 0 && (
+                    <div className="mb-2 px-3 py-2.5 rounded-[5px] bg-[#fff8e6] border border-[#f0dca8]">
+                      <p className="font-montserrat text-[12px] text-[#2b2b2b]">
+                        You need to add a farmer before you can list a product —
+                        every product is tied to the farmer who grew it.
+                      </p>
+                      <Link
+                        href="/agent/farmers"
+                        onClick={onClose}
+                        className="inline-block mt-1.5 font-montserrat text-[12px] font-medium text-[#538e53] underline underline-offset-2 hover:text-[#3a6b3a] cursor-pointer"
+                      >
+                        Add your first farmer →
+                      </Link>
+                    </div>
+                  )}
                   <div ref={farmerDropdownRef} className="relative w-full">
                     {/* Search Input Trigger */}
                     <div className="relative">
@@ -298,6 +477,10 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
                         {isLoadingFarmers ? (
                           <div className="px-3 py-2 text-sm text-gray-500">
                             Loading farmers...
+                          </div>
+                        ) : farmers.length === 0 ? (
+                          <div className="px-3 py-2 text-sm text-gray-500">
+                            You have no farmers yet — add one first.
                           </div>
                         ) : filteredFarmers.length === 0 ? (
                           <div className="px-3 py-2 text-sm text-gray-500">
@@ -429,7 +612,16 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
                     onVideoSelect={handleVideoSelect}
                     onRemoveImage={removeImage}
                     onRemoveVideo={removeVideo}
+                    imagesRequired
                   />
+                  {errors.images && (
+                    <p
+                      role="alert"
+                      className="text-red-500 text-[12px] font-montserrat mt-1"
+                    >
+                      {errors.images}
+                    </p>
+                  )}
                 </div>
 
                 <button
@@ -445,7 +637,13 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
             {currentStep === 2 && (
               <ItemDetailsForm
                 onBack={handleBack}
-                onClose={onClose}
+                // Only fired after the product is actually created — clear the
+                // draft so the next open starts blank and closing it doesn't
+                // prompt to discard an item that was already saved.
+                onClose={() => {
+                  resetForm();
+                  onClose();
+                }}
                 selectedCategory={selectedCategory}
                 subcategory={subcategory}
                 productName={productName}

@@ -16,6 +16,7 @@ import {
   OrderRecord,
   OrdersApiService,
   mapOrderRecord,
+  isOrderDelivered,
 } from "@/services/OrderService";
 import {
   useOrders,
@@ -179,7 +180,11 @@ export const AgentOrderTable: React.FC<AgentOrderTableProps> = ({
     isLoading,
     isError,
   } = useOrders({
-    status,
+    // Delivered orders keep the backend status `paid` ("parked" in UI terms) —
+    // delivery is recorded on `transportStatus`. Asking the API for
+    // `status=delivered` therefore returns nothing, so the Delivered tab reads
+    // the same list as Packed and the two are split client-side below.
+    status: dataType === "delivered" ? "parked" : status,
     search: debouncedSearch || undefined,
     year: selectedYear || undefined,
     month: selectedMonth
@@ -187,10 +192,16 @@ export const AgentOrderTable: React.FC<AgentOrderTableProps> = ({
       : undefined,
   });
 
-  const mappedData = useMemo(
-    () => (Array.isArray(queryData) ? queryData.map(mapOrderRecord) : []),
-    [queryData],
-  );
+  const mappedData = useMemo(() => {
+    if (!Array.isArray(queryData)) return [];
+    const rows =
+      dataType === "delivered"
+        ? queryData.filter(isOrderDelivered)
+        : dataType === "parked"
+          ? queryData.filter((o) => !isOrderDelivered(o))
+          : queryData;
+    return rows.map(mapOrderRecord);
+  }, [queryData, dataType]);
 
   // Sync query data into local state so checkbox toggles stay client-side.
   useEffect(() => {

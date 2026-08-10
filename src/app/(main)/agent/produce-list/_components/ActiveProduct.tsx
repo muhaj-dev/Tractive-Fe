@@ -322,7 +322,7 @@ export const ActiveProduct: React.FC<ActiveProductProps> = ({
           <input
             type="number"
             name="min"
-            placeholder="Min Price ($)"
+            placeholder="Min Price (₦)"
             value={priceRange.min}
             onChange={handlePriceChange}
             className="w-full px-3 py-2 border-[1px] border-gray-300 rounded-[4px] text-sm focus:outline-none focus:ring-[#538e53] font-montserrat"
@@ -330,7 +330,7 @@ export const ActiveProduct: React.FC<ActiveProductProps> = ({
           <input
             type="number"
             name="max"
-            placeholder="Max Price ($)"
+            placeholder="Max Price (₦)"
             value={priceRange.max}
             onChange={handlePriceChange}
             className="w-full px-3 py-2 border-[1px] border-gray-300 rounded-[4px] text-sm focus:outline-none focus:ring-[#538e53] font-montserrat"
