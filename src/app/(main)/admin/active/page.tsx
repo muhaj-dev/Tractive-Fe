@@ -195,11 +195,22 @@ export default function ActivePage() {
     try {
       const stats = await adminUserService.getUserStats();
       const source = stats as Record<string, unknown>;
+      // The live payload puts these at the top level as `activeUsers` /
+      // `suspendedUsers`. Omitting those spellings made both tabs read (0)
+      // while the table below listed rows; `Removed` was only ever right
+      // because `removedUsers` was already in its list.
       setCounts({
-        Active: readNumber(source, ["byStatus.active", "active"]) ?? 0,
-        Suspended: readNumber(source, ["byStatus.suspended", "suspended"]) ?? 0,
+        Active:
+          readNumber(source, ["activeUsers", "byStatus.active", "active"]) ?? 0,
+        Suspended:
+          readNumber(source, [
+            "suspendedUsers",
+            "byStatus.suspended",
+            "suspended",
+            "inactive",
+          ]) ?? 0,
         Removed:
-          readNumber(source, ["byStatus.removed", "removed", "removedUsers"]) ??
+          readNumber(source, ["removedUsers", "byStatus.removed", "removed"]) ??
           0,
       });
     } catch {
