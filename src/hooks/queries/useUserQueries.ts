@@ -237,6 +237,29 @@ export const useGetWishlist = (page: number = 1, limit: number = 20) => {
     })
 }
 
+/** Ids of the fleets already on the buyer's wishlist. Wishlist rows carry
+ * `type: "fleet" | "product"`; fleet rows populate `fleet`, product rows don't.
+ * React Query dedupes this across every truck card on the page. */
+export const useWishlistedFleetIds = () => {
+    const { data, isLoading } = useQuery({
+        queryKey: ["wishlist", "fleet-ids"],
+        queryFn: () => userService.getWishlist(1, 100),
+        staleTime: 60 * 1000,
+        // Non-buyer roles get a 403 here — one attempt is enough.
+        retry: false,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const items: any[] = Array.isArray(data) ? data : (data as any)?.data ?? [];
+    const fleetIds = new Set<string>(
+        items
+            .map((item) => item?.fleet?._id ?? item?.fleet)
+            .filter((id: unknown): id is string => typeof id === "string")
+    );
+
+    return { fleetIds, isLoading };
+};
+
 export const useGetTopSellers = () => {
   return useQuery({
     queryKey: ["topSellers"],

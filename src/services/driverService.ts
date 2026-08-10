@@ -4,6 +4,8 @@ export interface CreateDriverPayload {
   fullName: string;
   phoneNumber: string;
   licenseNumber: string;
+  /** Cloudinary URL of the driver's photo. */
+  image?: string;
 }
 
 export interface UpdateDriverPayload {
@@ -13,6 +15,7 @@ export interface UpdateDriverPayload {
   trackingNumber?: string;
   fleetId?: string;
   iot?: string;
+  image?: string;
 }
 
 export interface AssignFleetPayload {

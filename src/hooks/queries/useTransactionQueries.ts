@@ -6,6 +6,7 @@ import {
   UpdateStatusData,
 } from "@/services/transactionService";
 import { toast } from "sonner";
+import { orderKeys } from "./useOrderQueries";
 
 // Agent transaction list — keyed by filters so each (status/search/year/month)
 // combination is cached separately and invalidated together after a mutation.
@@ -51,6 +52,10 @@ export const useCreateTransaction = () => {
     mutationFn: (payload: CreateTransactionPayload) => transactionService.createTransaction(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wonBidsCheckout"] });
+      // The order has just moved from unpaid to awaiting approval — the
+      // Pending Payment tab has to re-read it or it keeps offering "Complete
+      // payment" for a payment already submitted.
+      queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
     },
     onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
       toast.error(

@@ -40,7 +40,19 @@ export interface GetReviewsResponse {
   reviews: Review[];
 }
 
+/**
+ * Who is being reviewed, from the UI's point of view.
+ *
+ * A user carries ONE rating, not one per role: `POST /api/reviews` stores the
+ * review against `agent` whoever the target is, and the same average then
+ * surfaces on `GET /api/sellers/{id}/reviews`, the transporter list and the
+ * agent's own inbox. So this only drives copy/labels — the request body is
+ * identical for all three.
+ */
+export type RevieweeType = "agent" | "seller" | "transporter";
+
 export interface CreateReviewPayload {
+  /** Id of the user being reviewed (agent, seller or transporter — same field). */
   agentId: string;
   rating: number;
   comment: string;
@@ -213,16 +225,24 @@ export class ReviewService {
   }
 
   /**
-   * Create a new review
+   * Create a new review.
+   *
+   * Sends `agent` (the key documented in swagger) alongside `agentId` (the key
+   * the deployed handler reads) so the call is correct against both. A second
+   * review of the same user comes back as 409 + `hasReviewed`, which the
+   * mutation surfaces as an already-reviewed state rather than an error.
    */
   static async createReview(
     payload: CreateReviewPayload,
   ): Promise<{ review: Review }> {
     try {
-      const response = await api.post<{ review: Review }>(
-        "/api/reviews",
-        payload,
-      );
+      const { agentId, rating, comment } = payload;
+      const response = await api.post<{ review: Review }>("/api/reviews", {
+        agent: agentId,
+        agentId,
+        rating,
+        comment,
+      });
       return response.data;
     } catch (error) {
       console.error("Error creating review:", error);

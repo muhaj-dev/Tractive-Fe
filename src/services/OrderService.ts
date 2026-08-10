@@ -285,6 +285,33 @@ const normalizeOrderStatus = (
   return "pending";
 };
 
+/**
+ * An order counts as delivered once the trip carrying it reports `delivered`.
+ * The backend records that on `transportStatus` and leaves the order's own
+ * `status` on `paid`, so filtering on `status` alone never matches a delivery
+ * made by a transporter. An agent can also mark an order delivered by hand,
+ * which does write `status`, so accept either signal.
+ */
+export const isOrderDelivered = (record: OrderRecord): boolean =>
+  (record.transportStatus ?? "").toLowerCase() === "delivered" ||
+  (record.status ?? "").toLowerCase() === "delivered";
+
+/**
+ * An order the buyer has created but not yet paid for.
+ *
+ * `pending` is a fresh order; `payment_pending` is one where a transfer has been
+ * declared and is waiting on admin approval. Both are unreachable from the
+ * transport tabs (those need `paid`), so they get their own list.
+ */
+export const isOrderUnpaid = (record: OrderRecord): boolean => {
+  const s = (record.status ?? "").toLowerCase();
+  return s === "pending" || s === "payment_pending";
+};
+
+/** True once a transfer has been declared and is awaiting admin approval. */
+export const isOrderAwaitingApproval = (record: OrderRecord): boolean =>
+  (record.status ?? "").toLowerCase() === "payment_pending";
+
 export const mapOrderRecord = (record: OrderRecord): Order => {
   const firstLine = record.products?.[0];
   const productRef = firstLine?.product;
@@ -311,7 +338,9 @@ export const mapOrderRecord = (record: OrderRecord): Order => {
     buyer: buyerName || "—",
     location: record.address || "—",
     date: formatOrderDate(record.createdAt),
-    status: normalizeOrderStatus(record.status),
+    status: isOrderDelivered(record)
+      ? "delivered"
+      : normalizeOrderStatus(record.status),
   };
 };
 

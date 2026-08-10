@@ -65,6 +65,16 @@ export const useGetTransporters = (params?: GetTransportersParams) => {
   });
 };
 
+/** Location-ranked transporter recommendations for the signed-in buyer. */
+export const useGetRecommendedTransporters = () => {
+  return useQuery({
+    queryKey: [...transporterKeys.all, "recommendations"] as const,
+    queryFn: () => transporterService.getRecommendedTransporters(),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
 export const useGetTransporter = (id: string, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: transporterKeys.detail(id),
@@ -122,11 +132,17 @@ export const useGetTransporterTrucks = (params?: {
 };
 
 export const useCreateFleetBid = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ fleetId, payload }: { fleetId: string; payload: CreateFleetBidPayload }) =>
       NegotiationService.createFleetBid(fleetId, payload),
     onSuccess: () => {
       toast.success("Bid sent successfully!", { duration: 4000, position: "top-center" });
+      // The caller navigates straight to the Fleet Bids tab, and useBuyerFleetBids has a
+      // 3-minute staleTime — without this the new bid is invisible until a manual reload.
+      // fleetBids() is a prefix of fleetBidsForFleet(), so the transporter-side list for
+      // this fleet refreshes too.
+      queryClient.invalidateQueries({ queryKey: transporterKeys.fleetBids() });
     },
     onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
       toast.error(

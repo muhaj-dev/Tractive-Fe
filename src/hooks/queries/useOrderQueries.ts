@@ -10,6 +10,7 @@ import {
   OrderRecord,
   CreateOrderPayload,
   UpdateTransportStatusPayload,
+  isOrderUnpaid,
 } from "@/services/OrderService";
 import { toast } from "sonner";
 
@@ -34,8 +35,19 @@ export const orderKeys = {
  * staleTime of 5 minutes avoids repeated network calls on every render.
  */
 export const useCreateOrder = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateOrderPayload) => OrdersApiService.createOrder(payload),
+    // Creating an order consumes the won bids it was built from and produces a
+    // new unpaid order. Without this, "Ready to checkout" kept counting bids
+    // that had already become an order, and the Pending Payment tab did not
+    // show the order the buyer had just created.
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["wonBidsCheckout"] });
+      queryClient.invalidateQueries({ queryKey: ["wonBids"] });
+      queryClient.invalidateQueries({ queryKey: ["myBids"] });
+      queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+    },
     onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
       toast.error(
         error?.response?.data?.message || error?.message || "Failed to create order. Please try again.",
@@ -77,6 +89,26 @@ export const useOrderDetail = (
     retry: (failureCount, error: { response?: { status?: number } }) => {
       const status = error?.response?.status;
       if (status === 401 || status === 403 || status === 404) return false;
+      return failureCount < 2;
+    },
+  });
+};
+
+/**
+ * Orders created but not yet paid for.
+ *
+ * Fetched unfiltered and narrowed here on purpose: `?status=pending` misses
+ * orders sitting in `payment_pending`, and `?status=payment_pending` returns an
+ * empty list on the API today. Filtering client-side catches both.
+ */
+export const useUnpaidOrders = () => {
+  return useQuery({
+    queryKey: orderKeys.list({ unpaid: true } as OrdersQueryParams),
+    queryFn: async () => (await OrdersApiService.getOrders()).filter(isOrderUnpaid),
+    staleTime: 1000 * 60 * 2,
+    retry: (failureCount, error: { response?: { status?: number } }) => {
+      if (error?.response?.status === 401 || error?.response?.status === 403)
+        return false;
       return failureCount < 2;
     },
   });

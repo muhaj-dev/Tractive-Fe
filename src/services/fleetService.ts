@@ -118,6 +118,7 @@ export interface AdminFleetPaymentRecord {
         status?: string;
         image?: string;
         images?: string[];
+        iot?: string;
         route?: { fromState?: string; toState?: string };
       };
   booking?:
@@ -275,6 +276,48 @@ export const fleetService = {
       }
       throw new Error("Failed to fetch fleet payments");
     }
+  },
+
+  /**
+   * Every fleet payment belonging to the signed-in transporter.
+   *
+   * There is no aggregate transporter-scoped endpoint — `/api/admin/fleet-payments`
+   * is admin-only (403) and `/api/transporters/transactions` returns product-order
+   * transactions, not fleet payments. But `/api/transporters/fleet/{id}/payments`
+   * IS transporter-scoped, so we list the transporter's own fleets and fan out
+   * over them.
+   *
+   * A fleet that 403s (one that is not really theirs) is skipped rather than
+   * failing the whole list. The payment carries `fleet` as a bare id, so the
+   * fleet record is folded in for the name/image/IOT the table renders.
+   */
+  getMyFleetPayments: async (): Promise<AdminFleetPaymentRecord[]> => {
+    const fleets = await fleetService.getFleets();
+    const perFleet = await Promise.all(
+      fleets.map(async (fleet) => {
+        try {
+          const raw = await fleetService.getFleetPayments(fleet._id);
+          const list: AdminFleetPaymentRecord[] = Array.isArray(raw)
+            ? (raw as AdminFleetPaymentRecord[])
+            : [];
+          return list.map((payment) => ({
+            ...payment,
+            fleet: {
+              _id: fleet._id,
+              fleetName: fleet.fleetName,
+              fleetNumber: fleet.fleetNumber,
+              plateNumber: fleet.plateNumber,
+              model: fleet.model,
+              images: fleet.images,
+              iot: fleet.iot,
+            },
+          }));
+        } catch {
+          return [] as AdminFleetPaymentRecord[];
+        }
+      }),
+    );
+    return perFleet.flat();
   },
 
   // GET /api/admin/fleet-payments - Admin list of all fleet payments with filters.

@@ -301,7 +301,7 @@ export const transactionService = {
             firstProduct?.name || `Order #${orderId.slice(-8)}`;
           const productDescription = firstProduct?.description || "";
           const productImage =
-            firstProduct?.images?.[0] || "/images/placeholder-product.jpg";
+            firstProduct?.images?.[0] || "/images/placeholder.png";
 
           return {
             _id: transaction._id,

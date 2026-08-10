@@ -89,6 +89,21 @@ export interface ApiTruck {
   rating?: string;
 }
 
+/** Shape returned by `GET /api/transporters/recommendations` — a transporter,
+ * plus how it matched the buyer's location. `image` is often absent. */
+export interface RecommendedTransporter {
+  _id: string;
+  name?: string;
+  businessName?: string;
+  image?: string;
+  state?: string;
+  address?: string;
+  avgRating?: number;
+  reviewsCount?: number;
+  locationMatch?: boolean;
+  matchedLocation?: string;
+}
+
 export interface GetTransportersParams {
   search?: string;
   location?: string;
@@ -245,6 +260,21 @@ export const transporterService = {
       return response.data.data || response.data || [];
     } catch (error) {
       console.error("[TransporterService] getTransporters error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Transporters recommended for the signed-in buyer, ranked by location match.
+   * GET /api/transporters/recommendations
+   */
+  getRecommendedTransporters: async (): Promise<RecommendedTransporter[]> => {
+    try {
+      const response = await api.get("/api/transporters/recommendations");
+      const data = response.data?.data ?? response.data ?? [];
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error("[TransporterService] getRecommendedTransporters error:", error);
       throw error;
     }
   },

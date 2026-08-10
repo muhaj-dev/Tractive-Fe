@@ -89,6 +89,12 @@ export interface FleetTripSummary {
   /** `/tracking` exposes the trip id under `tripId` instead of `_id`. */
   tripId?: string;
   status?: FleetTripStatus;
+  /**
+   * The backend advances this in lockstep with `status` for `on_transit` and
+   * `delivered`, but on a pick it writes `transportStatus: "picked"` and leaves
+   * `status` on `"loaded"`. Treat it as the more reliable of the two.
+   */
+  transportStatus?: string;
   fleet?: FleetTripFleet | string;
   fleetId?: string;
   transporter?: FleetTripTransporter;
