@@ -206,9 +206,17 @@ export const getSellerReviews = async (
         ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
         : 0);
 
-    const dist: any[] = Array.isArray(data?.ratingDistribution)
-      ? data.ratingDistribution
-      : [];
+    // The endpoint returns the distribution as an object keyed `5_star`…`1_star`;
+    // older/other shapes send an array of `{ rating, count }`. Support both.
+    const rawDist = data?.ratingDistribution;
+    const dist: any[] = Array.isArray(rawDist)
+      ? rawDist
+      : rawDist && typeof rawDist === "object"
+        ? Object.entries(rawDist).map(([key, count]) => ({
+            rating: Number(String(key).replace(/[^0-9]/g, "")),
+            count,
+          }))
+        : [];
     const ratings = [5, 4, 3, 2, 1].map((star) => {
       const entry = dist.find((d) => Number(d?.rating) === star);
       const count =

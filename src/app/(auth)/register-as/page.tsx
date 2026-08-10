@@ -24,19 +24,19 @@ const roles: RoleOption[] = [
     id: "buyer",
     label: "Buyer",
     description: "Purchase quality produce",
-    icon: "/images/buyer-icon.png",
+    icon: "/images/AsABuying.png",
   },
   {
     id: "agent",
     label: "Agent",
     description: "Connect farmers and buyers",
-    icon: "/images/agent-icon.png",
+    icon: "/images/AsAAgent.png",
   },
   {
     id: "transporter",
     label: "Transporter",
     description: "Deliver agricultural products",
-    icon: "/images/transporter-icon.png",
+    icon: "/images/AsATransporter.png",
   },
 ];
 

@@ -1,4 +1,5 @@
 import type { TransporterTransactionApi } from "@/services/transporterService";
+import type { AdminFleetPaymentRecord } from "@/services/fleetService";
 
 export interface TransporterTransaction {
   id: string;
@@ -49,6 +50,45 @@ const resolveFleet = (tx: TransporterTransactionApi) => {
   const truck =
     typeof order.truck === "object" && order.truck ? order.truck : undefined;
   return fleet ?? truck;
+};
+
+/**
+ * A fleet payment — money a buyer paid for one of this transporter's fleets —
+ * rendered as a transaction row. These never reached the Transactions tab
+ * before: it was fed only product-order transactions, so a transporter could
+ * not see money owed to them for their own bookings.
+ */
+export const mapFleetPaymentTransaction = (
+  payment: AdminFleetPaymentRecord,
+): TransporterTransaction => {
+  const fleet =
+    typeof payment.fleet === "object" && payment.fleet ? payment.fleet : undefined;
+  const buyer =
+    typeof payment.buyer === "object" && payment.buyer ? payment.buyer : undefined;
+  const id = payment._id ?? payment.id ?? "";
+
+  // The load is on the payment itself; fall back to summing the shipment lines.
+  const weight =
+    typeof payment.loadWeightKg === "number"
+      ? payment.loadWeightKg
+      : (payment.shipmentItems ?? []).reduce(
+          (sum, item) => sum + (item.loadWeightKg ?? 0),
+          0,
+        );
+
+  return {
+    id,
+    IOT: fleet?.iot || (typeof payment.fleetTripId === "string" ? payment.fleetTripId.slice(-9) : "") || id.slice(-9),
+    image: fleet?.image || fleet?.images?.[0] || "/images/truckcontainer.png",
+    name: fleet?.fleetName || "Fleet",
+    description: fleet?.plateNumber || fleet?.model || "",
+    Payment: typeof payment.amount === "number" ? payment.amount : 0,
+    KG: weight,
+    Seller: buyer?.name || "",
+    date: formatDate(payment.createdAt),
+    checked: payment.status === "approved",
+    status: typeof payment.status === "string" ? payment.status : undefined,
+  };
 };
 
 export const mapTransporterTransaction = (

@@ -122,8 +122,16 @@ export default function BidingCard({
           className={`w-[100%] h-[200px] object-cover rounded-md ${imageClass}`}
           onError={() => setImgSrc("/images/tomatoes.png")}
         />
-        <div
-          className={`absolute top-2 right-2 bg-[#ffffff80] rounded-full p-1 cursor-pointer hover:scale-110 transition-transform ${addMutation.isPending || removeMutation.isPending ? "opacity-50 pointer-events-none" : ""}`}
+        <button
+          type="button"
+          aria-label={
+            localWishlisted
+              ? `Remove ${title} from wishlist`
+              : `Add ${title} to wishlist`
+          }
+          aria-pressed={localWishlisted}
+          disabled={addMutation.isPending || removeMutation.isPending}
+          className={`absolute top-2 right-2 bg-[#ffffff80] rounded-full p-1 cursor-pointer hover:scale-110 transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2A942A] ${addMutation.isPending || removeMutation.isPending ? "opacity-50 cursor-not-allowed" : ""}`}
           onClick={toggleWishlist}
         >
           <svg
@@ -132,6 +140,8 @@ export default function BidingCard({
             height="21"
             viewBox="0 0 22 21"
             fill={localWishlisted ? "#2A942A" : "none"}
+            aria-hidden="true"
+            focusable="false"
           >
             <path
               d="M11.454 19.21C11.114 19.33 10.554 19.33 10.214 19.21C7.31398 18.22 0.833984 14.09 0.833984 7.09C0.833984 4 3.32398 1.5 6.39398 1.5C8.21398 1.5 9.82398 2.38 10.834 3.74C11.3478 3.04588 12.017 2.48173 12.788 2.09274C13.559 1.70376 14.4104 1.50076 15.274 1.5C18.344 1.5 20.834 4 20.834 7.09C20.834 14.09 14.354 18.22 11.454 19.21Z"
@@ -141,7 +151,7 @@ export default function BidingCard({
               strokeLinejoin="round"
             />
           </svg>
-        </div>
+        </button>
       </div>
       <Link href={`/buyer/product/${id}`}>
         <div className="p-4 ">

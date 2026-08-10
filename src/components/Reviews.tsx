@@ -40,6 +40,13 @@ interface ReviewData {
 interface ReviewsProps {
   sellerId?: string;
   transporterId?: string;
+  /**
+   * Show the reply composer. `POST /api/reviews/{id}/reply` is gated on
+   * `activeRole === "agent"` (a buyer gets 403 "Agent access required"), and
+   * this modal renders on the buyer-facing store/transporter pages — so replying
+   * is off unless a caller is showing it to the reviewed agent themselves.
+   */
+  canReply?: boolean;
   onClose: () => void;
 }
 
@@ -60,12 +67,21 @@ const EMPTY_DATA: ReviewData = {
   reviewerAvatars: [],
 };
 
-export const Reviews: React.FC<ReviewsProps> = ({ sellerId, transporterId, onClose }) => {
+export const Reviews: React.FC<ReviewsProps> = ({
+  sellerId,
+  transporterId,
+  canReply = false,
+  onClose,
+}) => {
   const sellerQuery = useGetSellerReviews(sellerId as string);
   const transporterQuery = useGetTransporterReviews(transporterId as string, { enabled: !!transporterId });
 
   const apiReviewData = sellerId ? sellerQuery.data : transporterQuery.data;
   const isLoading = sellerId ? sellerQuery.isLoading : transporterQuery.isLoading;
+  // Distinguish "this user has no reviews" from "the request failed" — the
+  // transporter reviews endpoint currently 400s, and silently showing an empty
+  // state for that reads as a rating of zero.
+  const loadError = sellerId ? sellerQuery.error : transporterQuery.error;
 
   const likeMutation = useLikeReview();
 
@@ -126,11 +142,17 @@ export const Reviews: React.FC<ReviewsProps> = ({ sellerId, transporterId, onClo
     const totalReviewers =
       Number(rd.totalReviewers ?? rd.totalReviews) || reviews.length;
 
+    // `ratingDistribution` arrives as `{ "5_star": 1, … }` from the seller
+    // endpoint and as an array of `{ rating, count }` elsewhere.
+    const rawDist = rd.ratings ?? rd.ratingDistribution;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dist: any[] = Array.isArray(rd.ratings)
-      ? rd.ratings
-      : Array.isArray(rd.ratingDistribution)
-        ? rd.ratingDistribution
+    const dist: any[] = Array.isArray(rawDist)
+      ? rawDist
+      : rawDist && typeof rawDist === "object"
+        ? Object.entries(rawDist).map(([key, count]) => ({
+            rating: Number(String(key).replace(/[^0-9]/g, "")),
+            count,
+          }))
         : [];
 
     const ratings: Rating[] = dist.length
@@ -138,10 +160,14 @@ export const Reviews: React.FC<ReviewsProps> = ({ sellerId, transporterId, onClo
           const entry = dist.find(
             (d) => Number(d?.rating ?? String(d?.stars).charAt(0)) === star,
           );
+          const count = Number(entry?.count) || 0;
           return {
             stars: `${star} star`,
-            count: Number(entry?.count) || 0,
-            percentage: Number(entry?.percentage) || 0,
+            count,
+            // The object shape carries counts only — derive the bar width.
+            percentage:
+              Number(entry?.percentage) ||
+              (totalReviewers ? (count / totalReviewers) * 100 : 0),
           };
         })
       : EMPTY_RATINGS;
@@ -293,6 +319,10 @@ export const Reviews: React.FC<ReviewsProps> = ({ sellerId, transporterId, onClo
           <p className="font-montserrat text-[12px] text-[#808080] py-6 text-center">
             Loading reviews…
           </p>
+        ) : loadError ? (
+          <p className="font-montserrat text-[12px] text-[#c0392b] py-6 text-center">
+            Reviews could not be loaded right now.
+          </p>
         ) : reviews.length === 0 ? (
           <p className="font-montserrat text-[12px] text-[#808080] py-6 text-center">
             No reviews yet.
@@ -344,17 +374,26 @@ export const Reviews: React.FC<ReviewsProps> = ({ sellerId, transporterId, onClo
                   />
                 )}
                 <div className="flex items-center gap-[46px] truncate">
-                  <button
-                    type="button"
-                    onClick={() => toggleReply(String(review.id))}
-                    className="flex items-center gap-[6px] cursor-pointer hover:opacity-80 transition-opacity"
-                    aria-expanded={openReplyId === String(review.id)}
-                  >
-                    <ReplyIcon />
-                    <span className="font-montserrat font-normal text-[11px] text-[#2b2b2b]">
-                      {review.replies} replies
-                    </span>
-                  </button>
+                  {canReply ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleReply(String(review.id))}
+                      className="flex items-center gap-[6px] cursor-pointer hover:opacity-80 transition-opacity"
+                      aria-expanded={openReplyId === String(review.id)}
+                    >
+                      <ReplyIcon />
+                      <span className="font-montserrat font-normal text-[11px] text-[#2b2b2b]">
+                        {review.replies} replies
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-[6px]">
+                      <ReplyIcon />
+                      <span className="font-montserrat font-normal text-[11px] text-[#2b2b2b]">
+                        {review.replies} replies
+                      </span>
+                    </div>
+                  )}
                   <div
                     className={`flex items-center gap-[6px] cursor-pointer hover:opacity-80 transition-opacity ${likeMutation.isPending && likeMutation.variables === String(review.id) ? "opacity-50 pointer-events-none" : ""}`}
                     onClick={() => likeMutation.mutate(String(review.id))}
@@ -366,7 +405,7 @@ export const Reviews: React.FC<ReviewsProps> = ({ sellerId, transporterId, onClo
                   </div>
                 </div>
 
-                {openReplyId === String(review.id) && (
+                {canReply && openReplyId === String(review.id) && (
                   <div className="flex flex-col gap-2 w-full">
                     <textarea
                       value={replyDraft}

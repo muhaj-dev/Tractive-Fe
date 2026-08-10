@@ -19,6 +19,14 @@ export interface TruckItem {
   pricePerKg?: number;
   totalPrice?: number;
   priceNegotiation?: boolean;
+  /**
+   * A whole-truck fleet is charged its flat `totalPrice` however much of it you fill —
+   * which is what the backend bills. Without this flag the booking page quoted
+   * `pricePerKg × weight`, so a 50 kg load on a ₦150 truck was quoted ₦0.5 and charged
+   * ₦150.
+   */
+  wholeTruckOnly?: boolean;
+  pricingModel?: string;
 }
 
 export const TruckData: TruckItem[] = [

@@ -32,17 +32,17 @@ const ROLE_CONFIGS = {
   agent: {
     label: "Agent",
     description: "Connect farmers and buyers",
-    icon: "/images/agent-icon.png",
+    icon: "/images/AsAAgent.png",
   },
   buyer: {
     label: "Buyer",
     description: "Purchase quality produce",
-    icon: "/images/buyer-icon.png",
+    icon: "/images/AsABuying.png",
   },
   transporter: {
     label: "Transporter",
     description: "Deliver agricultural products",
-    icon: "/images/transporter-icon.png",
+    icon: "/images/AsATransporter.png",
   },
 };
 
