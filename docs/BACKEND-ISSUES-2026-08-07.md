@@ -705,6 +705,107 @@ Worth noting from the same run: marking a trip `picked` returns
 
 ---
 
+## 15. Every `{id}` route on the support APIs rejects its own ids — HIGH
+
+Found 10 Aug 2026 while building the Chat and Help pages (frontend 14c / D4).
+
+### The problem in one line
+
+`GET /api/chat/{conversationId}` and `DELETE /api/help/{id}` answer **400 for
+every id they are given**, including well-formed 24-character ObjectIds that
+the sibling *list* endpoints returned moments earlier.
+
+### Reproduction — chat
+
+```
+GET /api/chat
+  200  [ { "_id": "6a5cad717413ba6b9be0455a", ... },
+         { "_id": "6a526f6d5d835594467da5fe", ... } ]
+
+GET /api/chat/6a5cad717413ba6b9be0455a   400  "Invalid conversation ID format"
+GET /api/chat/6a526f6d5d835594467da5fe   400  "Invalid conversation ID format"
+```
+
+Both ids are 24 lowercase hex characters — valid ObjectIds by any reading.
+Controls:
+
+```
+GET /api/chat/000000000000000000000000   400  "Invalid conversation ID format"   <- should be 404
+GET /api/chat/not-an-id                  400  "Invalid conversation ID format"   <- correct
+```
+
+So the route answers identically whether the id is valid-and-real,
+valid-and-absent, or plainly malformed. It never succeeds.
+
+There is no second way in: `GET /api/chat/{id}/messages` is not implemented at
+all (it falls through to the platform's HTML 404 page), and the spec agrees —
+it documents only `PATCH /api/chat/{conversationId}/messages/{messageId}`.
+`GET /api/chat/{conversationId}` is the *only* route that can return a
+conversation's messages.
+
+### Reproduction — help
+
+Identical signature, different wording:
+
+```
+POST /api/help  {subject, message, priority}   201   ticket created, id 6a7956050a2280f3467d2b58
+GET  /api/help                                 200   [ { "_id": "6a7956050a2280f3467d2b58", "status": "open", ... } ]
+
+DELETE /api/help/6a7956050a2280f3467d2b58      400   "Invalid ticket id"
+DELETE /api/help/000000000000000000000000      400   "Invalid ticket id"
+DELETE /api/help/not-an-id                     400   "Invalid ticket id"
+DELETE /api/help                               400   "Ticket ID is required"
+PATCH  /api/help/6a7956050a2280f3467d2b58      405   (not an alternative)
+```
+
+### Impact
+
+- **A conversation can be listed but never opened.** The chat list renders real
+  data — participants, last message, timestamps — and clicking any row cannot
+  load the thread. Chat is effectively read-only-at-a-glance.
+- **A support ticket can be raised but never closed.** `POST` works and returns
+  201; nothing can then move the ticket out of `open`, from the user side or
+  (as far as these routes go) at all.
+- One ticket is currently stuck open in the live data because of this —
+  `6a7956050a2280f3467d2b58`, subject *"QA sweep — Help page smoke test"*,
+  raised by the shared test account. It is safe to delete server-side.
+
+### Likely cause
+
+Two different resources, two different error strings, one identical behaviour:
+valid input rejected, invalid input rejected, no input path succeeding. That
+points at a shared id-validation helper or middleware used by both routers
+rather than two coincidental bugs. Worth checking whether the validator is
+being handed the whole `req.params` object, or a differently-named param than
+the route declares (`conversationId` vs `id` is a plausible mismatch — the chat
+route declares `{conversationId}` while the help route declares `{id}`, and
+both fail the same way).
+
+### Requested change
+
+1. Make `GET /api/chat/{conversationId}` accept the ids that `GET /api/chat`
+   returns, and return the conversation with its `messages` array.
+2. Make `DELETE /api/help/{id}` accept the ids that `GET /api/help` returns.
+3. Return **404**, not 400, for a well-formed id that does not exist — the
+   current behaviour makes "wrong id" and "no such thing" indistinguishable.
+4. Confirm whether `POST /api/chat/{conversationId}` (send a message) suffers
+   the same validation problem. It was not exercised, deliberately: the only
+   conversations available belong to real users and sending them test messages
+   was not appropriate.
+
+### Frontend position in the meantime
+
+Both pages are built and shipped against the documented contract, so they will
+start working the moment these routes are fixed, with no frontend change:
+
+- the Chat thread pane renders an explicit *"This conversation cannot be opened
+  yet"* error rather than an empty thread — a blank pane would repeat frontend
+  bug 13d, where a failed load was indistinguishable from "no data"
+- the *Close ticket* button stays wired and surfaces the server's own message
+  on failure
+
+---
+
 ## Test data created during this run
 
 | Kind | Id |

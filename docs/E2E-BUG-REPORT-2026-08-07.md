@@ -1899,6 +1899,71 @@ was on the abort list in every script and was never touched.
 
 ---
 
+## 16. Chat and Help pages built — 14c partially closed, 10 Aug 2026
+
+**Decision D4 was answered "build them if the APIs exist".** They exist and
+answer (§15j), so the four dead sidebar routes are now real pages:
+
+| Route | Was | Now |
+|---|---|---|
+| `/agent/chat` | 404 | Chat |
+| `/agent/help` | 404 | Help & support |
+| `/transporter/chat` | 404 | Chat |
+| `/transporter/help` | 404 | Help & support |
+
+Shared implementation, one component each, so the two roles cannot drift:
+`src/components/support/SupportChatView.tsx` and `SupportHelpView.tsx`, with
+the four route files as three-line wrappers. Data access went into the existing
+`supportService` / `useSupportQueries` pair rather than a new one.
+
+### What works, verified in the live UI
+
+| Behaviour | Evidence |
+|---|---|
+| Both routes render for **both** roles | `h1` "Chat" / "Help & support", `http 200`, no 404 text, no console errors |
+| Sidebar links reach them | `<a href="/transporter/chat">` and `/transporter/help`, both inside `<aside>`, both land correctly |
+| Support contacts | `GET /api/support/contacts` → hotline / WhatsApp / email, rendered as `tel:`, `wa.me` and `mailto:` links |
+| Conversation list | `GET /api/chat` → 2 real conversations with participant names, last message and timestamps |
+| **Raise a support request** | `POST /api/help` → **201**, and the ticket appears in the list **without a reload** |
+| Ticket list | `GET /api/help` → renders subject, message, priority and status chips |
+| Form validation | Submit blocked until both subject and message are non-empty, with inline per-field errors and `aria-invalid` |
+
+Verified by `x11-verify-support.js` and `x12-verify-support2.js`.
+
+### What is blocked by the backend
+
+Both blockers are **backend item 15**, and neither is a frontend defect:
+
+- **A conversation cannot be opened.** `GET /api/chat/{conversationId}` returns
+  400 for every id, including the ones `GET /api/chat` just returned.
+- **A ticket cannot be closed.** `DELETE /api/help/{id}` returns 400 for every
+  id, with the same signature.
+
+The pages are written against the documented contract and will work unchanged
+once those routes are fixed. In the meantime:
+
+- the thread pane shows an explicit *"This conversation cannot be opened yet"*
+  panel with a retry, **not** an empty thread — an empty thread would repeat
+  bug 13d, where a failed load read as "no data" and cost real debugging time.
+  The conversation's most recent message is still shown, so the pane is never
+  simply blank.
+- the *Close ticket* button stays wired and surfaces the server's own message.
+
+### What is deliberately still missing
+
+`14c` counted 15 dead links. Four are now built. The rest are untouched and
+still a product call: `/agents`, `/transporters`, `/contact-us`,
+`/account-settings`, `/bid`, and the five footer links.
+
+### Test data left behind
+
+One support ticket is stuck open in live data, because closing it is the very
+thing that is broken: `6a7956050a2280f3467d2b58`, *"QA sweep — Help page smoke
+test"*, priority `low`, raised by the shared test account. Safe to delete
+server-side.
+
+---
+
 ## Parked — signup (deferred by request, not fixed)
 
 Recorded so it isn't lost. **Signup is broken for every new user in production.**
