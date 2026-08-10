@@ -10,6 +10,7 @@ import {
   fleetService,
 } from "@/services/fleetService";
 import { ConfirmActionModal } from "../../_components/ConfirmActionModal";
+import Avatar from "@/components/ui/Avatar";
 
 interface FleetPaymentDetailModalProps {
   isOpen: boolean;
@@ -230,8 +231,9 @@ export const FleetPaymentDetailModal: React.FC<
     partyField(buyer, "name") || partyField(buyer, "email") || "—";
   const buyerEmail = partyField(buyer, "email");
   const buyerPhone = partyField(buyer, "phone");
-  const buyerAvatar =
-    partyField(buyer, "avatar") || "/images/placeholder-avatar.png";
+  // Avatar handles the missing case *and* the present-but-404 case, so no
+  // `|| placeholder` here.
+  const buyerAvatar = partyField(buyer, "avatar");
 
   const transporter = payment?.transporter;
   const transporterName =
@@ -446,11 +448,10 @@ export const FleetPaymentDetailModal: React.FC<
                       Buyer
                     </p>
                     <div className="flex items-center gap-3">
-                      <Image
+                      <Avatar
                         src={buyerAvatar}
                         alt={buyerName}
-                        width={40}
-                        height={40}
+                        size={40}
                         className="rounded-full w-10 h-10 object-cover"
                       />
                       <div className="min-w-0">
@@ -478,11 +479,12 @@ export const FleetPaymentDetailModal: React.FC<
                         Transporter
                       </p>
                       <div className="flex items-center gap-3">
-                        <Image
-                          src="/images/placeholder-avatar.png"
+                        {/* Was hardcoded to the placeholder, so a transporter
+                            with a real photo never showed it. */}
+                        <Avatar
+                          src={partyField(transporter, "avatar")}
                           alt={transporterName}
-                          width={40}
-                          height={40}
+                          size={40}
                           className="rounded-full w-10 h-10 object-cover"
                         />
                         <div className="min-w-0">

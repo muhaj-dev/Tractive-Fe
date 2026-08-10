@@ -10,6 +10,7 @@ import AdminTable, {
 } from "../../../_components/table/AdminTableList";
 import { UserActionMenu } from "../UserActionMenu";
 import Image from "next/image";
+import Link from "next/link";
 import {
   adminUserService,
   AdminProfession,
@@ -171,8 +172,16 @@ const columns: ColumnConfig<User>[] = [
   {
     key: "fullname",
     header: "Full Name",
+    // A real anchor, not just the row's onClick: it is keyboard reachable, it
+    // has an accessible name, and -- the reason it matters here -- it
+    // navigates natively even before React has hydrated, which the row
+    // handler cannot do.
     render: (item: User) => (
-      <div className="flex items-center gap-2 sm:gap-3">
+      <Link
+        href={`/admin/all-users/${item.id}`}
+        className="flex items-center gap-2 sm:gap-3 cursor-pointer rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#538e53]"
+        aria-label={`Open ${item.fullname}'s profile`}
+      >
         <UserAvatar image={item.image} name={item.fullname} />
         <div className="flex flex-col min-w-0 flex-1">
           <span className="text-[10px] sm:text-[11px] md:text-[12px] font-montserrat font-normal text-[#2b2b2b] truncate">
@@ -182,7 +191,7 @@ const columns: ColumnConfig<User>[] = [
             {item.email}
           </span>
         </div>
-      </div>
+      </Link>
     ),
     minWidth: "min-w-[160px] sm:min-w-[180px] md:min-w-[200px]",
   },

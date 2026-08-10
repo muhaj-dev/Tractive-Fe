@@ -20,6 +20,10 @@ type BulkUserAction = "suspend" | "remove" | "reactivate";
 interface PendingBulk {
   action: BulkUserAction;
   ids: string[];
+  /** "row" came from a single row's action menu and must use the single-user
+   * endpoints; "bulk" came from the selection bar. Both confirm first —
+   * suspending or removing somebody is not an undoable click. */
+  scope: "row" | "bulk";
 }
 
 type SlideType = "Active" | "Suspended" | "Removed";
@@ -288,10 +292,7 @@ export default function ActivePage() {
     }
   };
 
-  const handleAdminSuspended = (id: string) => patchStatus(id, "suspended");
-  const handleAdminRemoved = (id: string) => patchStatus(id, "removed");
-
-  const handleReactivate = async (id: string) => {
+  const reactivate = async (id: string) => {
     try {
       await adminUserService.reactivateUser(id);
       toast.success("User reactivated");
@@ -304,9 +305,16 @@ export default function ActivePage() {
     }
   };
 
-  const handleAdminOnboarding = async (id: string) => {
-    await handleReactivate(id);
-  };
+  // Row actions ask first, exactly as the bulk bar does. Previously these fired
+  // the write on a single click with no dialog and no undo, while selecting the
+  // same user via its checkbox and using the bulk bar did confirm.
+  const handleAdminSuspended = (id: string) =>
+    setPendingBulk({ action: "suspend", ids: [id], scope: "row" });
+  const handleAdminRemoved = (id: string) =>
+    setPendingBulk({ action: "remove", ids: [id], scope: "row" });
+  const handleReactivate = (id: string) =>
+    setPendingBulk({ action: "reactivate", ids: [id], scope: "row" });
+  const handleAdminOnboarding = (id: string) => handleReactivate(id);
 
   const selectedIds = useMemo(
     () => data.filter((u) => u.checked).map((u) => u.id),
@@ -320,7 +328,7 @@ export default function ActivePage() {
 
   const requestBulk = (action: BulkUserAction) => {
     if (selectedIds.length === 0) return;
-    setPendingBulk({ action, ids: selectedIds });
+    setPendingBulk({ action, ids: selectedIds, scope: "bulk" });
   };
 
   const cancelPendingBulk = () => {
@@ -330,7 +338,23 @@ export default function ActivePage() {
 
   const confirmPendingBulk = async () => {
     if (!pendingBulk) return;
-    const { action, ids } = pendingBulk;
+    const { action, ids, scope } = pendingBulk;
+
+    // A row action is still a single-user action -- keep it on the single-user
+    // endpoints rather than sending a one-element bulk payload.
+    if (scope === "row") {
+      setIsSubmitting(true);
+      try {
+        if (action === "suspend") await patchStatus(ids[0], "suspended");
+        else if (action === "remove") await patchStatus(ids[0], "removed");
+        else await reactivate(ids[0]);
+        setPendingBulk(null);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (action === "suspend") {
@@ -413,26 +437,33 @@ export default function ActivePage() {
       return { title: "", description: "", confirmLabel: "", tone: "info" as const };
     const count = pendingBulk.ids.length;
     const plural = count > 1 ? "s" : "";
+    const isRow = pendingBulk.scope === "row";
+    // A row action names one person, so "1 selected user" would read oddly.
+    const who = isRow
+      ? data.find((u) => u.id === pendingBulk.ids[0])?.fullName || "this user"
+      : `${count} selected user${plural}`;
+    const subject = isRow ? who : `${count} user${plural}`;
+
     if (pendingBulk.action === "suspend") {
       return {
-        title: `Suspend ${count} user${plural}?`,
-        description: `This will suspend ${count} selected user${plural}. They will lose access until reactivated.`,
-        confirmLabel: "Suspend all",
+        title: isRow ? `Suspend ${who}?` : `Suspend ${count} user${plural}?`,
+        description: `This will suspend ${subject}. They will lose access until reactivated.`,
+        confirmLabel: isRow ? "Suspend" : "Suspend all",
         tone: "danger" as const,
       };
     }
     if (pendingBulk.action === "remove") {
       return {
-        title: `Remove ${count} user${plural}?`,
-        description: `This will remove ${count} selected user${plural} from the platform.`,
-        confirmLabel: "Remove all",
+        title: isRow ? `Remove ${who}?` : `Remove ${count} user${plural}?`,
+        description: `This will remove ${subject} from the platform.`,
+        confirmLabel: isRow ? "Remove" : "Remove all",
         tone: "danger" as const,
       };
     }
     return {
-      title: `Reactivate ${count} user${plural}?`,
-      description: `This will reactivate ${count} selected user${plural} and restore platform access.`,
-      confirmLabel: "Reactivate all",
+      title: isRow ? `Reactivate ${who}?` : `Reactivate ${count} user${plural}?`,
+      description: `This will reactivate ${subject} and restore platform access.`,
+      confirmLabel: isRow ? "Reactivate" : "Reactivate all",
       tone: "success" as const,
     };
   })();

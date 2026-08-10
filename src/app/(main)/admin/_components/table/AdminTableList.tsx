@@ -271,6 +271,21 @@ export const AdminTable = <T extends BaseData>({
               animate="visible"
               transition={{ delay: index * 0.1 }}
               onClick={onRowClick ? () => onRowClick(item.id) : undefined}
+              // A clickable row must also be reachable and operable from the
+              // keyboard -- the same gap fixed on the wishlist heart (11h) and
+              // the add-to-store modal (12f).
+              tabIndex={onRowClick ? 0 : undefined}
+              role={onRowClick ? "link" : undefined}
+              onKeyDown={
+                onRowClick
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onRowClick(item.id);
+                      }
+                    }
+                  : undefined
+              }
             >
               {isCheckboxTable && (
                 <td

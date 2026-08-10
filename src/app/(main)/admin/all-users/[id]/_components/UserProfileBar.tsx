@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import Avatar from "@/components/ui/Avatar";
 import { toast } from "sonner";
 import {
   adminUserService,
@@ -131,15 +132,13 @@ export const UserProfileBar: React.FC<UserProfileBarProps> = ({
       <div className="px-6 py-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-4 min-w-0">
           <div className="relative w-14 h-14 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 ring-2 ring-white shadow-sm">
-            <Image
-              src={
-                (user.image as string) ||
-                (user.avatar as string) ||
-                "/images/placeholder-avatar.png"
-              }
+            {/* Avatar covers both a missing URL and one that 404s; the plain
+                `src || placeholder` form only covered the first. */}
+            <Avatar
+              src={(user.image as string) || (user.avatar as string)}
               alt={(user.name as string) || "User"}
-              fill
-              className="object-cover"
+              size={56}
+              className="object-cover w-full h-full"
             />
           </div>
           <div className="min-w-0">
