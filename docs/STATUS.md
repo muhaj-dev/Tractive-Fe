@@ -11,10 +11,28 @@ files, held back pending **D6**.
 Detail lives in:
 - [`E2E-BUG-REPORT-2026-08-07.md`](E2E-BUG-REPORT-2026-08-07.md) — every bug, its fix, and how to re-test it
 - [`BACKEND-ISSUES-2026-08-07.md`](BACKEND-ISSUES-2026-08-07.md) — the backend-facing list
-- [`SESSION-HANDOFF-2026-08-09.md`](SESSION-HANDOFF-2026-08-09.md) — how to resume, environment traps, harness
+- [`SESSION-HANDOFF-2026-08-10.md`](SESSION-HANDOFF-2026-08-10.md) — **current** — how to
+  resume, environment traps, the harness
 
 **Verification command:** `npx tsc --noEmit` — clean. ESLint cannot run (pre-existing
 circular-structure config error, unrelated to this work).
+
+---
+
+## 0. Coverage at a glance
+
+| Surface | Pages | Interactions | Notes |
+|---|---|---|---|
+| Buyer | ✅ swept | ◐ 7 controls left | §3.2 |
+| Agent | ✅ swept | ◐ 6 controls left | §3.3 |
+| Transporter | ✅ swept | ◐ 6 controls left | §3.4 |
+| **Admin** | ✅ swept | ✅ **done 10 Aug** — 8 of 9, last blocked on **D8** | §3.1 |
+| Chat / Help | ✅ **built 10 Aug** | ◐ threads + closing tickets blocked by backend 15 | §16 |
+| **Mobile** | ❌ **never opened** | ❌ | **the top gap — §3.5** |
+| **Notifications** | ❌ **never opened** | ❌ | plumbing is live on every page load |
+
+Both money paths are verified end to end: order payments (approve **and** refund, §15a /
+§17c) and fleet payments (§1).
 
 ---
 
@@ -172,15 +190,22 @@ bids *needing a response*; fleet bids are already included and the ones observed
 
 ## 3. Everything remaining to test
 
-Every role's **pages** have been visited and every major **flow** exercised. What is left is
-interaction depth — individual controls that have never had a button pressed — plus two
-whole dimensions nobody has touched (mobile, notifications).
+Every role's **pages** have been visited and every major **flow** exercised. **Admin is now
+done too** (10 Aug), so the biggest remaining gap has moved: what is left is interaction
+depth on the three non-admin roles, plus the two dimensions still nobody has touched —
+**mobile and notifications**.
 
 Ordered by value. `☐` = never exercised.
 
-### 3.1 Admin interactions — the biggest gap
+> **Read this before picking the next thing up.** Mobile is now the single highest-value
+> item on this list, and not on a hunch: **four of the ~30 bugs found across all six
+> sessions live only in `*Mobile*` files** (14b's admin nav 404, the `/agent ` typo, and
+> two of the six logo links fixed in §18a). Every session so far has run at 1600×1400
+> desktop. That is a whole surface with a demonstrated defect rate and zero coverage.
 
-Five of the nine items are now done (10 Aug, bug report §15). Remaining:
+### 3.1 Admin interactions — ✅ DONE except one blocked item
+
+Eight of the nine items are done (10 Aug, bug report §15 and §17). Remaining:
 
 - ☑ ~~suspend / remove / restore a user~~ — **done**, full lifecycle, net zero (§15c)
 - ☑ ~~product-payment approval + rejection~~ — **done**, and the money path is verified
@@ -265,21 +290,34 @@ detail modal.
 
 ### 3.6 Quality / a11y sweeps
 
-- ☐ **Finish the modal focus pass** — five modals pass; the same one-line
-  `useModalA11y(isOpen, ref)` is still needed for `EditProductModal`, `BiddersModal`,
-  `CustomerInfoModal`, the `CustomerCareModal`s and `TripDetailsModal`
-- ☐ **Migrate the remaining 10 `placeholder-avatar.png` call sites** to the resilient
-  `Avatar` component (mostly admin screens — do it during 3.1)
-- ☐ **A wider a11y pass** — the bare-`<div onClick>` pattern fixed in three places
-  (`11h`, `11h-2`, `12f`) almost certainly exists elsewhere
+- ☐ **Finish the modal focus pass** — the list has grown, because the admin sweep measured
+  two more. Still needing the one-line `useModalA11y(isOpen, ref)`: `EditProductModal`,
+  `BiddersModal`, `CustomerInfoModal`, the `CustomerCareModal`s, `TripDetailsModal`,
+  **`TransactionDetailModal`** (15g — no dialog role, does not close on Escape) and the
+  **admin Trip Details modal** (17f — no dialog role and *no buttons at all*, so no
+  focusable close control). 17f is the worst of them and the cheapest to fix.
+- ◐ **Migrate the `placeholder-avatar.png` call sites** — 2 of 12 done 10 Aug
+  (`UserProfileBar`, `FleetPaymentDetailModal`, where the transporter avatar was hardcoded
+  to the placeholder). The rest are low risk now the asset exists: the mappers in
+  `/admin/active`, `/suspended`, `/removed`, `/transactions`, `/fleet-payments`, plus
+  `agent/bids`, `BiddersModal`, `OtherStoreProduct`, `BiddingProduct`, `WishList`.
+- ☐ **Three avatar implementations now coexist** — `Avatar` (resilient), `UserAvatar`
+  (initials) and a *third* local `UserAvatar` defined inside `AllUserType`. Worth
+  consolidating to one.
+- ◐ **A wider a11y pass** — the bare-click-handler pattern is now fixed in four places
+  (`11h`, `11h-2`, `12f`, and admin table rows in §17a). It almost certainly exists
+  elsewhere; a sweep for `onClick` on non-interactive elements would find them.
 - ☐ Tailwind canonical-class warnings across many files — cosmetic, flagged by the IDE, never
   addressed
 
 ### 3.7 Blocked — needs the backend or another machine
 
-- ☐ **Real Cloudinary upload** (product images + payment receipts) — `api.cloudinary.com` is
-  DNS-blocked here. **The only item on this whole list that cannot be done from this
-  environment.**
+- ☐ **Open a chat conversation / close a support ticket** — backend item 15.
+  `GET /api/chat/{id}` and `DELETE /api/help/{id}` reject *every* id, including the ones
+  their own list endpoints return. The pages are built and will work unchanged once fixed.
+- ☐ **Real Cloudinary upload** (product images + payment receipts + **banner images**) —
+  `api.cloudinary.com` is DNS-blocked here. **The only item on this whole list that cannot
+  be done from this environment.**
 - ☐ **Any further transport testing** — no bookable fleet remains. Create one via Add Fleet
   (it works), but each new fleet is a permanent row, so don't do it casually.
 - ☐ **Manual Create Trip** — needs backend 14 (bookings never released).
