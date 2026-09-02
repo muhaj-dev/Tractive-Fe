@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 import React from "react";
 import { useTopBuyers } from "@/hooks/queries/useAdminDashboardQueries";
 import { formatCurrency } from "@/lib/format";
@@ -49,11 +49,10 @@ export const TopBuyer: React.FC = () => {
               className="w-full flex items-center justify-between px-4"
             >
               <div className="flex items-center gap-[5px]">
-                <Image
-                  src={buyer.image || "/images/TopBuyer.png"}
+                <Avatar
+                  src={buyer.image}
                   alt={buyer.name}
-                  width={40}
-                  height={40}
+                  size={40}
                   className="rounded-full object-cover h-[40px] w-[40px]"
                 />
                 <span className="font-montserrat text-[#2b2b2b] text-[11px] font-normal">

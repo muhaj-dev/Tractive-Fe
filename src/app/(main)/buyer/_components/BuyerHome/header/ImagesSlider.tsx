@@ -19,12 +19,17 @@ export const ImageSlider: React.FC<ImageSliderProps> = ({
 }) => {
   // Auto-slide functionality
   useEffect(() => {
+    // With no images, `% 0` is NaN and the index never recovers.
+    if (!sliderImages.length) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % sliderImages.length);
     }, 3000); // Auto-slide every 3 seconds
 
     return () => clearInterval(interval); // Cleanup on unmount
   }, [sliderImages.length, setCurrentSlide]);
+
+  // The list can shrink under a stale index, which would render <Image> with no src.
+  const activeImage = sliderImages[currentSlide] ?? sliderImages[0];
 
   // Slider navigation
   const goToSlide = (index: number) => {
@@ -35,21 +40,23 @@ export const ImageSlider: React.FC<ImageSliderProps> = ({
     <div className="w-full lg:w-[75%] relative">
       <div className="relative w-full h-[150px] image-slider-content  rounded-[4px] overflow-hidden">
         <AnimatePresence>
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="absolute inset-0"
-          >
-            <Image
-              src={sliderImages[currentSlide]}
-              alt={`Slider Image ${currentSlide + 1}`}
-              width={800}
-              height={350}
-              className="rounded-[4px] h-full w-full object-cover"
-            />
-          </motion.div>
+          {activeImage && (
+            <motion.div
+              key={currentSlide}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0"
+            >
+              <Image
+                src={activeImage}
+                alt={`Slider Image ${currentSlide + 1}`}
+                width={800}
+                height={350}
+                className="rounded-[4px] h-full w-full object-cover"
+              />
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
       {/* Slider Navigation Dots */}

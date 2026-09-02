@@ -109,17 +109,29 @@ export const Navbar = () => {
             {/* ========= ICONS ========= */}
             <div className="flex items-center gap-[0.5rem] md:gap-[3rem] lg:gap-[5rem]">
               {/* ===================== Notification icon ========================= */}
-              <div
-                className="relative cursor-pointer"
-                onClick={handleNotificationClick}
-                ref={notificationRef}
-              >
-                <NotificationIcon />
-                {hasUnread && (
-                  <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-1 flex items-center justify-center text-[9px] font-medium text-white bg-[#d32f2f] rounded-full">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
+              <div className="relative" ref={notificationRef}>
+                {/* A real button, not a bare div: the bell was unreachable by
+                    keyboard, so notifications could not be opened at all
+                    without a mouse. */}
+                <button
+                  type="button"
+                  onClick={handleNotificationClick}
+                  aria-haspopup="true"
+                  aria-expanded={isNotificationOpen}
+                  aria-label={
+                    hasUnread
+                      ? `Notifications, ${unreadCount} unread`
+                      : "Notifications"
+                  }
+                  className="relative flex cursor-pointer items-center rounded-[4px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#538e53]"
+                >
+                  <NotificationIcon />
+                  {hasUnread && (
+                    <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-1 flex items-center justify-center text-[9px] font-medium text-white bg-[#d32f2f] rounded-full">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
                 {isNotificationOpen && (
                   <div className="absolute top-9 right-0 z-20 w-[92vw] max-w-[420px] overflow-hidden rounded-[8px] border border-[#e2e2e2] bg-[#fefefe] shadow-lg">
                     <Notifications />

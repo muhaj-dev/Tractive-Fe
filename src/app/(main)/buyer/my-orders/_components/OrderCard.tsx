@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { OrderRecord } from "@/services/OrderService";
+import { formatUnitAfterQuantity } from "@/utils/productUnits";
 import { useAppDispatch } from "@/lib/hooks";
 import { setPendingTransportOrderIds } from "@/lib/features/pendingTransport/pendingTransportSlice";
 
@@ -150,7 +151,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
           {quantity !== undefined && (
             <span>
               Qty: {quantity}
-              {unit ? ` ${unit}` : ""}
+              {unit ? ` ${formatUnitAfterQuantity(unit)}` : ""}
             </span>
           )}
           <span>Ordered: {formatDate(order.createdAt)}</span>

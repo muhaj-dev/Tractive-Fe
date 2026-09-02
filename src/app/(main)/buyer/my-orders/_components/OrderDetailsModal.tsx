@@ -4,6 +4,7 @@ import Image from "next/image";
 import { XIcon } from "@/icons/Icon1";
 import { StatusBadge } from "@/components/StatusBadge";
 import { OrderRecord } from "@/services/OrderService";
+import { formatUnitAfterQuantity } from "@/utils/productUnits";
 
 interface Props {
   order: OrderRecord | null;
@@ -179,7 +180,9 @@ export const OrderDetailsModal: React.FC<Props> = ({ order, onClose }) => {
                     </p>
                     <p className="font-montserrat text-[11px] text-[#808080]">
                       Qty: {line.quantity ?? 0}
-                      {isObj && prod.unit ? ` ${prod.unit}` : ""}
+                      {isObj && prod.unit
+                        ? ` ${formatUnitAfterQuantity(prod.unit)}`
+                        : ""}
                     </p>
                   </div>
                   <p className="font-montserrat text-[12px] text-[#2b2b2b]">

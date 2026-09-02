@@ -123,28 +123,34 @@ export const AgentNavbar = ({onLogout}: AgentNavbarProps) => {
                 {/* ========= ICONS ========= */}
                 <div className="relative flex items-center gap-[0.5rem] md:gap-[3rem] lg:gap-[5rem]">
                   {/* ===================== Notification icon ========================= */}
-                  <div
-                    className="relative"
-                    onClick={handleNotificationClick}
-                    ref={notificationRef}
-                  >
-                    <NotificationIcon />
-                    {hasNotifications && (
-                      <span className="absolute top-0 right-[2px] h-2 w-2 rounded-full bg-[#538E53]" />
-                    )}
+                  <div className="relative" ref={notificationRef}>
+                    {/* A real button, not a bare div: the bell was unreachable
+                        by keyboard, so notifications could not be opened at all
+                        without a mouse. */}
+                    <button
+                      type="button"
+                      onClick={handleNotificationClick}
+                      aria-haspopup="true"
+                      aria-expanded={isNotificationOpen}
+                      aria-label={
+                        hasNotifications
+                          ? `Notifications, ${unreadCount} unread`
+                          : "Notifications"
+                      }
+                      className="relative flex cursor-pointer items-center rounded-[4px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#538e53]"
+                    >
+                      <NotificationIcon />
+                      {hasNotifications && (
+                        <span className="absolute top-0 right-[2px] h-2 w-2 rounded-full bg-[#538E53]" />
+                      )}
+                    </button>
                     {isNotificationOpen && (
                       <div className="absolute top-10 right-0 z-50 w-[92vw] max-w-[420px] overflow-hidden rounded-[8px] border border-[#e2e2e2] bg-[#fefefe] shadow-lg">
-                        <ul className="py-2">
-                          {hasNotifications ? (
-                            <>
-                              <Notifications />
-                            </>
-                          ) : (
-                            <li className="px-4 py-2 text-[0.89rem] text-gray-500">
-                              No new notifications
-                            </li>
-                          )}
-                        </ul>
+                        {/* Always render the centre: gating it on unread hid the
+                            whole notification history the moment everything was
+                            read, and Notifications has its own empty state. */}
+                        <Notifications />
+                      
                       </div>
                     )}
                   </div>

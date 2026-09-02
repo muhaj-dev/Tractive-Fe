@@ -2240,6 +2240,396 @@ several sites shared one target.
 
 ---
 
+## 19. Mobile and tablet sweep — 10 Aug 2026
+
+The top item on §3.5, and the one every previous session deferred. Two full
+passes over all 42 pages — **390×844** (iPhone 12/13) and **768×1024** (iPad
+portrait) — with a real mobile user agent, `isMobile` and touch enabled, and a
+hard read-only route guard that aborts every non-GET.
+
+The headline is not what the backlog predicted.
+
+### 19a. The responsive layout itself is sound — no bug
+
+Every previous session ran at desktop width, and §3.5 argued mobile was the
+highest-risk surface because *four of ~30 bugs so far lived only in `*Mobile*`
+files*. That reasoning was sound but the conclusion did not hold: measuring
+`documentElement.scrollWidth` against the viewport on every page found
+
+| Viewport | Pages | Pages overflowing horizontally |
+|---|---|---|
+| 390×844 | 42 | **0** |
+| 768×1024 | 42 | **0** |
+
+Nothing spills sideways, no page scrolls horizontally, and every wide table is
+already inside its own `overflow-x` container. Both breakpoint pairs are
+complementary rather than overlapping — the navbars swap at `md` (768) and the
+sidebars at `sm` (640), so there is no width at which the app has no navigation.
+At 768 the admin sidebar correctly collapses to its 100px icon rail.
+
+**The mobile-only defects found were behavioural, not layout.** All four below
+were invisible to a desktop run.
+
+### 19b. The mobile notification dot was hardcoded mock data — ✅ FIXED
+
+Three navbars never called the notifications API at all. They ran this on mount
+and lit the dot from its length:
+
+```js
+const mockNotifications = [
+  { id: 1, message: "You have a new message" },
+  { id: 2, message: "Order #456 updated" },
+];
+setHasNotifications(mockNotifications.length > 0);   // always true
+```
+
+So the green unread dot was **permanently on**, for every user, regardless of
+whether anything was unread — and it could never clear, because nothing ever set
+it false except logout. The other nine navbars already used
+`useNotificationCenter`; these three were missed.
+
+| File | Surface |
+|---|---|
+| `MobileNavbar` | public + buyer, mobile |
+| `TransporterMobileNavbar` | transporter, mobile |
+| `TransporterProfileNavbar` | transporter profile pages — **desktop**, so not mobile-only |
+
+All three now read `unreadCount` from `useNotificationCenter(isLoggedIn)`, the
+same as the rest.
+
+**Verified:** the API reports `unreadCount: 45` for the test account and the DOM
+now renders the dot from that figure rather than from the mock array. This also
+means §3.5's "notifications never opened" item now has a real number attached —
+there are 45 unread notifications waiting, so that surface has live data to test
+against.
+
+### 19c. The mobile menu could not be opened from a keyboard — ✅ FIXED
+
+In all four mobile navbars the hamburger was a bare `<div>` with a click
+handler on the icon inside it:
+
+```jsx
+<div className="cursor-pointer" ref={menuIconRef}>
+  <MenuIcon onClick={handleMobileMenuToggle} />
+</div>
+```
+
+No `<button>`, no `tabIndex`, no `aria-label`, no `aria-expanded`. On a phone
+that is the *only* navigation, so for a keyboard or switch user the entire
+mobile app was unreachable — a step worse than 15g/17f, which affect one modal
+each. This is the same bare-click-handler pattern as `11h`, `12f` and §17a, now
+found in a fifth place, which is the strongest argument yet for the sweep §3.6
+proposes.
+
+Each is now a real `<button type="button">` with `aria-label` (*"Open menu"* /
+*"Close menu"*), `aria-expanded`, and a 44×44 minimum tap target:
+`MobileNavbar`, `AdminMobileNavbar`, `AgentMobileNavbar`,
+`TransporterMobileNavbar`.
+
+**Verified in the browser at 390×844:** the trigger is a `BUTTON`, measures
+44×44, is focusable, reports `aria-expanded=false`, and **Enter opens the menu**
+(`aria-expanded=true`). A `<div>` did none of those.
+
+### 19d. The homepage banner rendered `<Image src="">` — ✅ FIXED
+
+`/buyer` threw two console errors on every load:
+
+```
+An empty string ("") was passed to the src attribute. This may cause the
+browser to download the whole page again over the network.
+Image is missing required "src" property
+```
+
+Cause: `BuyersHeader` mapped banners straight to their URLs —
+
+```js
+const sliderImages = banners.length ? banners.map((b) => b.imageUrl) : fallbackSliderImages;
+```
+
+— and one live banner has no `imageUrl`. `banners.length` was truthy, so the
+local fallback never engaged and the slider rendered an empty `src`. React's
+warning is not cosmetic: an empty `src` makes the browser re-request the whole
+page.
+
+Fixed in two places: `BuyersHeader` now filters to banners that actually carry
+an image before deciding whether to fall back, and `ImageSlider` guards its own
+index (`% sliderImages.length` is `NaN` when the list is empty, which would pin
+the index at `NaN` permanently) and renders nothing rather than an image with no
+source.
+
+**Verified:** zero empty-`src` images and zero console warnings on `/buyer`,
+at both viewports.
+
+Worth a product note: a banner with no image can be created at all, which is
+the admin-settings half of the same problem.
+
+### 19e. Four more avatar call sites 404'd — ✅ FIXED
+
+The `test_avatar.png` 404 that `Avatar` was written to survive is still being
+requested, because four dashboard components had never been migrated and used a
+raw `Image` with `src={x.image || "/images/…"}`. That guard only covers a
+*missing* URL; the stored URL here is present and 404s, so it rendered as a
+broken image with the alt text showing through:
+
+| File | Surface |
+|---|---|
+| `admin/_components/TopBuyer` | admin dashboard, *Top Buyers* |
+| `admin/_components/TopAgents` | admin dashboard, *Top Agents* |
+| `admin/_components/TopTransporter` | admin dashboard, *Top Transporters* |
+| `transporter/_components/TopCustomers` | transporter dashboard |
+
+All four now use `<Avatar>`, which falls back on `onError`. This is §3.6's
+"migrate the `placeholder-avatar.png` call sites" item, moved from 2 of 12 done
+to 6 of 12.
+
+Note the 404 itself is **data, not code** — the account's stored avatar points
+at a Cloudinary object that does not exist. The bug is that nothing degraded
+gracefully.
+
+**Verified, with one expectation corrected.** After the change,
+`/transporter` renders **no broken images**. The `test_avatar.png` 404 is still
+in the network log, and that is correct rather than a remaining bug: `onError`
+can only fire *after* the browser has tried the URL and failed, so one 404 per
+broken avatar is inherent to the fallback working. The user-visible defect —
+a broken-image glyph with alt text showing through — is gone. Suppressing the
+request itself would mean fixing the stored URL, which is a data task.
+
+### 19f. Tap targets are small across the board — not fixed, needs a design call
+
+Consistently at 390px, the same controls fall under the 44×44 guidance: table
+tab strips (~20–24px tall), the pagination page-size `<select>` (53×27), row
+action menus (30×30), the sidebar collapse chevron (16×16) and the wishlist
+heart (30×29). `/admin/all-users` alone reports 46 such controls.
+
+Not filed as a bug because it is systemic and cosmetic-adjacent — it is a
+deliberate density choice on data-dense admin tables, and changing it is a
+design decision, not a defect fix. Recorded so the decision is explicit.
+
+### 19g. Password reset exists — 14d and D5 were wrong
+
+Not a mobile finding; it surfaced while enumerating routes for the sweep (§3 of
+the handoff says to run `find src/app -name page.tsx` before touching routes,
+and doing so contradicted the backlog).
+
+**14d says: *"Password reset does not exist. `/forgot-password` and
+`/reset-password` both 404 and nothing links to them."*** All three claims are
+wrong, on a spelling:
+
+| Claim | Reality |
+|---|---|
+| `/forgot-password` 404s | correct — but the route is **`/forget-password`**, and it exists |
+| `/reset-password` 404s | it exists: `src/app/(auth)/reset-password/page.tsx` |
+| nothing links to them | [login/page.tsx:183](../src/app/(auth)/login/page.tsx#L183) links to `/forget-password`, labelled *"Forget password"* |
+
+The earlier audit probed the American spelling; the codebase uses the British
+one throughout. The feature is fully built: page, zod schema
+(`forgetPasswordSchema`), and a `forgotPassword()` helper that posts to
+`/api/auth/forgot-password`.
+
+**What is actually broken is the backend mailer**, and it fails in exactly the
+wrong direction — see backend item 16:
+
+| Request | User exists? | Response |
+|---|---|---|
+| `{"email":"not-an-email"}` | no | **200** *"If your email exists, you will receive a reset link."* |
+| `{"email":"qa.flow.probe.8821@example.invalid"}` | **yes** | **500**, empty body |
+| `{"email":"i59mv8titr@lnovic.com"}` | **yes** | **500**, empty body |
+
+It succeeds only when there is nobody to email. `POST /api/auth/reset-password`
+itself is fine — it 400s correctly on a bad payload, so the second half of the
+flow is waiting on a token the first half cannot send.
+
+Consequences: password reset works for no real account, and the differing status
+codes leak which addresses have accounts.
+
+**This changes D5.** The question was *"is password reset in scope?"* — it is
+already built and shipped, so the only open question is whether the backend
+mailer gets fixed (the same mailer as the deferred signup item 9). The frontend
+needs no work.
+
+### What this section did not cover
+
+Both passes were **read-only**. No mobile flow was driven end to end — no bid
+placed, no checkout, no form submitted at 390px. Layout and navigation are now
+evidenced; *transactions on a phone* are still untested.
+
+---
+
+## 20. Notifications, partial checkout, and the fleet-bid loop — 10 Aug 2026 (second session)
+
+Four areas were driven for the first time: a fresh product taken all the way to a
+**pending** payment, the **notification centre**, the **fleet-bid negotiation loop**, and
+`FleetBidPaymentModal`. Six real defects came out of it, four of them fixed.
+
+### 20a. Partial checkout was impossible — FIXED
+
+**How it surfaced.** Creating the pending payment needed one bid checked out. The order was
+refused: `POST /api/orders` → **400 `"Total amount does not match accepted bids"`**.
+
+**The cause.** `my-biddings/page.tsx` passed the summary straight from the backend's
+`won/checkout` response:
+
+```tsx
+productsSubtotal={checkoutData?.productsSubtotal ?? 0}
+totalAmount={checkoutData?.totalAmount ?? 0}
+```
+
+Those are the totals for the **whole basket**, but `bidIds` carried only the **selected**
+rows. With two accepted bids in the basket (₦1,050 + ₦400) the Summary read **₦1,450**
+while only the ₦400 bid was ticked, so the backend's guard rejected it.
+
+**Why no earlier session caught it.** Every previous run ticked *every* checkbox
+(`for (i…) cbs.nth(i).check()`), so the whole-basket total happened to be correct. The bug
+only appears when a buyer checks out **some** of what they have won — which is the normal
+case, and exactly the "multi-order checkout" item §3.2 had listed as untested.
+
+**The fix.** Re-derive the summary from the selection, the way the backend composes it:
+sum of `effectiveAmount` (counter-aware) plus local transport where the product charges it.
+`effectiveAmount` and `product.localTransport` were missing from `BidResponse` and were
+added.
+
+**Verified.** Summary ₦400 for one ticked row, `POST /api/orders` → **201**.
+
+### 20b. The notification centre — first look, ever
+
+**The bell was unreachable by keyboard, in all 11 navbars.** It was a bare
+`<div onClick>` with no role, no `tabIndex` and no label. Measured before the fix:
+**60 Tab presses never landed on it**, so notifications could not be opened at all without
+a mouse. Now a real `<button>` with `aria-haspopup`, `aria-expanded` and a counted label
+(*"Notifications, 49 unread"*). Verified: `focus()` lands, **Enter opens the panel**.
+
+**Marking one notification read is impossible — backend.**
+`PATCH /api/notifications/{id}` → **400 `"Invalid notification ID format"`** on
+`6a79a66369acd8dadda5abb6`, a well-formed 24-hex id its own list endpoint returned
+moments earlier. This is the **same signature as backend item 15** (`GET /api/chat/{id}`,
+`DELETE /api/help/{id}`) — now a third resource behind what looks like one shared
+validator. Raised as **backend 18**.
+
+**The failure was silent.** Neither mark-read mutation had an `onError`, so clicking a
+notification did nothing, said nothing, and left the dot in place. Both now toast.
+
+**Every notification was a dead end.** The API never sets `link`; it sends `type` plus a
+`metadata` bag (`productId` / `bidId` / `orderId` / `transactionId`). Clicking one only
+marked it read and went nowhere. `Notifications.tsx` now derives a destination from the
+type, **scoped to the role area the user is in** — one account holds all three roles — and
+only ever returns routes that exist (bug 14c's lesson). Verified: **18 of 20 rows now
+link**, `/buyer/my-orders` and `/buyer/product/{id}` as a buyer, `/agent/pending` and
+`/agent/bids` as an agent. The 2 unmapped types stay unlinked rather than 404.
+
+**Rows were not keyboard-operable either** — a bare `div onClick`. Now a `<Link>` when
+there is somewhere to go and a `<button>` when there is not.
+
+**The panel was hidden once you were caught up.** Eight navbars rendered
+`{hasNotifications ? <Notifications /> : "No new notifications"}`, so the entire read
+history vanished the moment unread hit zero. `Notifications` has its own empty state, so
+the gate is gone. It also removes an invalid `<ul><div>…</div></ul>` nesting.
+
+**Deliberately not done: "Mark all as read."** It is the only working way to clear
+anything, but pressing it would destroy the 45+ unread notifications that are the only
+real data this area has. Left for a session that wants to spend them.
+
+**Working correctly:** SSE stream opens on every page load, badge reads `9+`, header count
+49, `GET /api/notifications/unread/count` → `{count: 49}` agreeing with the panel.
+
+### 20c. The transporter could never see a fleet bid — FIXED
+
+**The finding.** The buyer had **4 pending fleet bids**, two of them 22 days old.
+`/transporter/negotiations` read *"No Negotiations Available"*. Both sides are the same
+shared account, so the transporter demonstrably owned those fleets.
+
+`GET /api/transporters/negotiations` returns `data: []` — in **every** variant tried
+(no params, `?page=1`, `?status=pending`, `?page=1&limit=50`). Meanwhile
+`GET /api/transporters/fleet/{fleetId}/bids` returns the same 4 bids **correctly**.
+
+So the data was always reachable; only the aggregate endpoint was blind. That single
+endpoint was silently blocking the whole negotiation loop — the transporter half of §3.4,
+the countered-fleet-bid half of §3.2, and `FleetBidPaymentModal`, which needs an accepted
+bid to exist.
+
+**The fix (frontend, no backend needed).** `getNegotiationsToAnswer()` calls the server
+endpoint first and **only** falls back to aggregating over `/fleets` → `/fleet/{id}/bids`
+when it comes back empty — so the moment the backend is fixed its answer wins and the cost
+returns to one request. Filtered to `pending` + `countered` (accepted and rejected bids are
+history, not work). Search/month/year moved client-side, since the fallback has no query
+parameters. Accept/reject now posts to the fleet-scoped
+`/fleet/{fleetId}/bids/{bidId}/respond`, so `NegotiationProps` carries `fleetId`.
+
+**Verified end to end:** negotiations went **0 rows → 5**; transporter **accept → 200**;
+the buyer's Fleet Bids tab flipped that bid to **Accepted** and offered **Pay Now**.
+Raised with the backend as **item 19**.
+
+### 20d. `FleetBidPaymentModal` — exercised, and blocked by the backend at the last step
+
+With an accepted bid finally in existence, the modal was driven for the first time. It
+behaves correctly: opens with the right amount (₦137,500), the four payment methods select,
+Continue is properly gated on a choice, the confirm step renders the bank accounts and the
+right copy.
+
+**The final call fails.** `POST /api/transporters/fleet/payments` → **405 Method Not
+Allowed**. Probed with an empty body so nothing could be created:
+
+| Path | POST |
+|---|---|
+| `/api/transporters/fleet/payments` | **405** |
+| `/api/transporters/fleets/payments` | **405** |
+| `/api/transporters/fleet-payments` | **405** |
+| `/api/buyers/fleet-payments` | 404 (HTML — no such route) |
+
+405 rather than 404 means the path resolves but the verb is not mounted — the route is
+GET-only. Note the *direct booking* path
+`POST /api/transporters/fleet/{fleetId}/payments` **does** work and is verified (§1), so
+only the **bid-based** payment is dead. Raised as **backend 20**.
+
+So **paying for an accepted fleet bid is currently impossible**, and the frontend is not
+the reason. The modal will work unchanged once the verb is mounted.
+
+### 20e. a11y — the bare-click-handler sweep continues
+
+The pattern has now been found in **eight** places. Fixed this session:
+
+| Where | Was | Now |
+|---|---|---|
+| The bell, **11 navbars** | `div onClick` — keyboard could not reach it | `<button>` + `aria-haspopup`/`aria-expanded`/counted label |
+| Notification rows | `div onClick` | `<Link>` or `<button>` |
+| `FleetBidPaymentModal` | `role=null`, no focus management | `role="dialog"`, `aria-modal`, focus trap, Escape closes |
+| Its payment methods | 4 × `div onClick` | `role="radiogroup"` of real `<button role="radio">` |
+| `BankAccounts` rows | `role="radio"` on a `div` with **no `tabIndex` and no key handler** | focusable, Enter/Space select |
+| `TransactionDetailModal` (15g) | no role, no Escape | `role="dialog"` + `useModalA11y(…, {onEscape})` |
+| `TrackTransporterInfoModal` (17f) | no role, focus stayed outside | `role="dialog"` + `aria-labelledby` + focus trap |
+
+The `BankAccounts` one had teeth: `AccountDetails` **silently does nothing** until a bank
+is selected, and the only way to select one was a mouse click.
+
+**Verified in the browser**, not just typechecked: `role="dialog"`, `aria-modal="true"`,
+`aria-label="Fleet bid payment"`, focus lands inside, 4 keyboard-reachable radios, Escape
+closes it.
+
+**Still outstanding:** `EditProductModal`, `BiddersModal`, `CustomerInfoModal` (×2), the
+`CustomerCareModal`s, `TripDetailsModal`.
+
+### 20f. Correct behaviour, worth recording
+
+- `AccountDetails` **requires** a bank before confirming, with the inline error *"Select the
+  account you transferred to."* An early script skipped it and read the no-op as a bug; it
+  is not.
+- The order card flips to *"Transfer submitted — awaiting confirmation"* and drops its
+  **Complete payment** button once paid. Correct.
+
+### 20g. Two traps this session added
+
+- **`POST /api/orders` returns the product line-item `_id` before the order `_id`.** A naive
+  `body.match(/"_id":"([a-f\d]{24})"/)` grabs the wrong one — `…abb1` instead of `…abb0`.
+  Resolve the order id from `GET /api/orders` instead.
+- **`page.route` interception breaks CORS preflight** for `fetch` issued inside the page:
+  every probe returned `TypeError: Failed to fetch` until the handler was removed. Probe
+  raw endpoints with no route handler installed.
+- Mongo ids start with a digit, so **`input#<id>` is an invalid CSS selector** — use
+  `input[id="…"]`.
+- The agent produce table now paginates (12 active), so `button:has-text("Next")` matches
+  the **pagination** Next sitting under the modal overlay, which never becomes clickable.
+
+---
+
 ## Parked — signup (deferred by request, not fixed)
 
 Recorded so it isn't lost. **Signup is broken for every new user in production.**

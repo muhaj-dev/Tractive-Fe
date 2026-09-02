@@ -151,47 +151,87 @@ const NegotiationListPage: React.FC = () => {
   const monthNumber = selectedMonth ? months.indexOf(selectedMonth) + 1 : undefined;
 
   const { data: fetchNegotiations, isLoading } = useQuery({
-    queryKey: [
-      "negotiations",
-      debouncedSearch,
-      selectedYear,
-      monthNumber,
-      page,
-    ],
-    queryFn: () =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      NegotiationService.getNegotiations<any[]>({
-        search: debouncedSearch || undefined,
-        month: monthNumber,
-        year: selectedYear || undefined,
-        page,
-      }),
+    queryKey: ["negotiations"],
+    // Search/month/year are applied below rather than server-side: the
+    // aggregated fallback has no query parameters to pass them to.
+    queryFn: () => NegotiationService.getNegotiationsToAnswer(),
     placeholderData: keepPreviousData,
   });
 
   useEffect(() => {
-    if (fetchNegotiations) {
-      setNegotiated(
-        fetchNegotiations.map((item) => ({
-          id: item._id || item.id,
-          image: item.image || item.fleet?.images?.[0] || "/images/truckcontainer.png",
-          name: item.name || item.fleet?.fleetName || item.fleet?.fleetNumber || "Fleet",
-          description: item.description || item.status || "Pending",
-          negotiator: item.negotiator || (item.buyer?.firstName ? `${item.buyer.firstName} ${item.buyer.lastName}` : "Negotiator"),
+    if (!fetchNegotiations) return;
+
+    const matchesFilters = (item: (typeof fetchNegotiations)[number]) => {
+      const fleet = typeof item.fleet === "object" ? item.fleet : null;
+      if (debouncedSearch) {
+        const haystack = [
+          fleet?.fleetName,
+          item.buyer?.name,
+          item.message,
+          String(item.amount ?? ""),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(debouncedSearch.toLowerCase())) return false;
+      }
+      if (!item.createdAt) return true;
+      const created = new Date(item.createdAt);
+      if (selectedYear && String(created.getFullYear()) !== selectedYear) return false;
+      if (monthNumber && created.getMonth() + 1 !== monthNumber) return false;
+      return true;
+    };
+
+    setNegotiated(
+      fetchNegotiations.filter(matchesFilters).map((item) => {
+        const fleet = typeof item.fleet === "object" ? item.fleet : null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const raw = item as any;
+        return {
+          id: item._id,
+          // Responding needs the fleet id as well as the bid id — the endpoint
+          // is /fleet/{fleetId}/bids/{bidId}/respond.
+          fleetId: fleet?._id || raw.fleet || "",
+          image: fleet?.images?.[0] || "/images/truckcontainer.png",
+          name: fleet?.fleetName || raw.fleet?.fleetNumber || "Fleet",
+          description: item.status || "Pending",
+          negotiator: item.buyer?.name || "Negotiator",
           amount: item.amount || 0,
-          KG: item.KG || item.product?.weight || 0,
-          location: item.location || (item.route ? `${item.route.fromState} - ${item.route.toState}` : "Unknown location"),
-          date: item.date || (item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""),
+          KG: raw.loadWeightKg ?? 0,
+          location: fleet?.route
+            ? `${fleet.route.fromState} - ${fleet.route.toState}`
+            : "Unknown location",
+          date: item.createdAt
+            ? new Date(item.createdAt).toLocaleDateString()
+            : "",
           checked: false,
-          originalPayloadAmount: item.amount || 0, // Keep original amount for response payload
-        }))
-      );
-    }
-  }, [fetchNegotiations]);
+          originalPayloadAmount: item.amount || 0,
+        };
+      }),
+    );
+  }, [fetchNegotiations, debouncedSearch, selectedYear, monthNumber]);
 
   const respondMutation = useMutation({
-    mutationFn: ({ id, action, amount }: { id: string; action: "accept" | "reject"; amount?: number }) =>
-      NegotiationService.respondToNegotiation(id, { action, amount }),
+    mutationFn: ({
+      id,
+      fleetId,
+      action,
+      amount,
+    }: {
+      id: string;
+      fleetId?: string;
+      action: "accept" | "reject";
+      amount?: number;
+    }) =>
+      // Prefer the fleet-scoped route, which is the one that actually resolves
+      // these bids. The bare /negotiations/{id}/respond route is kept as a
+      // fallback for rows that arrive without a fleet id.
+      fleetId
+        ? NegotiationService.respondToFleetBidAsTransporter(fleetId, id, {
+            action,
+            amount,
+          })
+        : NegotiationService.respondToNegotiation(id, { action, amount }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["negotiations"] });
       toast.success(`Negotiation ${variables.action}ed successfully`);
@@ -202,43 +242,34 @@ const NegotiationListPage: React.FC = () => {
     },
   });
 
-  const handleReject = async (id?: string) => {
+  const respond = async (action: "accept" | "reject", id?: string) => {
     if (id) {
-       const neg = negotiated.find((n) => n.id === id);
-       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-       respondMutation.mutate({ id, action: "reject", amount: (neg as any)?.originalPayloadAmount });
-       return;
+      const neg = negotiated.find((n) => n.id === id);
+      respondMutation.mutate({
+        id,
+        fleetId: neg?.fleetId,
+        action,
+        amount: neg?.originalPayloadAmount,
+      });
+      return;
     }
     const selectedItems = negotiated.filter((p) => p.checked);
-    if (selectedItems.length > 0) {
-      await Promise.all(
-        selectedItems.map((item) =>
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          respondMutation.mutateAsync({ id: item.id, action: "reject", amount: (item as any).originalPayloadAmount })
-        )
-      );
-      setNegotiated(negotiated.map((p) => (p.checked ? { ...p, checked: false } : p)));
-    }
+    if (selectedItems.length === 0) return;
+    await Promise.all(
+      selectedItems.map((item) =>
+        respondMutation.mutateAsync({
+          id: item.id,
+          fleetId: item.fleetId,
+          action,
+          amount: item.originalPayloadAmount,
+        }),
+      ),
+    );
+    setNegotiated(negotiated.map((p) => (p.checked ? { ...p, checked: false } : p)));
   };
 
-  const handleAccept = async (id?: string) => {
-    if (id) {
-        const neg = negotiated.find((n) => n.id === id);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        respondMutation.mutate({ id, action: "accept", amount: (neg as any)?.originalPayloadAmount });
-        return;
-    }
-    const selectedItems = negotiated.filter((p) => p.checked);
-    if (selectedItems.length > 0) {
-      await Promise.all(
-        selectedItems.map((item) =>
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          respondMutation.mutateAsync({ id: item.id, action: "accept", amount: (item as any).originalPayloadAmount })
-        )
-      );
-      setNegotiated(negotiated.map((p) => (p.checked ? { ...p, checked: false } : p)));
-    }
-  };
+  const handleReject = (id?: string) => respond("reject", id);
+  const handleAccept = (id?: string) => respond("accept", id);
 
   const handleCheckboxChange = (id: string) => {
     console.log(`Checkbox toggled for ID: ${id}`);

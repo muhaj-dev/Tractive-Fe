@@ -63,7 +63,11 @@ export const BankAccounts: React.FC<BankAccountsProps> = ({
       <div className="">
         <div className="w-full flex flex-col gap-[0.1rem] justify-center">
 
-          <div className="flex flex-col gap-2 items-center w-full">
+          <div
+            className="flex flex-col gap-2 items-center w-full"
+            role={selectable ? "radiogroup" : undefined}
+            aria-label={selectable ? "Account you transferred to" : undefined}
+          >
             {isLoading && (
               <p className="text-[#808080] font-montserrat text-[12px] py-2">
                 Loading bank accounts…
@@ -85,9 +89,24 @@ export const BankAccounts: React.FC<BankAccountsProps> = ({
                 onClick={
                   selectable ? () => onSelectBank!(account.bank) : undefined
                 }
+                // role="radio" alone is a promise the element cannot keep: it was
+                // not focusable and did not answer the keyboard, so the bank a
+                // buyer transferred to could only be picked with a mouse — and
+                // the confirm button silently does nothing until one is picked.
+                onKeyDown={
+                  selectable
+                    ? (event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onSelectBank!(account.bank);
+                        }
+                      }
+                    : undefined
+                }
+                tabIndex={selectable ? 0 : undefined}
                 role={selectable ? "radio" : undefined}
                 aria-checked={selectable ? selectedBank === account.bank : undefined}
-                className={`relative flex items-center w-full p-2.5 border rounded-md gap-2.5 transition-colors ${
+                className={`relative flex items-center w-full p-2.5 border rounded-md gap-2.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#538e53] ${
                   selectable ? "cursor-pointer" : ""
                 } ${
                   selectable && selectedBank === account.bank

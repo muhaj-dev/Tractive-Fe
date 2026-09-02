@@ -42,10 +42,14 @@ export const BuyersHeader: React.FC = () => {
   const { loadingStates, isFollowing, toggleFollow } = useFollowing();
 
   // Homepage banners (B3) — fall back to local images if none returned.
+  // A banner can come back with no imageUrl at all, and passing that straight
+  // through rendered <Image src="">, which makes the browser re-request the
+  // whole page. Keep only banners that actually carry an image.
   const { data: banners = [] } = useBanners();
-  const sliderImages = banners.length
-    ? banners.map((b) => b.imageUrl)
-    : fallbackSliderImages;
+  const bannerImages = banners
+    .map((b) => b.imageUrl)
+    .filter((url): url is string => typeof url === "string" && url.trim() !== "");
+  const sliderImages = bannerImages.length ? bannerImages : fallbackSliderImages;
 
   // Fetch top sellers
   const { data: topSellersResponse } = useGetTopSellers();

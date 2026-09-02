@@ -149,6 +149,40 @@ const Page: React.FC = () => {
     setSelection({ isCheckoutAll: false, selectedBids: [] });
   };
 
+  const selectedBidIds = useMemo(
+    () =>
+      selection.isCheckoutAll
+        ? bidItems.map((item) => item.id)
+        : selection.selectedBids,
+    [selection, bidItems],
+  );
+
+  // `won/checkout` returns the totals for the WHOLE basket. Checking out a
+  // subset used to send those whole-basket totals alongside only the selected
+  // bidIds, and POST /api/orders rejected it with "Total amount does not match
+  // accepted bids" — so any partial checkout was impossible. Re-derive the
+  // summary from the selection, the same way the backend composes it:
+  // sum of effective (counter-aware) amounts, plus local transport where the
+  // product charges it.
+  const selectedTotals = useMemo(() => {
+    const chosen = wonBids.filter((bid: BidResponse) =>
+      selectedBidIds.includes(bid._id),
+    );
+    const productsSubtotal = chosen.reduce(
+      (sum: number, bid: BidResponse) => sum + (bid.effectiveAmount ?? bid.amount),
+      0,
+    );
+    const localTransportTotal = chosen.reduce((sum: number, bid: BidResponse) => {
+      const lt = bid.product.localTransport;
+      return sum + (lt?.required ? lt.fee || 0 : 0);
+    }, 0);
+    return {
+      productsSubtotal,
+      localTransportTotal,
+      totalAmount: productsSubtotal + localTransportTotal,
+    };
+  }, [wonBids, selectedBidIds]);
+
   const pills: Array<{ id: ProductSubTab; label: string; count: number }> = [
     { id: "countered", label: "Needs response", count: counteredTotal },
     { id: "pending", label: "Waiting", count: pendingTotal },
@@ -343,20 +377,14 @@ const Page: React.FC = () => {
                       isRefetching={isRefetching}
                     />
                     <BidsCheckout
-                      productsSubtotal={checkoutData?.productsSubtotal ?? 0}
-                      localTransportTotal={
-                        checkoutData?.localTransportTotal ?? 0
-                      }
-                      totalAmount={checkoutData?.totalAmount ?? 0}
+                      productsSubtotal={selectedTotals.productsSubtotal}
+                      localTransportTotal={selectedTotals.localTransportTotal}
+                      totalAmount={selectedTotals.totalAmount}
                       hasSelection={
                         selection.isCheckoutAll ||
                         selection.selectedBids.length > 0
                       }
-                      selectedBidIds={
-                        selection.isCheckoutAll
-                          ? bidItems.map((item) => item.id)
-                          : selection.selectedBids
-                      }
+                      selectedBidIds={selectedBidIds}
                       checkoutData={wonBids}
                       onTransactionSuccess={handleTransactionSuccess}
                     />

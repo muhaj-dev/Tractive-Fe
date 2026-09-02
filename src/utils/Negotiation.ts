@@ -1,5 +1,9 @@
 export interface NegotiationProps {
   id: string;
+  /** Fleet the bid was placed on — the respond endpoint is keyed by both ids. */
+  fleetId?: string;
+  /** The bid amount as sent, kept for the accept/reject payload. */
+  originalPayloadAmount?: number;
   image: string;
   name: string;
   description: string;

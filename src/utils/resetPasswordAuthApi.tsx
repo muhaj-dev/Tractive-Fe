@@ -17,7 +17,14 @@ export const resetPassword = async (
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ token, password: data.password }),
+      // `confirmPassword` is required by the API — without it the request is
+      // rejected with "Token, password, and confirm password are required"
+      // before the token is even checked, so the reset could never succeed.
+      body: JSON.stringify({
+        token,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+      }),
     });
 
     if (!response.ok) {

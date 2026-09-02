@@ -89,6 +89,28 @@ export class NegotiationService {
   }
 
   /**
+   * The negotiations a transporter actually has to answer.
+   *
+   * This used to fan out one request per fleet, because
+   * `GET /api/transporters/negotiations` returned an empty array while bids sat
+   * unanswered on the transporter's own fleets. That endpoint now returns them,
+   * so a single request is enough. It already answers with only the bids that
+   * need a reply, but the status filter is kept — a list this drives is a
+   * work queue, and settled bids are history, not work.
+   */
+  static async getNegotiationsToAnswer(
+    params: NegotiationQueryParams = {},
+  ): Promise<FleetBidResponse[]> {
+    const bids = await NegotiationService.getNegotiations<FleetBidResponse[]>(
+      params,
+    );
+    if (!Array.isArray(bids)) return [];
+    return bids.filter(
+      (bid) => bid.status === "pending" || bid.status === "countered",
+    );
+  }
+
+  /**
    * Respond to negotiation
    * POST /api/transporters/negotiations/{id}/respond
    */

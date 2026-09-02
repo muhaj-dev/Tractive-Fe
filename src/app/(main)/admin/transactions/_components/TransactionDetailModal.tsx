@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { transactionService } from "@/services/transactionService";
@@ -69,6 +70,12 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const [confirmStatus, setConfirmStatus] = useState<
     "approved" | "rejected" | null
   >(null);
+
+  const panelRef = useRef<HTMLDivElement>(null);
+  // 15g: this dialog had no role, no focus management and did not close on
+  // Escape — the overlay stayed up and swallowed the next click, so the tester
+  // had to reload between rows.
+  useModalA11y(isOpen, panelRef, { onEscape: onClose });
 
   useEffect(() => {
     if (!isOpen || !transactionId) return;
@@ -188,10 +195,17 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="transaction-detail-title"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h3 className="font-montserrat font-semibold text-base text-[#2b2b2b]">
+              <h3
+                id="transaction-detail-title"
+                className="font-montserrat font-semibold text-base text-[#2b2b2b]"
+              >
                 Transaction Details
               </h3>
               <button

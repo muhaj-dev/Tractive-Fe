@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { XIcon } from "@/icons/Icon1";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { BankAccounts } from "./BankAccounts";
 import { useCreateFleetPayment } from "@/hooks/queries/useTransporterQueries";
 import { paymentMethodMap } from "@/utils/paymentMethods";
@@ -28,6 +29,10 @@ export const FleetBidPaymentModal: React.FC<FleetBidPaymentModalProps> = ({
   const [step, setStep] = useState<"method" | "confirm">("method");
   const [selectedMethod, setSelectedMethod] = useState("");
   const { mutate: submitPayment, isPending } = useCreateFleetPayment();
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Measured 10 Aug: this dialog reported role=null, so nothing announced it and
+  // focus stayed on the page behind it.
+  useModalA11y(isOpen, panelRef, { onEscape: () => !isPending && onClose() });
 
   if (!isOpen) return null;
 
@@ -70,6 +75,10 @@ export const FleetBidPaymentModal: React.FC<FleetBidPaymentModalProps> = ({
       <div
         className="bg-[#fefefe] rounded-[8px] w-[90%] max-w-[400px] max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Fleet bid payment"
       >
         <button
           onClick={handleClose}
@@ -87,12 +96,17 @@ export const FleetBidPaymentModal: React.FC<FleetBidPaymentModalProps> = ({
             <p className="font-montserrat text-[12px] text-[#808080]">
               Amount: <span className="text-[#2b2b2b] font-medium">₦{bid.amount.toLocaleString()}</span>
             </p>
-            <div className="flex flex-col gap-2">
+            {/* Buttons, not divs: these were unreachable by keyboard, so the
+                payment method could only ever be chosen with a mouse. */}
+            <div className="flex flex-col gap-2" role="radiogroup" aria-label="Payment method">
               {paymentMethods.map((method) => (
-                <div
+                <button
                   key={method.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedMethod === method.id}
                   onClick={() => setSelectedMethod(method.id)}
-                  className={`flex items-center border border-[#808080] px-3 py-3 cursor-pointer rounded-md transition-colors ${
+                  className={`flex items-center border border-[#808080] px-3 py-3 cursor-pointer rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#538e53] ${
                     selectedMethod === method.id
                       ? "bg-[#538e53]"
                       : "hover:bg-[#f5f5f5]"
@@ -116,7 +130,7 @@ export const FleetBidPaymentModal: React.FC<FleetBidPaymentModalProps> = ({
                       {method.name}
                     </span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
             <button

@@ -380,12 +380,21 @@ export const BookingTripsView: React.FC<BookingTripsViewProps> = ({
     [trips],
   );
 
-  // The backend already filtered by ?search=, but its ?status= filter is not
-  // trustworthy: `?status=picked` comes back with trips that are already
-  // `delivered`, so the Picked tab would list finished trips. It also emits
-  // statuses outside the documented enum (e.g. `loaded` after a pick), which
-  // `normalizeTripStatus` folds back onto a lifecycle state. Re-apply the tab's
-  // status here so a tab only ever shows trips actually in that state.
+  // The backend filters by ?search= and, since 18 Aug 2026, by ?status= too:
+  // it validates against `pending | planned | picked | loaded | on_transit |
+  // arrived | delivered | cancelled` and 400s on anything else.
+  //
+  // That enum is wider than our four tabs, and a tab can cover more than one of
+  // its values (`pending`+`planned` -> New, `picked`+`loaded` -> Picked). The
+  // endpoint takes a single status — `?status=a,b` 400s and `?status[]=` is
+  // ignored outright — so the request below can only ask for the tab's primary
+  // status. Keep re-filtering here so the statuses that map onto this tab but
+  // were not the one we asked for are still placed correctly.
+  //
+  // NOTE: because the server-side filter is now honoured, a trip sitting in a
+  // tab's *secondary* status (a `pending` trip on New, a `loaded` one on Picked)
+  // is dropped before it reaches us. Filtering here cannot bring it back — that
+  // needs a multi-status param on the endpoint. See docs/API-FIXES-REQUIRED.md.
   const filteredTrips = useMemo(
     () =>
       tripsList.filter(

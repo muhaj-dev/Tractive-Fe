@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -25,6 +26,45 @@ const toneForTitle = (title?: string) => {
   return "text-[#2b2b2b]";
 };
 
+/**
+ * Where a notification should take you.
+ *
+ * The backend never sets `link` — it sends `type` plus a `metadata` bag
+ * (productId / bidId / orderId / transactionId) — so every notification used to
+ * be a dead end: clicking one marked it read and went nowhere. Derive a
+ * destination from the type instead, scoped to the role area the user is
+ * currently in, since one account can hold all three roles.
+ *
+ * Only routes that actually exist are returned; anything unrecognised stays
+ * unlinked rather than becoming a 404 (see bug 14c).
+ */
+const linkFor = (
+  n: AppNotification,
+  role: "buyer" | "agent" | "transporter" | null,
+): string | undefined => {
+  if (n.link) return n.link;
+  const type = n.type || "";
+  const productId = n.metadata?.productId as string | undefined;
+
+  if (type.startsWith("bid_")) {
+    if (role === "agent") return "/agent/bids";
+    if (role === "transporter") return "/transporter/negotiations";
+    if (productId) return `/buyer/product/${productId}`;
+    return "/buyer/my-biddings";
+  }
+  if (type.startsWith("order_") || type.startsWith("transaction_")) {
+    if (role === "agent") return "/agent/pending";
+    if (role === "transporter") return "/transporter/new";
+    return "/buyer/my-orders";
+  }
+  if (type.startsWith("trip_") || type.startsWith("fleet_")) {
+    if (role === "transporter") return "/transporter/new";
+    // `(account)` is a route group, so it does not appear in the URL.
+    return "/buyer/track-orders";
+  }
+  return undefined;
+};
+
 const formatTime = (iso: string) => {
   try {
     return formatDistanceToNow(new Date(iso), { addSuffix: true });
@@ -34,6 +74,12 @@ const formatTime = (iso: string) => {
 };
 
 export const Notifications = () => {
+  const pathname = usePathname();
+  const roleSegment = (pathname || "").split("/")[1];
+  const role =
+    roleSegment === "buyer" || roleSegment === "agent" || roleSegment === "transporter"
+      ? roleSegment
+      : null;
   const { data, isLoading, isError } = useNotifications();
   const notifications = data?.notifications ?? [];
   const { mutate: markAllRead, isPending: isMarking } =
@@ -125,25 +171,31 @@ export const Notifications = () => {
                 </div>
               );
 
+              const href = linkFor(n, role);
+              const onActivate = () => {
+                if (!n.isRead) markRead(n._id);
+              };
+              // A bare div with onClick was neither focusable nor operable from
+              // a keyboard, so a notification could only ever be opened with a
+              // mouse. Use the element that matches what it does: a link when
+              // there is somewhere to go, a button when there is not.
+              const shared =
+                "block w-full text-left cursor-pointer transition-colors hover:bg-[#f5f7f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#538e53]";
+
               return (
                 <li
                   key={n._id}
                   className={n.isRead ? "bg-[#fafafa]" : "bg-[#fefefe]"}
                 >
-                  <div
-                    onClick={() => {
-                      if (!n.isRead) markRead(n._id);
-                    }}
-                    className="cursor-pointer transition-colors hover:bg-[#f5f7f5]"
-                  >
-                    {n.link ? (
-                      <Link href={n.link} className="block">
-                        {content}
-                      </Link>
-                    ) : (
-                      content
-                    )}
-                  </div>
+                  {href ? (
+                    <Link href={href} onClick={onActivate} className={shared}>
+                      {content}
+                    </Link>
+                  ) : (
+                    <button type="button" onClick={onActivate} className={shared}>
+                      {content}
+                    </button>
+                  )}
                 </li>
               );
             })}

@@ -85,6 +85,10 @@ export const normalizeTripStatus = (s?: string): FleetTripStatus => {
     case "ontransit":
     case "transit":
     case "transiting":
+    // `arrived` means at the drop-off but not yet signed off as delivered, so it
+    // belongs with the in-flight trips. Without this it hits the `default` below
+    // and the trip reappears under New.
+    case "arrived":
       return "on_transit";
     case "delivered":
     case "completed":

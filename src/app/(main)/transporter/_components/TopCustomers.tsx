@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 import { useTransporterTopCustomers } from "@/hooks/queries/useTransporterDashboardQueries";
 
 // Framer Motion variants for table animation
@@ -92,11 +92,10 @@ export const TopCustomers: React.FC = () => {
                 >
                   <td className="px-4 py-1 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <Image
-                        src={customer.image || "/images/bidder1.png"}
+                      <Avatar
+                        src={customer.image}
                         alt={customer.name}
-                        width={30}
-                        height={30}
+                        size={30}
                         className="h-[25px] w-[25px] rounded-full object-cover"
                       />
                       <span className="text-[10.5px] font-montserrat font-normal text-[#2b2b2b]">

@@ -1,6 +1,6 @@
 # Backend issues — 07 Aug 2026
 
-For the backend team. Every item below was reproduced live against
+For the backend team. Every item below was reproduced live abgainst
 `https://tractive-be.vercel.app` and includes the exact request, the response we got,
 and what we expected instead.
 
@@ -803,6 +803,238 @@ start working the moment these routes are fixed, with no frontend change:
   bug 13d, where a failed load was indistinguishable from "no data"
 - the *Close ticket* button stays wired and surfaces the server's own message
   on failure
+
+---
+
+## 16. `POST /api/auth/forgot-password` 500s for every real user — HIGH
+
+Found 10 Aug while checking frontend item 14d, which claimed password reset did
+not exist. **It does exist** — `/forget-password` and `/reset-password` are both
+real pages, `/login` links to the first, and `POST /api/auth/reset-password`
+validates its input correctly. What is broken is the one call that has to send
+mail.
+
+The behaviour is exactly inverted from what it should be:
+
+| Request body | Does the user exist? | Response |
+|---|---|---|
+| `{"email":"not-an-email"}` | no | **200** `{"message":"If your email exists, you will receive a reset link."}` |
+| `{"email":"qa.flow.probe.8821@example.invalid"}` | **yes** (real account) | **500**, empty body |
+| `{"email":"i59mv8titr@lnovic.com"}` | **yes** (the shared test account) | **500**, empty body |
+| `{"email":""}` | — | 400 `{"error":"Email required"}` |
+
+So the endpoint succeeds only when there is **nobody to email**, and fails
+precisely when it has to send. Note the 200 response is the correct
+anti-enumeration wording — the intent is clearly right, the send is what throws.
+Almost certainly the same mailer as item 9 (signup), which is deferred.
+
+Two consequences:
+
+1. **Password reset does not work for any real account.** With signup's mailer
+   also broken and `refresh` never working (item 13), account recovery has no
+   path at all.
+2. **It leaks which accounts exist.** 500 means "this address has an account",
+   200 means it does not — an enumeration oracle that defeats the very
+   anti-enumeration message the 200 branch is written to provide.
+
+### Requested change
+
+1. Fix the send so an existing user gets a reset link.
+2. Until then, catch the mailer error and still return the 200 message — never
+   let the failure mode differ by whether the account exists.
+3. Confirm `POST /api/auth/reset-password` end to end once a real token can be
+   issued. Its validation is already correct: it 400s with
+   `{"error":"Token, password, and confirm password are required"}`.
+
+**How to reproduce:** the table above, straight against the deployed API. No UI
+needed. The `.invalid` address is a real user created by this effort, so it
+proves the 500 tracks account existence rather than deliverability.
+
+---
+
+## 17. `GET /api/buyers/biddings/won/checkout` returned a one-off 500 — LOW, needs watching
+
+**Reported with its weak evidence stated up front:** this was seen **once**, and
+did not reproduce in eleven further loads. It is recorded so the backend team can
+recognise it if it recurs, not as a defect to go and fix today.
+
+`/buyer/my-biddings` threw this on one load:
+
+```
+[api 500] GET /api/buyers/biddings/won/checkout
+❌ Error fetch won bids checkout: AxiosError: Request failed with status code 500
+```
+
+Same page, same account, minutes apart:
+
+| When | Result | *Ready to checkout* tab |
+|---|---|---|
+| first load | **500** | `0` |
+| next 11 loads | 200 | `1` |
+
+The viewport differed between the first two observations but that is incidental
+— nothing about this endpoint is responsive, and five deliberate back-to-back
+reloads afterwards all returned 200. So: a transient failure on the same request
+that otherwise succeeds.
+
+**Consequence when it does fail:** the *Ready to checkout* tab shows `0` and a
+won bid is unreachable, with nothing telling the buyer the load failed — the
+same class of problem as frontend 13d.
+
+Possibly related to item 10 on the same endpoint (it returns a bid it should no
+longer return after `POST /api/orders` consumed it). A consumed bid that
+dereferences something the query does not join would explain both, but that is a
+hypothesis, not a finding.
+
+### Requested change
+
+Nothing urgent. When item 10 is picked up, check the error path on the same
+query, and make sure the failure returns an empty list rather than a 500.
+
+---
+
+## 18. `PATCH /api/notifications/{id}` rejects its own ids — HIGH (same bug as item 15)
+
+### The problem in one line
+
+A notification can be listed but **never marked read**.
+
+### Reproduction
+
+```
+GET   /api/notifications?page=1&limit=20        -> 200, first item _id = 6a79a66369acd8dadda5abb6
+PATCH /api/notifications/6a79a66369acd8dadda5abb6   body {"isRead": true}
+      -> 400 {"success": false, "message": "Invalid notification ID format"}
+```
+
+The id is a well-formed 24-character hex ObjectId that **this API returned itself**,
+seconds earlier, from its own list endpoint.
+
+### Why this is filed against item 15
+
+The signature is identical to `GET /api/chat/{id}` and `DELETE /api/help/{id}`: a valid id
+from the resource's own list endpoint is rejected as malformed. That is now **three
+different resources** failing the same way, which points hard at one shared id validator
+rather than three separate bugs. Fixing item 15's validator most likely fixes this too —
+please check them together.
+
+### Impact
+
+The account under test carries **49 unread**. Individually dismissing any of them is
+impossible, so the badge can only ever be cleared with the blunt
+`PATCH /api/notifications` (mark **all** read). Per-notification read state — the thing the
+unread dot in the list exists to express — cannot be set at all.
+
+### Requested change
+
+Accept the ids your own list endpoints return. Please confirm whether the validator expects
+something other than a bare ObjectId.
+
+### Frontend position in the meantime
+
+The mutation now surfaces the failure with a toast instead of failing silently. No further
+frontend work is needed; it will work the moment the validator does.
+
+---
+
+## 19. `GET /api/transporters/negotiations` never returns pending fleet bids — HIGH
+
+### The problem in one line
+
+**A transporter can never see, and therefore never answer, a bid on their own fleet.**
+
+### Reproduction
+
+Same account, transporter role, holding 5 fleets:
+
+```
+GET /api/transporters/negotiations                  -> 200 {"data": []}
+GET /api/transporters/negotiations?page=1           -> 200 {"data": []}
+GET /api/transporters/negotiations?status=pending   -> 200 {"data": []}
+GET /api/transporters/negotiations?page=1&limit=50  -> 200 {"data": []}
+
+GET /api/transporters/fleet/69a67ace96f7df1573952158/bids
+    -> 200, 2 bids: 6a778318aba43e06b1aeda05 pending 137500
+                    6a76f58e2d84fd203c428e0e pending 120000
+GET /api/transporters/fleet/69fb76bbe9b0c1859d580c5d/bids
+    -> 200, 2 bids: 6a5cd45d8e8a23204afc2404 pending 50000
+                    6a5cd45c8e8a23204afc23fa pending 50000
+```
+
+Four pending bids exist and are returned correctly per fleet. The aggregate endpoint
+returns none of them. The buyer's `GET /api/buyers/fleet-bids` also lists all four.
+
+### Impact
+
+This one endpoint was silently blocking the **entire fleet negotiation loop**:
+
+- the transporter cannot accept, reject or counter a bid;
+- the buyer therefore never gets a counter to respond to;
+- no bid ever reaches `accepted`, so the fleet-bid payment path is unreachable.
+
+Two of these bids had been sitting `pending` for **22 days** with the transporter's screen
+reading *"No Negotiations Available"*. From the buyer's side it looks like the transporter
+is ignoring them.
+
+### Requested change
+
+Return the transporter's pending and countered fleet bids, the same set the per-fleet
+endpoint already returns. Please also confirm what the `search` / `month` / `year` / `page`
+parameters are meant to filter on — they cannot be verified while the list is empty.
+
+### Frontend position in the meantime
+
+The page now calls the server endpoint **first** and only aggregates over
+`/fleets` → `/fleet/{id}/bids` when it comes back empty. Fixing this endpoint
+automatically returns the page to a single request; no frontend change will be needed.
+
+---
+
+## 20. `POST /api/transporters/fleet/payments` is not mounted — HIGH (blocks fleet-bid payment)
+
+### The problem in one line
+
+**An accepted fleet bid cannot be paid for.**
+
+### Reproduction
+
+With bid `6a778318aba43e06b1aeda05` in status `accepted`, the buyer's payment modal sends:
+
+```
+POST /api/transporters/fleet/payments
+     {"fleetBidId": "...", "paymentMethod": "bank_transfer", "note": "..."}
+     -> 405 Method Not Allowed
+```
+
+Probed with an **empty body**, so nothing could be created:
+
+| Path | POST |
+|---|---|
+| `/api/transporters/fleet/payments` | **405** |
+| `/api/transporters/fleets/payments` | **405** |
+| `/api/transporters/fleet-payments` | **405** |
+| `/api/buyers/fleet-payments` | 404 (HTML — no such route) |
+
+**405, not 404**, means the path resolves but POST is not mounted on it — most likely the
+segment is being matched by a GET-only `/fleet/{fleetId}` route with
+`fleetId = "payments"`.
+
+### Note: only the bid-based path is affected
+
+`POST /api/transporters/fleet/{fleetId}/payments` — the **direct booking** payment, with a
+fleet id in the path — works and is verified end to end. It is only the bid-based payment,
+which has no fleet id in the URL, that fails.
+
+### Impact
+
+Together with item 19 this closes the fleet-bid path from both ends: a bid could not be
+accepted, and now that one has been, it cannot be paid. The buyer sees a working
+**Pay Now** button that can never succeed.
+
+### Requested change
+
+Mount POST on the fleet-bid payment route, or tell us the correct path and we will point
+the client at it. The frontend is otherwise complete and verified up to this call.
 
 ---
 

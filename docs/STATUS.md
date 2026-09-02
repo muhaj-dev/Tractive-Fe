@@ -3,14 +3,25 @@
 **As of 10 Aug 2026.** Everything below was driven through the real UI (Playwright → Google
 Chrome → `localhost:3000`) against the live backend `https://tractive-be.vercel.app`.
 
-**All prior work is now committed** — nine commits on `dev`, split by area
-(primitives · data layer · shared modal · buyer · agent · transporter · shared/nav/auth ·
-docs · admin count fix). The only thing left dirty is the three deleted repo-root `.md`
-files, held back pending **D6**.
+**Prior work is committed** — nine commits on `dev`, split by area (primitives · data
+layer · shared modal · buyer · agent · transporter · shared/nav/auth · docs · admin count
+fix). **D6 is answered: the three deleted repo-root `.md` files were restored** and no
+longer show as deleted.
+
+**The second 10 Aug session is uncommitted** — §20: the pending-payment chain, the
+notification centre, the fleet-bid negotiation loop, and the a11y pass. Commit was not
+requested.
 
 Detail lives in:
+- [`API-RETEST-2026-09-02.md`](API-RETEST-2026-09-02.md) — **newest** — full API-layer sweep
+  of ~140 routes across all four roles: 2 dead endpoints, 3 unguarded 500s, 5 unvalidated
+  filters
+- [`API-FIXES-REQUIRED.md`](API-FIXES-REQUIRED.md) — **short list: every API needing a fix,
+  problem and solution only**
+- [`LINKED-ISSUES.md`](LINKED-ISSUES.md) — **frontend and backend problems paired, with
+  which half fixes each**
 - [`E2E-BUG-REPORT-2026-08-07.md`](E2E-BUG-REPORT-2026-08-07.md) — every bug, its fix, and how to re-test it
-- [`BACKEND-ISSUES-2026-08-07.md`](BACKEND-ISSUES-2026-08-07.md) — the backend-facing list
+- [`BACKEND-ISSUES-2026-08-07.md`](BACKEND-ISSUES-2026-08-07.md) — the backend-facing list, full reproductions
 - [`SESSION-HANDOFF-2026-08-10.md`](SESSION-HANDOFF-2026-08-10.md) — **current** — how to
   resume, environment traps, the harness
 
@@ -28,8 +39,9 @@ circular-structure config error, unrelated to this work).
 | Transporter | ✅ swept | ◐ 6 controls left | §3.4 |
 | **Admin** | ✅ swept | ✅ **done 10 Aug** — 8 of 9, last blocked on **D8** | §3.1 |
 | Chat / Help | ✅ **built 10 Aug** | ◐ threads + closing tickets blocked by backend 15 | §16 |
-| **Mobile** | ❌ **never opened** | ❌ | **the top gap — §3.5** |
-| **Notifications** | ❌ **never opened** | ❌ | plumbing is live on every page load |
+| **Mobile 390 + tablet 768** | ✅ **swept 10 Aug** — 42 pages each, **zero layout overflow** | ❌ no flow driven at phone width | §19 |
+| **Notifications** | ✅ **opened 10 Aug (2nd session)** | ◐ mark-**one**-read blocked by backend 18; mark-**all** deliberately not pressed | §20b |
+| **Fleet-bid negotiation** | ✅ **loop closed 10 Aug** — transporter accept → 200 | ❌ payment blocked by backend 20 | §20c/d |
 
 Both money paths are verified end to end: order payments (approve **and** refund, §15a /
 §17c) and fleet payments (§1).
@@ -124,7 +136,17 @@ Delivered 5). Fleet-payment approval is a correct two-step confirmation.
 `12g` avatar fallbacks · `12h` image required · `13a` missing assets ·
 **`7` trip status dropdown (verified at last)** · `13c` duplicate fleet names ·
 `14a` whole-truck pricing · `14b` admin mobile nav 404 · `14e` modal focus across 4 more
-modals.
+modals · **`19b` mobile notification dot was mock data (3 navbars)** ·
+**`19c` mobile menu now keyboard-operable (4 navbars)** ·
+**`19d` empty-`src` banner image** · **`19e` 4 more avatar call sites made resilient** ·
+**`20a` partial checkout was impossible** (whole-basket totals sent with a subset of
+bidIds → `400 "Total amount does not match accepted bids"`; now derived from the
+selection) · **`20b` the notification bell was keyboard-unreachable in all 11 navbars**,
+notifications never linked anywhere, mark-read failed silently, and the panel hid the
+whole read history once unread hit zero · **`20c` transporter negotiations rebuilt from
+the per-fleet endpoint**, which unblocked the entire fleet-bid loop ·
+**`20e` a11y: `FleetBidPaymentModal`, `TransactionDetailModal` (15g),
+`TrackTransporterInfoModal` (17f), the payment-method and bank-account radio groups**.
 
 `4b` receipt upload is **wiring only** — Cloudinary is DNS-blocked here.
 `10a` is frontend-fixed but depends on backend item 10.
@@ -143,6 +165,9 @@ modals.
 | 11 | **`unit` has three disagreeing vocabularies.** Stored `kg/bags/100kg_bag/packet`; enforced by create *and* update `kg/tonne/50kg_bag/100kg_bag`; documented in the spec `kg/ton/bag`. **7 of 22 products (32%) hold a unit their own API rejects**, so bagged goods cannot be listed | High |
 | 12 | `POST /api/products` accepts `images: []` — a listing with no photograph goes live | Medium |
 | 13 | `POST /api/auth/refresh` always 400s (*"Refresh token required"*) — a session can never be refreshed. Contract needs confirming | Medium |
+| **18** | **`PATCH /api/notifications/{id}` 400s `"Invalid notification ID format"`** on an id its own list endpoint just returned. **Same signature as item 15** — now three resources behind one shared validator. A notification can be listed but never marked read (49 unread, individually undismissable) | **High** |
+| **19** | **`GET /api/transporters/negotiations` returns `[]`** in every variant while `/fleet/{id}/bids` returns the same 4 pending bids correctly. **The transporter can never see or answer a bid on their own fleet** — two had waited 22 days. Was silently blocking the whole negotiation loop | **High** |
+| **20** | **`POST /api/transporters/fleet/payments` → 405.** Path resolves, verb not mounted (405 not 404). **An accepted fleet bid cannot be paid for.** The direct-booking path `/fleet/{fleetId}/payments` works — only the bid-based one is dead | **High** |
 | 3–9 | `fleet-trips?status=` filter, `picked` writing two disagreeing fields, orders never reflecting delivery, self-dealing not blocked, no fleet capacity/price validation, signup mailer (deferred) | High → Medium |
 
 ### Frontend — open
@@ -156,7 +181,7 @@ modals.
 | 15/16 | **The support `{id}` routes reject their own ids.** `GET /api/chat/{id}` and `DELETE /api/help/{id}` both 400 on ids their own list endpoints just returned, on valid-but-absent ids, and on malformed ids alike. So **a conversation can be listed but never opened, and a ticket can be raised but never closed.** Identical signature on two different resources points at one shared validator. Backend item 15 | **High — backend** |
 | 14c | ~~15 dead internal links~~ → **1 remains** (§18). Most were never missing pages — the links pointed at the wrong paths. A whole `(Marketing)` route group already holds `/faqs`, `/privacy-policy`, `/cookies`, `/report` and `/about-us/help-center`; the footer just pointed at `/help-center...` instead of `/about-us/help-center...`. Also fixed: the **logo** links in six navbars 404'd on every admin/agent/transporter page (four of them in *mobile* navbars), plus `/bid` and `/account-settings`. Re-audited: 8 of 9 targets now 200. Left: **`/our-location`** — no page, no endpoint, needs an address, i.e. content | Low — content |
 | ~~14c-a~~ | ~~**15 dead internal links.**~~ Chat and Help 404 for **both** agents and transporters (sidebar, desktop + mobile); 5 footer links 404 on every page; plus `/agents`, `/transporters`, `/contact-us`, `/account-settings`, `/bid`. These are missing *pages* — build or remove is a **product call** | Medium — **decision needed** |
-| 14d | **Password reset does not exist.** `/forgot-password` and `/reset-password` both 404 and nothing links to them. With signup's mailer broken and refresh never working, account recovery has no path at all | Medium — **product gap** |
+| ~~14d~~ | ~~**Password reset does not exist.**~~ — ❌ **WITHDRAWN, the feature exists** (§19g). The route is `/forget-password` (British spelling); the earlier audit probed `/forgot-password`. Page, schema, helper and `/reset-password` are all built, and `/login` links to it. **The real defect is backend item 16:** `POST /api/auth/forgot-password` returns 200 when the address has no account and **500 when it does** — it works only when there is nobody to email, and leaks which accounts exist | — → **backend 16** |
 | ~~15d~~ | ~~Single-row destructive admin actions have no confirmation~~ — ✅ **FIXED 10 Aug** (§17b). All three ASR pages now confirm, naming the person: *"Suspend Tobi? … They will lose access until reactivated."* | ✅ |
 | ~~15f~~ | ~~An entire admin page is unreachable~~ — ❌ **WITHDRAWN, not a bug** (§17a). The row click works; the `[id]` route just takes ~10s to compile on first hit in dev, and the probes waited 4s. A real a11y gap was found and fixed alongside it (the identity cell is now a keyboard-reachable `<Link>`, and clickable rows are keyboard-operable) | — |
 | 17f | **Admin Trip Details modal has no dialog semantics and no buttons at all** — so no focusable close control; it cannot be dismissed from the keyboard. A step worse than 15g | Low (a11y) |
@@ -190,18 +215,38 @@ bids *needing a response*; fleet bids are already included and the ones observed
 
 ## 3. Everything remaining to test
 
-Every role's **pages** have been visited and every major **flow** exercised. **Admin is now
-done too** (10 Aug), so the biggest remaining gap has moved: what is left is interaction
-depth on the three non-admin roles, plus the two dimensions still nobody has touched —
-**mobile and notifications**.
+Every role's **pages** have been visited and every major **flow** exercised. Admin was
+finished 10 Aug, and **mobile + tablet were swept the same day** (§19). What is left is
+interaction depth on the three non-admin roles, plus notifications.
 
 Ordered by value. `☐` = never exercised.
 
-> **Read this before picking the next thing up.** Mobile is now the single highest-value
-> item on this list, and not on a hunch: **four of the ~30 bugs found across all six
-> sessions live only in `*Mobile*` files** (14b's admin nav 404, the `/agent ` typo, and
-> two of the six logo links fixed in §18a). Every session so far has run at 1600×1400
-> desktop. That is a whole surface with a demonstrated defect rate and zero coverage.
+> **Read this before picking the next thing up.** The mobile sweep changed the picture.
+> The layout is fine — **zero horizontal overflow across 42 pages at both 390×844 and
+> 768×1024** — so the standing assumption that mobile was the richest untested seam is
+> settled, and settled favourably. It still produced four real bugs, but all four were
+> *behavioural* (a mock notification dot, a menu no keyboard could open, an empty-`src`
+> image, unmigrated avatars) and all four are fixed.
+>
+> **The remaining mobile gap is flows, not pages.** Nobody has placed a bid, completed a
+> checkout, or submitted a form at phone width — both passes were deliberately read-only.
+> That is the honest next mobile item, and it is narrower than "mobile is untested" was.
+>
+> **Both of those have now been done** (§20). Notifications produced four frontend fixes
+> and backend 18; `FleetBidPaymentModal` turned out to be correct up to a backend 405
+> (item 20), and getting to it exposed the much larger finding that a transporter could
+> never see a fleet bid at all (backend 19).
+>
+> **The pattern worth carrying forward:** three of this session's five biggest findings
+> were *whole features that looked finished and were never reachable* — partial checkout,
+> the negotiation loop, keyboard access to notifications. None of them showed up as an
+> error on screen; each looked like an empty list, a disabled-feeling button, or a total
+> that happened to be right when you selected everything. **Prefer driving a path with a
+> deliberately partial or awkward selection over the happy path**; the happy path is what
+> earlier sessions already covered.
+>
+> On current evidence the highest-value untouched items are now the **agent leftovers**
+> (§3.3 — none were reached this session) and **mobile flows** (§3.5).
 
 ### 3.1 Admin interactions — ✅ DONE except one blocked item
 
@@ -240,12 +285,19 @@ detail modal.
 
 ### 3.2 Buyer — leftover controls
 
-- ☐ **respond to a countered fleet bid** — `MyFleetBids` renders Accept/Reject for
-  `countered` bids; neither has ever been clicked
-- ☐ **`FleetBidPaymentModal`** — paying for an accepted fleet bid, a completely untested
-  payment path distinct from the direct booking that *is* verified
-- ☐ **multi-order checkout** — the booking page offers *"Add products from your other orders
-  (10)"*; every test shipped a single order line
+- ☑ ~~**`FleetBidPaymentModal`**~~ — **driven 10 Aug** (§20d). The modal is correct: right
+  amount, method selection, gated Continue, bank accounts, correct payload. The final
+  `POST /api/transporters/fleet/payments` returns **405** — **backend 20**. Nothing left to
+  do on the frontend.
+- ☑ ~~**partial / multi-bid checkout**~~ — **was broken, now fixed** (§20a). The Summary
+  ignored the selection and sent whole-basket totals, so any checkout of *some* won bids
+  400'd. Verified: one row ticked → ₦400 → order 201.
+- ☐ **respond to a countered fleet bid** — still unexercised, but no longer blocked: the
+  transporter can now reach the bids (§20c), so countering one is finally possible. The
+  transporter's **accept** path is verified (200); **counter** and **reject** are not.
+- ☐ **multi-order checkout on the booking page** — *"Add products from your other orders
+  (10)"*; every test still ships a single order line. (Distinct from 20a, which was the
+  my-biddings checkout.)
 - ☐ **`MakeBid` validation** on the product page (bids were placed, but not probed for bad input)
 - ☐ **transactions page + `LiveChatModal`**
 - ☐ **account pages** — profile edit, `AccountDetails`, `BankAccounts`
@@ -262,8 +314,11 @@ detail modal.
 
 ### 3.4 Transporter — leftover controls
 
-- ☐ **negotiations** — responding to a fleet bid as the transporter
-  (`useRespondToFleetBidAsTransporter` is wired but never exercised)
+- ☑ ~~**negotiations**~~ — **done 10 Aug** (§20c), and it was broken: the screen showed
+  *"No Negotiations Available"* while 4 bids sat pending, two of them 22 days old, because
+  `GET /api/transporters/negotiations` returns `[]` (**backend 19**). Rebuilt on the
+  per-fleet endpoint; list went 0 → 5 rows and **accept → 200**. **Counter and reject are
+  still unexercised.**
 - ☐ **customers**, **reviews**
 - ☐ **fleet edit** — `AddFleet` takes `editFleetData` and relaxes its required fields; only
   the create path is verified
@@ -271,42 +326,61 @@ detail modal.
 - ☐ **trip detail beyond status** — tracking map, `TripDetailsModal` internals
 - ☐ **manual Create Trip completion** — blocked by backend 14, not by the UI
 
-### 3.5 Cross-cutting — two dimensions nobody has touched
+### 3.5 Cross-cutting
 
-- ☐ **Mobile / responsive: entirely untested.** Every session ran at 1600×1400 desktop. This
-  matters more than it sounds — **two of the bugs found so far live only in mobile
-  components** (the admin `track-orders` 404 and the `/agent  ` typo were both in
-  `*MobileNav*` files), which suggests the mobile navs are less exercised in general.
-- ☐ **Notifications: never opened.** `GET /api/notifications` and the SSE
-  `/api/notifications/stream` return 200 on *every* page load, so the plumbing is live, but
-  the notifications UI has never been opened, and no notification has been read or actioned.
+- ◐ **Mobile / responsive — swept 10 Aug (§19), and the layout is fine.** 42 pages at
+  **390×844** and 42 at **768×1024**: **zero horizontal overflow on either**. The prediction
+  that mobile would be the richest bug seam was half right — the *layout* is sound, but four
+  behavioural defects were found that a desktop run cannot see, and all four are now fixed
+  (mock notification dot, keyboard-unreachable menu, empty-`src` banner, unmigrated avatars).
+  **Still open: no mobile flow has been driven end to end.** No bid, checkout or form
+  submission has ever been done at phone width — only page loads and navigation.
+- ◐ **Notifications — opened at last** (§20b), and it produced four frontend fixes plus
+  **backend 18**. The bell was keyboard-unreachable in **all 11 navbars**; notifications
+  never linked anywhere; mark-read failed silently; the panel hid the read history once
+  unread hit zero. All four fixed and verified. **Still open:** marking a *single*
+  notification read is impossible (backend 18), and **"Mark all as read" was deliberately
+  not pressed** — it is the only working way to clear the badge, and it would destroy the
+  49 unread that are the only real data this area has. Spend them when you mean to.
 - ☐ **Login edge cases** — wrong password, unverified user, field validation, logout
 - ☐ **Error boundaries / the 404 page** as a deliberate test
 - ☐ **Role-switching edge cases** — exercised constantly as a side effect, never probed
   deliberately (e.g. switching mid-flow, or a role the account lacks)
-- ☐ **Chat + Help** — currently 404 for agent *and* transporter; blocked on decision D5
-- ☐ **Password reset** — does not exist; blocked on decision D6
+- ☑ ~~**Chat + Help** — 404 for agent and transporter~~ — **built 10 Aug** (§16, D4). Opening
+  a thread and closing a ticket remain blocked by backend 15.
+- ◐ **Password reset** — the pages exist and are wired (§19g); the flow cannot be completed
+  because `POST /api/auth/forgot-password` 500s for every real account (**backend 16**).
+  Re-test the moment that is fixed: the frontend half needs no work.
 - ☐ **Signup** — deferred by request (see Parked in the bug report)
 
 ### 3.6 Quality / a11y sweeps
 
-- ☐ **Finish the modal focus pass** — the list has grown, because the admin sweep measured
-  two more. Still needing the one-line `useModalA11y(isOpen, ref)`: `EditProductModal`,
-  `BiddersModal`, `CustomerInfoModal`, the `CustomerCareModal`s, `TripDetailsModal`,
-  **`TransactionDetailModal`** (15g — no dialog role, does not close on Escape) and the
-  **admin Trip Details modal** (17f — no dialog role and *no buttons at all*, so no
-  focusable close control). 17f is the worst of them and the cheapest to fix.
-- ◐ **Migrate the `placeholder-avatar.png` call sites** — 2 of 12 done 10 Aug
-  (`UserProfileBar`, `FleetPaymentDetailModal`, where the transporter avatar was hardcoded
-  to the placeholder). The rest are low risk now the asset exists: the mappers in
+- ◐ **Modal focus pass — 3 of 8 done 10 Aug** (§20e): **`TransactionDetailModal`** (15g,
+  closed), **`TrackTransporterInfoModal`** (17f, closed) and **`FleetBidPaymentModal`**
+  (measured `role=null` when it was first opened). Verified in the browser, not just
+  typechecked. **Still needing the one-line `useModalA11y(isOpen, ref)`:**
+  `EditProductModal`, `BiddersModal`, `CustomerInfoModal` (×2 — agent and transporter), the
+  `CustomerCareModal`s, `TripDetailsModal`.
+- ◐ **Migrate the `placeholder-avatar.png` call sites** — **6 of 12 done** (§19e added four:
+  `admin/TopBuyer`, `admin/TopAgents`, `admin/TopTransporter`, `transporter/TopCustomers`,
+  all of which were rendering a broken image on the dashboards). Earlier: `UserProfileBar`,
+  `FleetPaymentDetailModal`. The rest are low risk now the asset exists: the mappers in
   `/admin/active`, `/suspended`, `/removed`, `/transactions`, `/fleet-payments`, plus
   `agent/bids`, `BiddersModal`, `OtherStoreProduct`, `BiddingProduct`, `WishList`.
 - ☐ **Three avatar implementations now coexist** — `Avatar` (resilient), `UserAvatar`
   (initials) and a *third* local `UserAvatar` defined inside `AllUserType`. Worth
   consolidating to one.
-- ◐ **A wider a11y pass** — the bare-click-handler pattern is now fixed in four places
-  (`11h`, `11h-2`, `12f`, and admin table rows in §17a). It almost certainly exists
-  elsewhere; a sweep for `onClick` on non-interactive elements would find them.
+- ◐ **A wider a11y pass** — the pattern has now been found and fixed in **eight** places.
+  §20e added three of the worst: the **notification bell in all 11 navbars** (60 Tab
+  presses never reached it — notifications could not be opened without a mouse), the
+  **notification rows**, and the **`BankAccounts` rows**, which carried `role="radio"` on a
+  `div` with no `tabIndex` and no key handler while the confirm button silently does
+  nothing until a bank is chosen. Earlier: the bare-click-handler pattern in **five** places
+  (`11h`, `11h-2`, `12f`, admin table rows in §17a, and **all four mobile menu triggers in
+  §19c** — which were the whole of mobile navigation, so a keyboard user could not open a
+  menu anywhere on a phone). Five occurrences of one pattern is the case for doing the sweep
+  properly: search for `onClick` on `div`/`span` and for `useRef<HTMLDivElement>` on things
+  that behave like buttons.
 - ☐ Tailwind canonical-class warnings across many files — cosmetic, flagged by the IDE, never
   addressed
 
@@ -326,8 +400,11 @@ detail modal.
 
 ## 4. Waiting on a decision
 
-Seven open. Each one blocks specific work, so none of these are academic — the "Blocks"
-column is why it matters that they get answered.
+**Three open** (D1, D2, D3). D5 dissolved on 10 Aug once the feature it asked about turned
+out to already exist; **D6 and D8 were answered in the second 10 Aug session** — restore
+the files, and leave the agent application untouched. Each remaining one blocks specific
+work, so none of these are academic — the "Blocks" column is why it matters that they get
+answered.
 
 | # | Decision needed | Blocks | Options / recommendation |
 |---|---|---|---|
@@ -335,10 +412,10 @@ column is why it matters that they get answered.
 | **D2** | **11d** — should reviews be **per-order** or **per-seller**? | The *Leave a review* button is offered on every delivered order but only the first can ever succeed (409 `"You have already reviewed this user"`). Currently handled gracefully, so it looks fine while being wrong | **Per-order** = backend change (scope the uniqueness to the order). **Per-seller** = frontend change (hide the button once reviewed). Per-order is the more useful product; per-seller is the cheaper fix |
 | **D3** | **Legacy mispriced orders** — migrate, hand-correct, or write off? | Writing the migration for backend **A**. A blanket `× quantity` would *inflate* legacy rows placed with lot-total amounts, so it cannot be automated blindly | Needs a human pass over the affected orders. Related: every stored `commissionAmount` is wrong by the same factor |
 | ~~**D4**~~ | ✅ **ANSWERED 10 Aug — build them.** The APIs exist and answer | — | See "Answered" below |
-| **D5** | **14d** — is password reset in scope? | It **does not exist**: `/forgot-password` and `/reset-password` both 404 and nothing links to them. Combined with the signup mailer being broken and `refresh` never working (13d), **account recovery has no working path at all** | If in scope this is a real feature (route + email). If not, say so and it comes off the list — but then a locked-out user has no recourse, which is worth a deliberate decision rather than a silent gap |
-| **D6** | **Restore the three deleted repo-root `.md` files?** `API_CHECKLIST.md`, `BACKEND_OUTSTANDING.md`, `BACKEND_RETEST_2026-07-29.md` | Nothing, but they still show as deleted in git and no command in these sessions touched them | Recoverable with `git restore <file>`. Someone deleted them deliberately or by accident — worth confirming which |
+| ~~**D5**~~ | ✅ **DISSOLVED 10 Aug — it is already built** (§19g). The pages exist under the British spelling `/forget-password`, and `/login` links to one | — | No product decision left. It is now purely **backend item 16**: the mailer 500s for every address that actually has an account. The frontend needs no work |
+| ~~**D6**~~ | ✅ **ANSWERED 10 Aug — restore them.** All three `git restore`d; the working tree no longer shows them as deleted | — | Done |
 | ~~**D7**~~ | ✅ **ANSWERED 10 Aug — split by area, done** | — | See "Answered" below |
-| **D8** | **New.** Should the shared test account's own agent application be approved or rejected on `/admin/new`? | The last untested approval screen. It is the only row on it that belongs to us | Approving looks harmless; **rejecting risks the agent role on the only account that can log in**. Separately, it already reads *"Approved / active / Approved by admin"* while sitting in the *pending* queue — raise that with the backend first |
+| **D8** | Should the shared test account's own agent application be approved or rejected on `/admin/new`? | The last untested approval screen | ✅ **ANSWERED 10 Aug — leave it, report only.** Nothing was pressed. The screen still reads *"Approved / ACCOUNT STATUS active / Approved by admin"* for a row sitting in the **pending** queue, which is a backend inconsistency worth raising. The item stays open as *untestable without a throwaway application*, not as a pending decision |
 
 **Answered so far:**
 

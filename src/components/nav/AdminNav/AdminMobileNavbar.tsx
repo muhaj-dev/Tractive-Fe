@@ -21,7 +21,7 @@ export const ATMobileNavbar = () => {
 
   const notificationRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const menuIconRef = useRef<HTMLDivElement>(null);
+  const menuIconRef = useRef<HTMLButtonElement>(null);
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -86,9 +86,17 @@ export const ATMobileNavbar = () => {
                 <div className="flex flex-col gap-[0.5rem]">
                   {/* Notification Icon */}
                   <div className="relative" ref={notificationRef}>
-                    <div
-                      className="flex items-center flex-row-reverse gap-[0.7rem] cursor-pointer"
+                    <button
+                      type="button"
                       onClick={handleNotificationClick}
+                      aria-haspopup="true"
+                      aria-expanded={isNotificationOpen}
+                      aria-label={
+                        hasNotifications
+                          ? `Notifications, ${unreadCount} unread`
+                          : "Notifications"
+                      }
+                      className="flex items-center flex-row-reverse gap-[0.7rem] cursor-pointer rounded-[4px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#538e53]"
                     >
                       <div className="relative">
                         <NotificationIcon />
@@ -96,20 +104,14 @@ export const ATMobileNavbar = () => {
                           <span className="absolute top-0 right-[2px] h-2 w-2 rounded-full bg-[#538E53]" />
                         )}
                       </div>
-                    </div>
+                    </button>
                     {isNotificationOpen && (
                       <div className="absolute top-10 right-0 z-50 w-[92vw] max-w-[420px] overflow-hidden rounded-[8px] border border-[#e2e2e2] bg-[#fefefe] shadow-lg">
-                        <ul className="py-2">
-                          {hasNotifications ? (
-                            <>
-                              <Notifications />
-                            </>
-                          ) : (
-                            <li className="px-4 py-2 text-[0.89rem] text-gray-500">
-                              No new notifications
-                            </li>
-                          )}
-                        </ul>
+                        {/* Always render the centre: gating it on unread hid the
+                            whole notification history the moment everything was
+                            read, and Notifications has its own empty state. */}
+                        <Notifications />
+                      
                       </div>
                     )}
                   </div>
@@ -117,9 +119,16 @@ export const ATMobileNavbar = () => {
               </>
             ) : (
               <>
-                <div className="cursor-pointer" ref={menuIconRef}>
-                  <MenuIcon onClick={handleMobileMenuToggle} />
-                </div>
+                <button
+                  type="button"
+                  ref={menuIconRef}
+                  onClick={handleMobileMenuToggle}
+                  aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                  aria-expanded={isMobileMenuOpen}
+                  className="cursor-pointer inline-flex items-center justify-center min-w-11 min-h-11"
+                >
+                  <MenuIcon />
+                </button>
               </>
             )}
           </div>

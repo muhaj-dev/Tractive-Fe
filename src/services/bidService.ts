@@ -54,6 +54,13 @@ export interface BidResponse {
     status: string;
     discount: number;
     categories: string[];
+    localTransport?: {
+      required: boolean;
+      fee: number;
+      from: string | null;
+      to: string | null;
+      note: string | null;
+    };
     createdAt: string;
     updatedAt: string;
     __v: number;
@@ -79,6 +86,10 @@ export interface BidResponse {
   quantity: number;
   unit: string;
   unitWeightKg?: number;
+  // The amount the seller actually agreed to: `amount`, or the counter-offer
+  // once one has been accepted. `won/checkout` sums *this*, not `amount`.
+  effectiveAmount?: number;
+  counterOffer?: number | null;
   status: "pending" | "approved" | "rejected" | "countered";
   message: string;
   createdAt: string;

@@ -6,41 +6,28 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { MenuIcon, NotificationIcon, SearchIcon } from "../../../icons/Icons";
 import { Notifications } from "../../Notifications";
+import { useNotificationCenter } from "@/hooks/queries/useNotificationQueries";
 
 export const TransporterMobileNavbar = () => {
   const pathname = usePathname();
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [hasNotifications, setHasNotifications] = useState(false); // Placeholder for notification status
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
+
+  const { data: notificationsData } = useNotificationCenter(isLoggedIn);
+  const unreadCount = notificationsData?.unreadCount ?? 0;
+  const hasNotifications = unreadCount > 0;
 
   const notificationRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const menuIconRef = useRef<HTMLDivElement>(null);
+  const menuIconRef = useRef<HTMLButtonElement>(null);
 
   const navItems = [
     { href: "/", label: "Home" },
     { href: "/about-us", label: "About Us" },
     { href: "/contact-us", label: "Contact Us" },
   ];
-
-  useEffect(() => {
-    const fetchNotificationsAndBids = async () => {
-      // Mock API call for notifications
-      const mockNotifications = [
-        { id: 1, message: "You have a new message" },
-        { id: 2, message: "Order #456" },
-      ];
-
-      // Update states based on mock data
-      setHasNotifications(mockNotifications.length > 0);
-    };
-
-    if (isLoggedIn) {
-      fetchNotificationsAndBids();
-    }
-  }, [isLoggedIn]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -99,9 +86,17 @@ export const TransporterMobileNavbar = () => {
                 <div className="flex flex-col gap-[0.5rem]">
                   {/* Notification Icon */}
                   <div className="relative" ref={notificationRef}>
-                    <div
-                      className="flex items-center flex-row-reverse gap-[0.7rem] cursor-pointer"
+                    <button
+                      type="button"
                       onClick={handleNotificationClick}
+                      aria-haspopup="true"
+                      aria-expanded={isNotificationOpen}
+                      aria-label={
+                        hasNotifications
+                          ? `Notifications, ${unreadCount} unread`
+                          : "Notifications"
+                      }
+                      className="flex items-center flex-row-reverse gap-[0.7rem] cursor-pointer rounded-[4px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#538e53]"
                     >
                       <div className="relative">
                         <NotificationIcon />
@@ -109,18 +104,13 @@ export const TransporterMobileNavbar = () => {
                           <span className="absolute top-0 right-[2px] h-2 w-2 rounded-full bg-[#538E53]" />
                         )}
                       </div>
-                    </div>
+                    </button>
                     {isNotificationOpen && (
                       <div className="absolute top-[3rem] right-0 w-[90vw] max-w-[500px] min-w-[300px] bg-white border border-gray-200 rounded-[4px] shadow-lg z-50 sm:top-[2.5rem]">
-                        <ul className="py-2">
-                          {hasNotifications ? (
-                            <Notifications />
-                          ) : (
-                            <li className="px-4 py-2 text-[0.89rem] text-gray-500">
-                              No new notifications
-                            </li>
-                          )}
-                        </ul>
+                        {/* Always render the centre: gating it on unread hid the
+                            whole notification history the moment everything was
+                            read, and Notifications has its own empty state. */}
+                        <Notifications />
                       </div>
                     )}
                   </div>
@@ -128,9 +118,16 @@ export const TransporterMobileNavbar = () => {
               </>
             ) : (
               <>
-                <div className="cursor-pointer" ref={menuIconRef}>
-                  <MenuIcon onClick={handleMobileMenuToggle} />
-                </div>
+                <button
+                  type="button"
+                  ref={menuIconRef}
+                  onClick={handleMobileMenuToggle}
+                  aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                  aria-expanded={isMobileMenuOpen}
+                  className="cursor-pointer inline-flex items-center justify-center min-w-11 min-h-11"
+                >
+                  <MenuIcon />
+                </button>
               </>
             )}
           </div>

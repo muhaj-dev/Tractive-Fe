@@ -208,6 +208,11 @@ export const useMarkNotificationRead = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
+    // Without this a failure is completely silent: clicking a notification does
+    // nothing, says nothing, and leaves the dot in place.
+    onError: () => {
+      toast.error("Couldn't mark that notification as read. Please try again.");
+    },
   });
 };
 
@@ -217,6 +222,9 @@ export const useMarkAllNotificationsRead = () => {
     mutationFn: () => notificationService.markAllRead(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    },
+    onError: () => {
+      toast.error("Couldn't mark your notifications as read. Please try again.");
     },
   });
 };

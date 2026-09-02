@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { XModalIcon } from "@/app/(main)/transporter/_components/Icons/TransporterIcons";
 import {
   FleetTripBuyer,
@@ -72,6 +73,11 @@ const BuyerCard: React.FC<{ buyer: FleetTripBuyer }> = ({ buyer }) => (
 export const TrackTransporterInfoModal: React.FC<
   TrackTransporterInfoModalProps
 > = ({ trip, mode, onClose }) => {
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Focus was left on the page behind: the dialog opened but a keyboard user
+  // stayed outside it. Escape is already handled below, so no onEscape here.
+  useModalA11y(true, panelRef);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -102,10 +108,17 @@ export const TrackTransporterInfoModal: React.FC<
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="track-transporter-info-title"
           className="relative bg-[#fefefe] rounded-lg w-full max-w-[520px] max-h-[92vh] overflow-y-auto my-auto"
         >
           <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-[#fefefe] px-4 py-3 border-b border-[#e0e0e0] rounded-t-lg">
-            <h2 className="font-montserrat font-medium text-[15px] sm:text-[16px] text-[#2b2b2b]">
+            <h2
+              id="track-transporter-info-title"
+              className="font-montserrat font-medium text-[15px] sm:text-[16px] text-[#2b2b2b]"
+            >
               {mode === "buyer" ? "Buyer Information" : "Transporter Information"}
             </h2>
             <button

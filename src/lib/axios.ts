@@ -55,9 +55,19 @@ api.interceptors.response.use(
 
       try {
         const newToken = await tokenManager.getRefreshTokenHelper(async () => {
+          // The backend accepts the refresh token either as an httpOnly cookie
+          // on its own origin or in the request body. The cookie is set during
+          // the server-side NextAuth login and is SameSite=Lax, so the browser
+          // has neither a copy of it nor permission to send it cross-site —
+          // posting an empty body here always came back 400. Send the token the
+          // session carries instead.
+          const session = await getSession();
+          const refreshToken = session?.refreshToken;
+          if (!refreshToken) return null;
+
           const res = await axios.post(
             `${API_BASE_URL}/api/auth/refresh`,
-            {},
+            { refreshToken },
             {
               withCredentials: true,
             },

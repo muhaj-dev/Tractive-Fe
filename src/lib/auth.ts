@@ -62,6 +62,12 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             image: user.image, // if any
             token: loginData.token,
+            // `/api/auth/login` also sets the refresh token as an httpOnly
+            // cookie, but on the *backend* origin and with SameSite=Lax — and
+            // this login runs server-side, so that cookie never reaches the
+            // browser at all. Carry the token from the response body instead,
+            // so the axios interceptor has something to send on a 401.
+            refreshToken: loginData.refreshToken,
             role: user.roles || user.role || [],
             activeRole: user.activeRole || null,
           };
@@ -114,6 +120,7 @@ export const authOptions: NextAuthOptions = {
       // Initial sign in
       if (user) {
         token.accessToken = user.token;
+        token.refreshToken = user.refreshToken;
         token.role = user.role;
         token.activeRole = user.activeRole;
       }
@@ -122,6 +129,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.accessToken = token.accessToken as string;
+        session.refreshToken = token.refreshToken as string;
         session.user.token = token.accessToken as string;
         session.user.role = token.role as string[];
         session.user.activeRole = token.activeRole as string | null;

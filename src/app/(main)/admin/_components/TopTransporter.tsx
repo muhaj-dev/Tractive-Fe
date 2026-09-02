@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 import { useTopTransporters } from "@/hooks/queries/useAdminDashboardQueries";
 import { formatCurrency } from "@/lib/format";
 
@@ -99,11 +99,10 @@ export const TopTransporter: React.FC = () => {
                 >
                   <td className="px-4 py-1 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <Image
-                        src={transporter.image || "/images/TopTransporter.png"}
+                      <Avatar
+                        src={transporter.image}
                         alt={transporter.name}
-                        width={30}
-                        height={30}
+                        size={30}
                         className="h-[25px] w-[25px] rounded-full object-cover"
                       />
                       <span className="text-[10.5px] font-montserrat font-normal text-[#2b2b2b]">

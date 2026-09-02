@@ -8,6 +8,7 @@ import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 import { MenuIcon, NotificationIcon, SearchIcon } from "@/icons/Icons";
 import { Notifications } from "../Notifications";
+import { useNotificationCenter } from "@/hooks/queries/useNotificationQueries";
 import ProfileDropDown from "../Profile_dropdowns/ProfileDropDown/ProfileDropDown";
 // import { Buyer_ProfileDropDown } from "../Profile_dropdowns/BuyerProfile_dropdown/Buyer_ProfileDropDown";
 
@@ -20,39 +21,22 @@ export const MobileNavbar = () => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [hasNotifications, setHasNotifications] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
+
+  const { data: notificationsData } = useNotificationCenter(isLoggedIn);
+  const unreadCount = notificationsData?.unreadCount ?? 0;
+  const hasNotifications = unreadCount > 0;
 
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const menuIconRef = useRef<HTMLDivElement>(null);
+  const menuIconRef = useRef<HTMLButtonElement>(null);
 
   const navItems = [
     { href: "/", label: "Home" },
     { href: "/about-us", label: "About Us" },
     { href: "/contact-us", label: "Contact Us" },
   ];
-
-  useEffect(() => {
-    // Login check handled by useSession
-
-    const fetchNotificationsAndBids = async () => {
-      // Mock API call for notifications and bids
-      const mockNotifications = [
-        { id: 1, message: "You have a new message" },
-        { id: 2, message: "Order #456 updated" },
-      ];
-
-      // Update states based on mock data
-      setHasNotifications(mockNotifications.length > 0);
-    };
-
-    // checkLoginStatus();
-    if (isLoggedIn) {
-      fetchNotificationsAndBids();
-    }
-  }, [isLoggedIn]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -98,7 +82,6 @@ export const MobileNavbar = () => {
 
     setIsDropdownOpen(false);
     setIsNotificationOpen(false);
-    setHasNotifications(false);
     setIsMobileMenuOpen(false);
   };
 
@@ -137,12 +120,16 @@ export const MobileNavbar = () => {
                 height={55}
               />
             </Link>
-            <div className="cursor-pointer" ref={menuIconRef}>
-              <MenuIcon
-                className="w-[20px] h-[20px]"
-                onClick={handleMobileMenuToggle}
-              />
-            </div>
+            <button
+              type="button"
+              ref={menuIconRef}
+              onClick={handleMobileMenuToggle}
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMobileMenuOpen}
+              className="cursor-pointer inline-flex items-center justify-center min-w-11 min-h-11"
+            >
+              <MenuIcon className="w-[20px] h-[20px]" />
+            </button>
           </div>
 
           {/* Search Box */}
@@ -211,36 +198,40 @@ export const MobileNavbar = () => {
                 {/* ========= ICONS ========= */}
                 <div className="flex flex-col gap-[0.5rem] md:gap-[3rem] lg:gap-[5rem]">
                   {/* ===================== Notification icon ========================= */}
-                  <div
-                    onClick={handleNotificationClick}
-                    ref={notificationRef}
-                    className="flex items-center justify-between p-1.5 rounded-[4px] hover:bg-[#f1f1f1] gap-2 cursor-pointer"
-                  >
-                    <span className="text-[#2b2b2b] hover:text-[#214821] text-[0.79rem] font-normal font-montserrat transition">
-                      Notification
-                    </span>
+                  <div className="relative" ref={notificationRef}>
+                    {/* A real button, not a bare div: the bell was unreachable
+                        by keyboard, so notifications could not be opened at all
+                        without a mouse. The panel is a sibling, not a child —
+                        nesting it inside the trigger made every click in the
+                        list toggle the panel shut. */}
+                    <button
+                      type="button"
+                      onClick={handleNotificationClick}
+                      aria-haspopup="true"
+                      aria-expanded={isNotificationOpen}
+                      aria-label={
+                        hasNotifications
+                          ? `Notifications, ${unreadCount} unread`
+                          : "Notifications"
+                      }
+                      className="flex w-full items-center justify-between p-1.5 rounded-[4px] hover:bg-[#f1f1f1] gap-2 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#538e53]"
+                    >
+                      <span className="text-[#2b2b2b] hover:text-[#214821] text-[0.79rem] font-normal font-montserrat transition">
+                        Notification
+                      </span>
 
-                    <div className="relative">
-                      <NotificationIcon />
-                      {hasNotifications && (
-                        <span className="absolute top-0 right-[2px] h-2 w-2 rounded-full bg-[#538E53]" />
-                      )}
-                      {isNotificationOpen && (
-                        <div className="absolute top-[3rem] right-0 w-[90vw] max-w-[500px] min-w-[300px] bg-white border border-gray-200 rounded-[4px] shadow-lg z-50 sm:top-[2.5rem]">
-                          <ul className="py-2">
-                            {hasNotifications ? (
-                              <>
-                                <Notifications />
-                              </>
-                            ) : (
-                              <li className="px-4 py-2 text-[0.89rem] text-gray-500">
-                                No new notifications
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
+                      <span className="relative">
+                        <NotificationIcon />
+                        {hasNotifications && (
+                          <span className="absolute top-0 right-[2px] h-2 w-2 rounded-full bg-[#538E53]" />
+                        )}
+                      </span>
+                    </button>
+                    {isNotificationOpen && (
+                      <div className="absolute top-[3rem] right-0 w-[90vw] max-w-[500px] min-w-[300px] bg-white border border-gray-200 rounded-[4px] shadow-lg z-50 sm:top-[2.5rem]">
+                        <Notifications />
+                      </div>
+                    )}
                   </div>
 
                   {/* ===================== BID icon ========================= */}
