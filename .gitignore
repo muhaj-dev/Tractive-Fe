@@ -45,3 +45,6 @@ next-env.d.ts
 
 # local dev server output
 dev.log
+
+# local docs, test reports and screenshots
+docs/
