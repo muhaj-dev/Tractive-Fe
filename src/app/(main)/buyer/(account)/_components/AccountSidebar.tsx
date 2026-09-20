@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   PackedIcon,
   MoneyReceiveIcon,
+  BoxTickIcon,
 } from "@/icons/DashboardIcons";
 
 interface NavItem {
@@ -16,6 +17,10 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Track orders", href: "/buyer/track-orders", icon: PackedIcon },
   { label: "Transactions", href: "/buyer/transactions", icon: MoneyReceiveIcon },
+  // My Orders lives here too: it is the same account area, and it was
+  // previously reachable only from the top nav, which hid it from anyone
+  // already inside Track orders / Transactions.
+  { label: "My Orders", href: "/buyer/my-orders", icon: BoxTickIcon },
   // "Chats" (/buyer/chats) removed: the route does not exist, so it 404'd.
 ];
 

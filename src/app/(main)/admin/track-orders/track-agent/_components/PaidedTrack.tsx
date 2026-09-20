@@ -8,7 +8,6 @@ import { OrderData, orderDataProps } from "@/utils/TrackAgentData";
 import AdminTable, {
   ColumnConfig,
 } from "../../../_components/table/AdminTableList";
-import { TrackAgentActionMenu } from "./TrackAgentActionMenu";
 import Image from "next/image";
 
 const months = [
@@ -37,13 +36,20 @@ const columns: ColumnConfig<OrderData>[] = [
           alt={item.title}
           width={10}
           height={10}
-          className="w-10 h-10 rounded-full"
+          className="w-10 h-10 rounded-full shrink-0"
         />
-        <div className="flex flex-col">
-          <span className="text-[10px] sm:text-[11px] md:text-[12px] font-montserrat font-normal text-[#2b2b2b]">
+        {/* `min-w-0` is what lets `truncate` bite inside a flex row, and the
+            max width keeps a long description from stretching the Produce
+            column across the table — it used to render in full on one line.
+            The whole text stays available on hover. */}
+        <div className="flex flex-col min-w-0 max-w-[180px] sm:max-w-[260px] md:max-w-[340px]">
+          <span className="truncate text-[10px] sm:text-[11px] md:text-[12px] font-montserrat font-normal text-[#2b2b2b]">
             {item.title}
           </span>
-          <span className="text-[9px] sm:text-[10px] md:text-[11px] font-montserrat font-normal text-[#808080]">
+          <span
+            title={item.description}
+            className="truncate text-[9px] sm:text-[10px] md:text-[11px] font-montserrat font-normal text-[#808080]"
+          >
             {item.description}
           </span>
         </div>
@@ -59,8 +65,7 @@ const columns: ColumnConfig<OrderData>[] = [
 
 export const PaidedTrack: React.FC<orderDataProps> = ({
   order,
-  handleSellerInfo,
-  handleBuyerInfo,
+  onRowClick,
   handleCheckboxChange,
   handleSelectAll,
   allChecked,
@@ -302,9 +307,7 @@ export const PaidedTrack: React.FC<orderDataProps> = ({
           dataType="TrackAgentData"
           columns={columns}
           initialData={order}
-          ActionMenuComponent={TrackAgentActionMenu}
-          handleBuyerInfo={handleBuyerInfo}
-          handleSellerInfo={handleSellerInfo}
+          onRowClick={onRowClick}
           handleCheckboxChange={handleCheckboxChange}
           handleSelectAll={handleSelectAll}
           allChecked={allChecked}

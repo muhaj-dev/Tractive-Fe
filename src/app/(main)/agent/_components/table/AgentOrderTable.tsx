@@ -8,8 +8,6 @@ import { CalenderIcon } from "@/icons/DashboardIcons";
 import "../../Table.css";
 import { TableList } from "./TableList";
 import { ActionMenuProps } from "../ActionMenuProps";
-import { copyToClipboard } from "@/utils/Clipboard";
-import { IdCopyIcon } from "../../produce-list/_components/table/ProductRow";
 import { CustomerCareModal } from "../../pending/_components/CustomerCareModal";
 import {
   Order,
@@ -17,6 +15,7 @@ import {
   OrdersApiService,
   mapOrderRecord,
   isOrderDelivered,
+  isOrderPacked,
 } from "@/services/OrderService";
 import {
   useOrders,
@@ -39,7 +38,6 @@ const productColumns: ColumnConfig<Order>[] = [
     minWidth: "min-w-[150px]",
     render: (product) => {
       const description = product.description ?? "";
-      const descriptionWords = description.split(" ");
       return (
         <div className="flex items-center gap-2">
           <Image
@@ -47,41 +45,27 @@ const productColumns: ColumnConfig<Order>[] = [
             alt={product.name || "Product"}
             width={53}
             height={30}
-            className="object-cover w-[55px] h-[31px] sm:w-[73px] sm:h-[40px]"
+            className="object-cover w-[55px] h-[31px] sm:w-[73px] sm:h-[40px] shrink-0"
           />
-          <div className="flex flex-col">
+          {/* `min-w-0` is what lets `truncate` bite inside a flex row, and the
+              max width keeps a long description from stretching the column —
+              it used to render in full and pushed every other column off. */}
+          <div className="flex flex-col min-w-0 max-w-[110px] sm:max-w-[140px] md:max-w-[180px]">
             <span className="truncate text-[10px] sm:text-[11px] md:text-[12px] font-normal font-montserrat text-[#2b2b2b]">
               {product.name || "—"}
             </span>
-            <span className="truncate text-[10px] sm:text-[11px] md:text-[12px] font-normal font-montserrat text-[#2b2b2b]">
-              <span className="inline sm:hidden">
-                {descriptionWords.slice(0, 2).join(" ")}
-                {descriptionWords.length > 2 ? "..." : ""}
+            {description && (
+              <span
+                title={description}
+                className="truncate text-[10px] sm:text-[11px] font-normal font-montserrat text-[#808080]"
+              >
+                {description}
               </span>
-              <span className="hidden sm:inline">{description}</span>
-            </span>
+            )}
           </div>
         </div>
       );
     },
-  },
-  {
-    header: "ID",
-    key: "id",
-    minWidth: "min-w-[100px]",
-    render: (product) => (
-      <div className="flex items-center gap-2">
-        <span>{product.id}</span>
-        <button
-          onClick={() => copyToClipboard(product.id)}
-          title="Copy Product ID"
-          aria-label="Copy Product ID"
-          className="cursor-pointer"
-        >
-          <IdCopyIcon />
-        </button>
-      </div>
-    ),
   },
   {
     header: "Amount",
@@ -180,11 +164,14 @@ export const AgentOrderTable: React.FC<AgentOrderTableProps> = ({
     isLoading,
     isError,
   } = useOrders({
-    // Delivered orders keep the backend status `paid` ("parked" in UI terms) —
-    // delivery is recorded on `transportStatus`. Asking the API for
-    // `status=delivered` therefore returns nothing, so the Delivered tab reads
-    // the same list as Packed and the two are split client-side below.
-    status: dataType === "delivered" ? "parked" : status,
+    // Packed and Delivered are split client-side from ONE unfiltered list, so
+    // no single API status filter has to serve both. It cannot: a completed
+    // delivery is written `status: "delivered"`, so `?status=paid` (which is
+    // what "parked" translates to) returns nothing for it and the Delivered tab
+    // rendered empty while the order sat in the database. Fetching both tabs'
+    // orders together and splitting on `isOrderDelivered` / `isOrderPacked`
+    // stays correct whichever of the two fields the backend flips.
+    status: dataType === "new" ? status : undefined,
     search: debouncedSearch || undefined,
     year: selectedYear || undefined,
     month: selectedMonth
@@ -198,7 +185,9 @@ export const AgentOrderTable: React.FC<AgentOrderTableProps> = ({
       dataType === "delivered"
         ? queryData.filter(isOrderDelivered)
         : dataType === "parked"
-          ? queryData.filter((o) => !isOrderDelivered(o))
+          ? // Not merely "not delivered": the list is unfiltered now, so an
+            // unpaid order would otherwise fall into Packed.
+            queryData.filter(isOrderPacked)
           : queryData;
     return rows.map(mapOrderRecord);
   }, [queryData, dataType]);

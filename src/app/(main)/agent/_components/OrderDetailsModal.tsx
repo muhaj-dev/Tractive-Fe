@@ -3,8 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import type { OrderRecord, OrderProductLine } from "@/services/OrderService";
-import { copyToClipboard } from "@/utils/Clipboard";
-import { IdCopyIcon } from "../produce-list/_components/table/ProductRow";
+import { useCustomerById } from "@/hooks/queries/useCustomerQueries";
 
 interface OrderDetailsModalProps {
   order: OrderRecord | null;
@@ -95,6 +94,14 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // Orders carry `buyer` as a bare id, so the buyer's name/phone/email are
+  // looked up from the agent's customer list. Only fetched while the modal is
+  // open, and cached, so opening row after row costs one request.
+  const rawBuyer = order?.buyer;
+  const lookupId =
+    typeof rawBuyer === "string" ? rawBuyer : (rawBuyer?._id ?? undefined);
+  const customer = useCustomerById(lookupId, { enabled: isOpen });
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
@@ -115,10 +122,14 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
   if (!isOpen || !order) return null;
 
-  const orderId = order._id ?? order.id ?? "—";
   const buyer = order.buyer;
-  const buyerId = typeof buyer === "string" ? buyer : (buyer?._id ?? "—");
-  const buyerName = typeof buyer === "string" ? null : buyer?.name;
+  // Prefer whatever the order populated; fall back to the customer lookup,
+  // which is where the details actually live for an agent.
+  const buyerName =
+    (typeof buyer === "string" ? null : buyer?.name) ?? customer?.name ?? "—";
+  const buyerPhone = customer?.mobile ?? "—";
+  const buyerEmail = customer?.email ?? "—";
+  const buyerState = customer?.state ?? "—";
 
   const lines: OrderProductLine[] = Array.isArray(order.products)
     ? order.products
@@ -154,19 +165,12 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               <h2 className="text-[18px] font-montserrat font-semibold text-[#2b2b2b]">
                 Order Details
               </h2>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-montserrat text-[#808080]">
-                  ID: {orderId}
-                </span>
-                <button
-                  onClick={() => copyToClipboard(orderId)}
-                  title="Copy Order ID"
-                  aria-label="Copy Order ID"
-                  className="cursor-pointer"
-                >
-                  <IdCopyIcon />
-                </button>
-              </div>
+              {/* The raw order id was shown here. It means nothing to a seller,
+                  so the buyer's name leads instead. */}
+              <span className="text-[11px] font-montserrat text-[#808080]">
+                {buyerName !== "—" ? buyerName : "Order"} ·{" "}
+                {formatDate(order.createdAt)}
+              </span>
             </div>
             <button
               onClick={onClose}
@@ -193,10 +197,12 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 
           {/* Buyer + dates */}
           <div className="grid grid-cols-2 gap-4 mb-5">
-            <Field label="Buyer">{buyerName ?? "—"}</Field>
-            <Field label="Buyer ID">
-              <span className="text-[11px]">{buyerId}</span>
+            <Field label="Buyer">{buyerName}</Field>
+            <Field label="Phone">{buyerPhone}</Field>
+            <Field label="Email">
+              <span className="break-words">{buyerEmail}</span>
             </Field>
+            <Field label="State">{buyerState}</Field>
             <Field label="Order date">{formatDate(order.createdAt)}</Field>
             <Field label="Last updated">{formatDate(order.updatedAt)}</Field>
             {order.address ? (

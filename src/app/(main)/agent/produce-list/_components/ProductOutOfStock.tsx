@@ -6,10 +6,7 @@ import { ArrowDownIcon, SearchIcon } from "@/icons/Icons";
 import { ProductTable } from "./table/ProductTable";
 import { AddToStore } from "../../_components/AddToStore";
 import { SearchFilters } from "@/services/productService";
-import {
-  useBulkDeleteProducts,
-  useBulkUpdateStatus,
-} from "@/hooks/queries/useProductQueries";
+import { useBulkDeleteProducts } from "@/hooks/queries/useProductQueries";
 import { toast } from "sonner";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import {
@@ -21,7 +18,12 @@ interface ProductOutOfStockProps {
   onProductsUpdate: (counts: { active: number; out_of_stock: number }) => void;
 }
 
-type BulkActionKind = "delete" | "back_in_stock";
+// Delete is the only bulk action. Bulk "back in stock" was removed: it went
+// through one request for many ids, which cannot carry each product's own
+// fields, so every product it touched lost its category (item 21 in
+// docs/API-FIXES-REQUIRED.md). Restock a product from the row's action menu
+// instead — that path resends the full product.
+type BulkActionKind = "delete";
 
 // Copy + tone for the bulk confirmation modal. `n` is the number selected.
 const BULK_COPY: Record<
@@ -39,13 +41,6 @@ const BULK_COPY: Record<
       `${n} product${n === 1 ? "" : "s"} will be permanently deleted. This cannot be undone.`,
     confirmLabel: (n) => `Yes, delete ${n}`,
     tone: "danger",
-  },
-  back_in_stock: {
-    title: "Mark as back in stock?",
-    description: (n) =>
-      `${n} product${n === 1 ? "" : "s"} will be moved back to the Active tab and made visible to buyers again.`,
-    confirmLabel: (n) => `Yes, restock ${n}`,
-    tone: "success",
   },
 };
 
@@ -144,24 +139,11 @@ export const ProductOutOfStock: React.FC<ProductOutOfStockProps> = ({
 
   // React Query Mutations for Bulk Actions
   const bulkDeleteMutation = useBulkDeleteProducts();
-  const bulkUpdateStatusMutation = useBulkUpdateStatus();
 
-  // Handle bulk back in stock operation
   // Bulk actions are destructive, so they open the themed ConfirmActionModal
   // instead of a native browser confirm(). The handlers below only stage the
   // action; `runPendingBulkAction` performs it once the user confirms.
   const [pendingBulk, setPendingBulk] = useState<BulkActionKind | null>(null);
-
-  const handleBulkBackInStock = () => {
-    if (selectedProductIds.length === 0) {
-      toast.warning("Please select products to mark as back in stock", {
-        duration: 3000,
-        position: "top-center",
-      });
-      return;
-    }
-    setPendingBulk("back_in_stock");
-  };
 
   const handleBulkDelete = () => {
     if (selectedProductIds.length === 0) {
@@ -184,16 +166,10 @@ export const ProductOutOfStock: React.FC<ProductOutOfStockProps> = ({
       bulkDeleteMutation.mutate(selectedProductIds, {
         onSuccess: clearSelectionAndClose,
       });
-    } else if (pendingBulk === "back_in_stock") {
-      bulkUpdateStatusMutation.mutate(
-        { ids: selectedProductIds, status: "available" },
-        { onSuccess: clearSelectionAndClose },
-      );
     }
   };
 
-  const isBulkSubmitting =
-    bulkDeleteMutation.isPending || bulkUpdateStatusMutation.isPending;
+  const isBulkSubmitting = bulkDeleteMutation.isPending;
 
   // Handle product selection updates from ProductTable
   const handleProductSelectionUpdate = useCallback((selectedIds: string[]) => {
@@ -239,24 +215,10 @@ export const ProductOutOfStock: React.FC<ProductOutOfStockProps> = ({
               className={`whitespace-nowrap px-4 py-2 opacity-[0.9] text-[#f9f9f9] text-[13px] font-normal rounded-[4px] transition-colors ${
                 selectedProductIds.length === 0
                   ? "bg-[#b28362]/50 cursor-not-allowed"
-                  : "bg-[#b28362] hover:bg-[#9f6f50]"
+                  : "bg-[#b28362] hover:bg-[#9f6f50] cursor-pointer"
               }`}
             >
               Delete{" "}
-              {selectedProductIds.length > 0
-                ? `(${selectedProductIds.length})`
-                : ""}
-            </button>
-            <button
-              onClick={handleBulkBackInStock}
-              disabled={selectedProductIds.length === 0}
-              className={`whitespace-nowrap px-4 py-2 opacity-[0.9] text-[#f9f9f9] text-[13px] font-normal rounded-[4px] transition-colors ${
-                selectedProductIds.length === 0
-                  ? "bg-[#8B4513]/50 cursor-not-allowed"
-                  : "bg-[#8B4513] hover:bg-[#7a3a10]"
-              }`}
-            >
-              Back in Stock{" "}
               {selectedProductIds.length > 0
                 ? `(${selectedProductIds.length})`
                 : ""}

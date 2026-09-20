@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { SwapIcon } from "@/icons/Icon1";
 import { useSwitchRole } from "@/hooks/queries/useUserQueries";
+import { getApiError } from "@/utils/apiError";
 import { useAddAccountModal } from "@/components/providers/AddAccountModalProvider";
 
 export type UserRole = "agent" | "buyer" | "transporter";
@@ -105,15 +106,15 @@ export const AccountMenu = ({
       toast.success(`Switched to ${ROLE_CONFIGS[role].displayName} role!`);
 
       router.push(`/${role}`);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error) {
       console.error("Role switch error:", error);
       toast.dismiss(loadingToastId);
-      toast.error(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Failed to switch role.",
+
+      const { message, description } = getApiError(
+        error,
+        `Failed to switch to your ${ROLE_CONFIGS[role].displayName} account.`,
       );
+      toast.error(message, { description, duration: 8000 });
     }
   };
 

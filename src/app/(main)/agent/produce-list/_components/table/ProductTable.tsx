@@ -204,7 +204,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 
       const newStatus =
         product.status === "available" ? "out_of_stock" : "available";
-      updateStatusMutation.mutate({ id, status: newStatus });
+      // Pass the row's product so the status change resends its other fields
+      // instead of letting the API wipe the category (item 21).
+      updateStatusMutation.mutate({ id, status: newStatus, existing: product });
       setActiveMenu(null);
     },
     [allProducts, updateStatusMutation],

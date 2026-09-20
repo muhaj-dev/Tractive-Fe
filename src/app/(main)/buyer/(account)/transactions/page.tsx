@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { useOrders } from "@/hooks/queries/useOrderQueries";
-import type { OrderRecord } from "@/services/OrderService";
+import { useBuyerTransactions } from "@/hooks/queries/useTransactionQueries";
+import type { FrontendTransaction } from "@/services/transactionService";
 import type {
   BuyerTransactionRow,
   BuyerTransactionStatus,
@@ -11,11 +11,11 @@ import { TransactionsFilters } from "./_components/TransactionsFilters";
 import { TransactionsTable } from "./_components/TransactionsTable";
 import { TableSkeleton } from "@/app/(main)/admin/_components/TableSkeleton";
 
-type TabKey = "pending" | "paid";
+type TabKey = "pending" | "approved";
 
 const TABS: { key: TabKey; label: string; status: BuyerTransactionStatus }[] = [
   { key: "pending", label: "Pending", status: "pending" },
-  { key: "paid", label: "Approved", status: "paid" },
+  { key: "approved", label: "Approved", status: "approved" },
 ];
 
 const MONTHS = [
@@ -47,12 +47,7 @@ const formatDate = (iso?: unknown): string => {
   });
 };
 
-const VALID_STATUSES: BuyerTransactionStatus[] = [
-  "pending",
-  "payment_pending",
-  "paid",
-  "delivered",
-];
+const VALID_STATUSES: BuyerTransactionStatus[] = ["pending", "approved"];
 
 /**
  * Human label for the order's `paymentMethod`. This column used to be
@@ -72,11 +67,22 @@ const paymentMethodLabel = (raw: unknown): string => {
   return PAYMENT_METHOD_LABELS[key] ?? key.replace(/_/g, " ");
 };
 
-const orderToRow = (raw: OrderRecord): BuyerTransactionRow | null => {
-  const o = raw as ApiObject;
-  const id = asString(o._id ?? o.id);
+/**
+ * A transaction row, built from the payment record rather than the order.
+ *
+ * `/api/transactions` returns its `order` fully populated — products, images
+ * and the seller — so the item columns are unchanged; only the money, method,
+ * date and status now come from the payment itself, which is what this screen
+ * is actually about.
+ */
+const transactionToRow = (
+  tx: FrontendTransaction,
+): BuyerTransactionRow | null => {
+  const t = tx as unknown as ApiObject;
+  const id = asString(t._id ?? t.id);
   if (!id) return null;
 
+  const o = asObject(t.order);
   const products = asArray(o.products);
   const firstLine = asObject(products[0]);
   const firstProduct = asObject(firstLine.product ?? firstLine);
@@ -86,7 +92,7 @@ const orderToRow = (raw: OrderRecord): BuyerTransactionRow | null => {
     return sum + asNumber(line.quantity, 0);
   }, 0);
   const unit = asString(firstLine.unit ?? firstProduct.unit, "");
-  const status = (typeof o.status === "string" ? o.status : "") as string;
+  const status = (typeof t.status === "string" ? t.status : "") as string;
   // The seller is the owner of the ordered product. `o.buyer` is this buyer's
   // own id (a bare string), so reading it here left the column permanently "—".
   const seller = asObject(firstProduct.owner);
@@ -97,10 +103,11 @@ const orderToRow = (raw: OrderRecord): BuyerTransactionRow | null => {
     item: asString(firstProduct.name, "—"),
     image: asString(productImages[0], "/images/maize.png"),
     quantity: totalQty ? `${totalQty}${unit ? ` ${unit}` : ""}` : "—",
-    amount: asNumber(o.totalAmount, 0),
+    // The amount actually paid, which is the transaction's own figure.
+    amount: asNumber(t.amount, asNumber(o.totalAmount, 0)),
     seller: asString(seller.businessName ?? seller.name, "—"),
-    method: paymentMethodLabel(o.paymentMethod),
-    date: formatDate(o.createdAt),
+    method: paymentMethodLabel(t.paymentMethod),
+    date: formatDate(t.createdAt),
     status: VALID_STATUSES.includes(status as BuyerTransactionStatus)
       ? (status as BuyerTransactionStatus)
       : "pending",
@@ -108,7 +115,12 @@ const orderToRow = (raw: OrderRecord): BuyerTransactionRow | null => {
 };
 
 export default function BuyerTransactionsPage() {
-  const { data: ordersRaw, isLoading, isError, refetch } = useOrders();
+  const {
+    data: transactionsRaw,
+    isLoading,
+    isError,
+    refetch,
+  } = useBuyerTransactions();
   const [activeTab, setActiveTab] = useState<TabKey>("pending");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>("");
@@ -117,7 +129,7 @@ export default function BuyerTransactionsPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Record<TabKey, HTMLButtonElement | null>>({
     pending: null,
-    paid: null,
+    approved: null,
   });
   const [indicatorStyle, setIndicatorStyle] = useState<{
     left: number;
@@ -143,16 +155,16 @@ export default function BuyerTransactionsPage() {
   }, [activeTab]);
 
   const allRows: BuyerTransactionRow[] = useMemo(() => {
-    if (!Array.isArray(ordersRaw)) return [];
-    return ordersRaw
-      .map(orderToRow)
+    if (!Array.isArray(transactionsRaw)) return [];
+    return transactionsRaw
+      .map(transactionToRow)
       .filter((r): r is BuyerTransactionRow => r !== null);
-  }, [ordersRaw]);
+  }, [transactionsRaw]);
 
   const tabCounts = useMemo(() => {
     const counts: Record<TabKey, number> = {
       pending: 0,
-      paid: 0,
+      approved: 0,
     };
     for (const r of allRows) {
       const tab = TABS.find((t) => t.status === r.status);

@@ -154,12 +154,11 @@ export const OrderListCard: React.FC<Props> = ({ order, selected, onSelect }) =>
             height={28}
             className="object-cover rounded-[4px] flex-shrink-0"
           />
+          {/* The truncated product id used to sit under the name. It is not
+              something a buyer can act on, so the name stands alone. */}
           <div className="flex flex-col min-w-0">
             <span className="font-montserrat text-[11px] text-[#2b2b2b] truncate">
               {order.product.name}
-            </span>
-            <span className="font-montserrat text-[10px] text-[#808080] truncate">
-              ID: {order.product.id.slice(0, 5)}
             </span>
           </div>
         </div>

@@ -245,10 +245,15 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
           description: formData.description,
           price: Number(formData.price),
           quantity: Number(formData.quantity), // Ensure number
+          discount: Number(formData.discount) || 0,
           images: formData.images,
           videos: formData.videos,
-          // Include other fields if required by strict PUT
         },
+        // The form only exposes the fields above, but the API treats a missing
+        // `category` as "delete it" (item 21). Passing the product we fetched
+        // lets the service resend everything else it already holds — category,
+        // unit, farmer, localTransport — untouched.
+        existing: product,
       },
       {
         onSuccess: (updated) => {
@@ -273,7 +278,9 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
     if (!product) return;
 
     updateStatusMutation.mutate(
-      { id: product.id, status: newStatus },
+      // Same reason as handleSubmit: the status change rides along with the
+      // product's existing fields so none of them are wiped (item 21).
+      { id: product.id, status: newStatus, existing: product },
       {
         onSuccess: () => {
           onClose(); // Status change usually effectively removes it from current list context

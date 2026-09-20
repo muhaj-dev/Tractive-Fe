@@ -20,6 +20,7 @@ import {
   type TrackOrderStatus,
 } from "./_components/trackOrdersData";
 import { useOrders } from "@/hooks/queries/useOrderQueries";
+import { isOrderDelivered, type OrderRecord } from "@/services/OrderService";
 
 type TabKey = "new" | "picked" | "on_transit" | "delivered";
 
@@ -71,11 +72,18 @@ export default function BuyerTrackOrdersPage() {
     return () => window.removeEventListener("resize", update);
   }, [activeTab]);
 
-  // Only orders that are paid have a meaningful transport state
+  // Only orders that are paid have a meaningful transport state — but a
+  // completed one is written `status: "delivered"`, so testing for `paid` alone
+  // threw away exactly the orders the Delivered tab exists to show, leaving all
+  // four tabs reading 0 for a trip that had finished.
   const trackOrders: TrackOrder[] = useMemo(() => {
     if (!Array.isArray(ordersRaw)) return [];
     return ordersRaw
-      .filter((o) => (o as ApiObject).status === "paid")
+      .filter(
+        (o) =>
+          (o as ApiObject).status === "paid" ||
+          isOrderDelivered(o as OrderRecord),
+      )
       .map(orderToTrackOrder)
       .filter((o) => !!o.id);
   }, [ordersRaw]);

@@ -58,13 +58,26 @@ function Login() {
     }
   }, [session, router, searchParams]);
 
+  // Arriving from /email-confirmation: the address was just verified, so it is
+  // prefilled rather than asked for again, and the success is acknowledged here
+  // because the verification page unmounts before a toast on it could be read.
+  const verifiedEmail = searchParams.get("email") ?? "";
+  const justVerified = searchParams.get("verified") === "1";
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginSchemaType>({
     resolver: zodResolver(LoginSchema),
+    defaultValues: { email: verifiedEmail },
   });
+
+  useEffect(() => {
+    if (justVerified) {
+      toast.success("Email verified. Log in to finish setting up your account.");
+    }
+  }, [justVerified]);
 
   const onSubmit = async (data: LoginSchemaType) => {
     setLoading(true);
@@ -187,8 +200,12 @@ function Login() {
             </Link>
 
             <div>
+              {/* type="submit" so the form submits on Enter too. Button defaults
+                  to type="button", and with submission wired only through onClick
+                  this form had no submit control at all — pressing Enter in the
+                  email or password field did nothing. */}
               <Button
-                onClick={() => handleSubmit(onSubmit)()}
+                type="submit"
                 text={
                   loading ? (
                     <div className="flex items-center justify-center gap-2.5">

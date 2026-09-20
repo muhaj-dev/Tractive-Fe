@@ -287,14 +287,28 @@ const normalizeOrderStatus = (
 
 /**
  * An order counts as delivered once the trip carrying it reports `delivered`.
- * The backend records that on `transportStatus` and leaves the order's own
- * `status` on `paid`, so filtering on `status` alone never matches a delivery
- * made by a transporter. An agent can also mark an order delivered by hand,
- * which does write `status`, so accept either signal.
+ *
+ * Delivery can land on EITHER field, so both are checked. `PATCH
+ * /api/orders/{id}/status` takes `status` and `transportStatus` separately
+ * (`status` enum: pending | payment_pending | paid | delivered), and a completed
+ * delivery is observed carrying `delivered` on both. Assuming `status` stays
+ * `paid` is what emptied the Delivered tabs on both sides of the marketplace.
  */
 export const isOrderDelivered = (record: OrderRecord): boolean =>
   (record.transportStatus ?? "").toLowerCase() === "delivered" ||
   (record.status ?? "").toLowerCase() === "delivered";
+
+/**
+ * Paid and on its way, but not yet delivered — the "Packed" tab.
+ *
+ * Deliberately the complement of `isOrderDelivered` within the paid set, so an
+ * order can never be counted by both. It cannot be expressed as an API filter:
+ * `?status=paid` alone would swallow deliveries the backend has already moved to
+ * `status: "delivered"`, which is how the Delivered tab came to render nothing
+ * while the order sat in the database.
+ */
+export const isOrderPacked = (record: OrderRecord): boolean =>
+  (record.status ?? "").toLowerCase() === "paid" && !isOrderDelivered(record);
 
 /**
  * An order the buyer has created but not yet paid for.

@@ -17,6 +17,20 @@ export const useAgentTransactions = (params: GetTransactionsParams) => {
   });
 };
 
+// The buyer's payment history. `/api/transactions` is already scoped to the
+// caller, so this shares the agent's service and differs only in its cache key.
+//
+// The buyer's page used to read `/api/orders` and filter it, which meant an
+// approved payment could never appear there at all: a transaction is a separate
+// record with its own `status` ("approved"), and no order status corresponds
+// to it. Orders say what was bought; transactions say what was paid.
+export const useBuyerTransactions = (params: GetTransactionsParams = {}) => {
+  return useQuery({
+    queryKey: ["buyerTransactions", params],
+    queryFn: () => transactionService.getTransactions(params),
+  });
+};
+
 // Approve a pending agent transaction. Invalidates every agentTransactions
 // query so both the Pending and Approved tabs refetch from the server.
 export const useUpdateTransactionStatus = () => {

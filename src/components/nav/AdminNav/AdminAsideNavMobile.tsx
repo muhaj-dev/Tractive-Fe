@@ -132,6 +132,24 @@ export const AdminAsideNavMobile = ({
       ],
     },
     {
+      title: "Orders",
+      items: [
+        {
+          href: "/admin/track-orders/track-agent",
+          icon: Bag2Icon,
+          label: "Track Orders",
+        },
+        // The transporter half of Track Orders used to be reachable only from
+        // the Agents / Transporters switch inside the agent page — no nav
+        // entry, desktop or mobile, pointed at it.
+        {
+          href: "/admin/track-orders/track-transporter",
+          icon: Bag2Icon,
+          label: "Transport Orders",
+        },
+      ],
+    },
+    {
       title: "Admins",
       items: [
         {
@@ -156,14 +174,6 @@ export const AdminAsideNavMobile = ({
     {
       title: "Others",
       items: [
-        // `/admin/track-orders` has no page of its own — only `track-agent` and
-        // `track-transporter` children — so the bare parent 404s. The desktop nav
-        // already points at the child; this one did not.
-        {
-          href: "/admin/track-orders/track-agent",
-          icon: Bag2Icon,
-          label: "Track Orders",
-        },
         {
           icon: Bag2Icon, // Example icon, replace with appropriate icon
           label: "Add to store",

@@ -25,9 +25,22 @@ interface BidItem {
   title: string;
   quantity: string;
   seller: string;
+  /** Price of ONE unit — the agreed one, so a counter-offer wins. */
   price: number;
+  /** price × quantity: what this line actually costs. */
+  lineTotal: number;
   imageSrc: string;
 }
+
+// The price the two sides actually settled on: the counter-offer once it has
+// been accepted, otherwise the original bid. `amount` alone is the buyer's
+// opening offer and is stale the moment a counter is agreed, so it must never
+// be shown or summed on its own.
+//
+// Everything that prices a bid goes through here, so the row and the summary
+// cannot drift apart — which is exactly how they came to disagree before.
+const agreedUnitPrice = (bid: BidResponse): number =>
+  bid.effectiveAmount ?? bid.amount;
 
 const Page: React.FC = () => {
   const searchParams = useSearchParams();
@@ -106,7 +119,8 @@ const Page: React.FC = () => {
         title: item.product.name,
         quantity: `${item.quantity} ${item.unit}`,
         seller: getAgentName(item),
-        price: item.amount,
+        price: agreedUnitPrice(item),
+        lineTotal: agreedUnitPrice(item) * item.quantity,
         imageSrc: item.product.images[0] || "/images/placeholder.png",
       })),
     [wonBids],
@@ -164,12 +178,20 @@ const Page: React.FC = () => {
   // summary from the selection, the same way the backend composes it:
   // sum of effective (counter-aware) amounts, plus local transport where the
   // product charges it.
+  //
+  // A bid's `amount` is a price PER UNIT, and `quantity` is denominated in that
+  // same unit, so a line is amount × quantity — the backend returns exactly that
+  // as `lineSubtotal`. Summing the bare amounts understated the basket by the
+  // quantity, which both showed the buyer the wrong price and made
+  // POST /api/orders reject every checkout with "Total amount does not match
+  // accepted bids". Local transport below is a flat per-bid fee, not a rate, so
+  // it is deliberately NOT multiplied.
   const selectedTotals = useMemo(() => {
     const chosen = wonBids.filter((bid: BidResponse) =>
       selectedBidIds.includes(bid._id),
     );
     const productsSubtotal = chosen.reduce(
-      (sum: number, bid: BidResponse) => sum + (bid.effectiveAmount ?? bid.amount),
+      (sum: number, bid: BidResponse) => sum + agreedUnitPrice(bid) * bid.quantity,
       0,
     );
     const localTransportTotal = chosen.reduce((sum: number, bid: BidResponse) => {

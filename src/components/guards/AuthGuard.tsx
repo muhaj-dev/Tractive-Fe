@@ -8,6 +8,15 @@ interface AuthGuardProps {
     children: React.ReactNode;
 }
 
+// Email verification is deliberately NOT listed. It happens BEFORE the user has
+// a session — POST /api/auth/register creates the account and mails a code but
+// issues no token, and POST /api/auth/verify-code returns no token either. So a
+// just-registered user is unauthenticated by definition; gating
+// /email-confirmation on a session bounced them straight to /login and the code
+// they had just been emailed could never be entered. That page guards itself on
+// the signup email in context instead, which is the condition that actually
+// applies to it.
+//
 // Only these route trees require authentication. Everything else is public —
 // the entire (Marketing) site (/, /about-us, /faqs, /cookies, /privacy-policy,
 // /report and their sub-pages) plus the public auth pages (/login, /signup,
@@ -25,8 +34,6 @@ const PROTECTED_PREFIXES = [
     "/register-as",
     "/onboarding",
     "/add-role",
-    "/account-verification",
-    "/email-confirmation",
 ];
 
 function isProtectedRoute(pathname: string) {

@@ -2,7 +2,7 @@
 import { Button } from "../../../components/Button";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,15 @@ import { toast } from "sonner";
 import { ChangePasswordFormData, ChangePasswordSchema } from "../../../schemas/changePasswordSchema";
 import { resetPassword } from "../../../utils/resetPasswordAuthApi";
 
-export default function ResetPassword() {
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPassword />
+    </Suspense>
+  );
+}
+
+function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

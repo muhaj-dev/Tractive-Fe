@@ -7,7 +7,10 @@ interface BidItem {
   title: string;
   quantity: string;
   seller: string;
+  /** Price of ONE unit, at the agreed (counter-aware) figure. */
   price: number;
+  /** price × quantity — what this line costs. */
+  lineTotal: number;
   imageSrc: string;
 }
 
@@ -150,7 +153,7 @@ export const MyBids: React.FC<MyBidsProps> = ({
                       {item.title}
                     </p>
                     <small className="font-montserrat font-normal text-[9px] sm:text-[10px] md:text-[11px] text-[#808080]">
-                      {item.quantity}
+                      Qty: {item.quantity}
                     </small>
                     <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-start sm:items-center">
                       <p className="font-montserrat font-normal text-[10px] sm:text-[11px] md:text-[12px] text-[#808080]">
@@ -163,9 +166,17 @@ export const MyBids: React.FC<MyBidsProps> = ({
                           one. */}
                     </div>
                   </div>
-                  <p className="font-montserrat font-normal text-xs sm:text-sm md:text-[14px] text-[#2b2b2b]">
-                    ₦{item.price.toLocaleString()}
-                  </p>
+                  {/* Unit price, the quantity it is charged on, and the line
+                      total. Showing the unit price alone read as the price of
+                      the whole line and understated it by the quantity. */}
+                  <div className="flex flex-col gap-0.5">
+                    <p className="font-montserrat font-normal text-[10px] sm:text-[11px] md:text-[12px] text-[#808080]">
+                      ₦{item.price.toLocaleString()} × {item.quantity}
+                    </p>
+                    <p className="font-montserrat font-semibold text-[13px] sm:text-[14px] md:text-[16px] text-[#2b2b2b]">
+                      ₦{item.lineTotal.toLocaleString()}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

@@ -6,7 +6,7 @@ import { NewProductActionMenu } from "../_components/ActionMenu/NewProductAction
 import { PackedProductActionMenu } from "../_components/ActionMenu/PackedProductActionMenu";
 import { DeliveredProductActionMenu } from "../_components/ActionMenu/DeliveredProductActionMenu";
 import { useOrders } from "@/hooks/queries/useOrderQueries";
-import { isOrderDelivered } from "@/services/OrderService";
+import { isOrderDelivered, isOrderPacked } from "@/services/OrderService";
 
 interface SideProps {
   switchSides: "New" | "Packed" | "Delivered";
@@ -20,18 +20,20 @@ export default function ProduceListPage() {
     useState<SideProps["switchSides"]>("New");
 
   // React Query — each status is cached individually and shared with the table.
-  // Packed and Delivered read the same list: a delivered order keeps the
-  // backend status `paid` and only flips `transportStatus`, so the two tabs are
-  // split client-side by `isOrderDelivered` rather than by a separate query.
+  // Packed and Delivered are split client-side from ONE unfiltered list, and
+  // must be: a completed delivery is written `status: "delivered"`, so the
+  // `?status=paid` query these badges used returned nothing for it and both
+  // counts showed 0 while the order existed. `isOrderPacked` and
+  // `isOrderDelivered` are complements, so an order is counted by exactly one.
   const { data: newOrders } = useOrders({ status: "pending" });
-  const { data: paidOrders } = useOrders({ status: "parked" });
+  const { data: allOrders } = useOrders();
 
   const newCount = Array.isArray(newOrders) ? newOrders.length : 0;
-  const packedCount = Array.isArray(paidOrders)
-    ? paidOrders.filter((o) => !isOrderDelivered(o)).length
+  const packedCount = Array.isArray(allOrders)
+    ? allOrders.filter(isOrderPacked).length
     : 0;
-  const deliveredCount = Array.isArray(paidOrders)
-    ? paidOrders.filter(isOrderDelivered).length
+  const deliveredCount = Array.isArray(allOrders)
+    ? allOrders.filter(isOrderDelivered).length
     : 0;
 
   const newContainerRef = useRef<HTMLDivElement>(null);

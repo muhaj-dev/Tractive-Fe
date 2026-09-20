@@ -13,15 +13,19 @@ export default function EmailVerification() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const router = useRouter();
-  const { email } = useEmailUser();
+  // `emailLoading` matters: the provider hydrates `email` from localStorage in an
+  // effect, so the first render after a refresh always has an empty email. Acting
+  // on that would bounce a reloading user back to /signup.
+  const { email, loading: emailLoading } = useEmailUser();
 
   // Redirect if no email is set
   useEffect(() => {
+    if (emailLoading) return;
     if (!email) {
       toast.error("No email found. Please sign up first.");
       router.push("/signup");
     }
-  }, [email, router]);
+  }, [email, emailLoading, router]);
 
   // Auto-verify when OTP is complete
   const handleOtpChange = async (otpValue: string) => {
@@ -45,11 +49,12 @@ export default function EmailVerification() {
         if (result.success) {
           toast.success("Email verified successfully!");
 
-          // Use router.replace instead of router.push to prevent going back
-          router.replace("/login");
-
-          // Alternative: Use window.location if router is not working
-          // window.location.href = "/login";
+          // verify-code issues no token, so the account still has to be signed
+          // into. The email is carried across so the login form can prefill it and
+          // the user is not asked to retype what they just verified. From there
+          // AuthGuard takes a role-less account on to /register-as.
+          // replace(), not push(), so Back does not return to a spent code.
+          router.replace(`/login?email=${encodeURIComponent(email)}&verified=1`);
         } else {
           // Show error message from the result
           toast.error(result.message || "Invalid verification code");
@@ -91,7 +96,7 @@ export default function EmailVerification() {
     }
   };
 
-  if (!email) {
+  if (emailLoading || !email) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
         <div className="flex items-center gap-2">

@@ -5,10 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowDownIcon, SearchIcon } from "@/icons/Icons";
 import { ProductTable } from "./table/ProductTable";
 import { SearchFilters } from "@/services/productService";
-import {
-  useBulkDeleteProducts,
-  useBulkUpdateStatus,
-} from "@/hooks/queries/useProductQueries";
+import { useBulkDeleteProducts } from "@/hooks/queries/useProductQueries";
 import { toast } from "sonner";
 import { AddToStore } from "../../_components/AddToStore";
 import { DateRangePicker } from "@/components/DateRangePicker";
@@ -21,7 +18,12 @@ interface ActiveProductProps {
   onProductsUpdate: (counts: { active: number; out_of_stock: number }) => void;
 }
 
-type BulkActionKind = "delete" | "out_of_stock";
+// Delete is the only bulk action. Bulk "mark out of stock" was removed: it went
+// through one request for many ids, which cannot carry each product's own
+// fields, so every product it touched lost its category (item 21 in
+// docs/API-FIXES-REQUIRED.md). Status is changed per row from the table's
+// action menu, which resends the full product.
+type BulkActionKind = "delete";
 
 // Copy + tone for the bulk confirmation modal. `n` is the number selected.
 const BULK_COPY: Record<
@@ -38,13 +40,6 @@ const BULK_COPY: Record<
     description: (n) =>
       `${n} product${n === 1 ? "" : "s"} will be permanently deleted. This cannot be undone.`,
     confirmLabel: (n) => `Yes, delete ${n}`,
-    tone: "danger",
-  },
-  out_of_stock: {
-    title: "Mark as out of stock?",
-    description: (n) =>
-      `${n} product${n === 1 ? "" : "s"} will be moved to the Out of Stock tab and hidden from buyers. You can move them back at any time.`,
-    confirmLabel: (n) => `Yes, mark ${n}`,
     tone: "danger",
   },
 };
@@ -144,7 +139,6 @@ export const ActiveProduct: React.FC<ActiveProductProps> = ({
 
   // React Query Mutations for Bulk Actions
   const bulkDeleteMutation = useBulkDeleteProducts();
-  const bulkUpdateStatusMutation = useBulkUpdateStatus();
 
   // Bulk actions are destructive, so they open the themed ConfirmActionModal
   // instead of a native browser confirm(). The handlers below only stage the
@@ -162,17 +156,6 @@ export const ActiveProduct: React.FC<ActiveProductProps> = ({
     setPendingBulk("delete");
   };
 
-  const handleBulkOutOfStock = () => {
-    if (selectedProductIds.length === 0) {
-      toast.warning("Please select products to mark as out of stock", {
-        duration: 3000,
-        position: "top-center",
-      });
-      return;
-    }
-    setPendingBulk("out_of_stock");
-  };
-
   const clearSelectionAndClose = () => {
     setSelectedProductIds([]);
     setPendingBulk(null);
@@ -183,16 +166,10 @@ export const ActiveProduct: React.FC<ActiveProductProps> = ({
       bulkDeleteMutation.mutate(selectedProductIds, {
         onSuccess: clearSelectionAndClose,
       });
-    } else if (pendingBulk === "out_of_stock") {
-      bulkUpdateStatusMutation.mutate(
-        { ids: selectedProductIds, status: "out_of_stock" },
-        { onSuccess: clearSelectionAndClose },
-      );
     }
   };
 
-  const isBulkSubmitting =
-    bulkDeleteMutation.isPending || bulkUpdateStatusMutation.isPending;
+  const isBulkSubmitting = bulkDeleteMutation.isPending;
 
   // Handle product selection updates from ProductTable
   const handleProductSelectionUpdate = useCallback((selectedIds: string[]) => {
@@ -240,24 +217,10 @@ export const ActiveProduct: React.FC<ActiveProductProps> = ({
               className={`whitespace-nowrap px-4 py-2 opacity-[0.9] text-[#f9f9f9] text-[13px] font-normal rounded-[4px] transition-colors ${
                 selectedProductIds.length === 0
                   ? "bg-[#b28362]/50 cursor-not-allowed"
-                  : "bg-[#b28362] hover:bg-[#9f6f50]"
+                  : "bg-[#b28362] hover:bg-[#9f6f50] cursor-pointer"
               }`}
             >
               Delete{" "}
-              {selectedProductIds.length > 0
-                ? `(${selectedProductIds.length})`
-                : ""}
-            </button>
-            <button
-              onClick={handleBulkOutOfStock}
-              disabled={selectedProductIds.length === 0}
-              className={`whitespace-nowrap px-4 py-2 opacity-[0.9] text-[#f9f9f9] text-[13px] font-normal rounded-[4px] transition-colors ${
-                selectedProductIds.length === 0
-                  ? "bg-[#538e53]/50 cursor-not-allowed"
-                  : "bg-[#538e53] hover:bg-[#467a46]"
-              }`}
-            >
-              Out of Stock{" "}
               {selectedProductIds.length > 0
                 ? `(${selectedProductIds.length})`
                 : ""}

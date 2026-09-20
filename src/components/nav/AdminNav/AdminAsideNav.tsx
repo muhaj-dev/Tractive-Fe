@@ -41,6 +41,7 @@ export const AdminAsideNav = () => {
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
     Managements: true,
     Approvers: true,
+    Orders: true,
     Admins: true,
     Reports: true,
     Others: true,
@@ -90,6 +91,24 @@ export const AdminAsideNav = () => {
       items: [
         { href: "/admin/new", icon: UserIcon, label: "New", hasDot: true },
         { href: "/admin/rejected", icon: userRemoveIcon, label: "Rejected" },
+      ],
+    },
+    {
+      title: "Orders",
+      items: [
+        {
+          href: "/admin/track-orders/track-agent",
+          icon: Bag2Icon,
+          label: "Track Orders",
+        },
+        // The transporter half of Track Orders used to be reachable only from
+        // the Agents / Transporters switch inside the agent page — no nav
+        // entry, desktop or mobile, pointed at it.
+        {
+          href: "/admin/track-orders/track-transporter",
+          icon: Bag2Icon,
+          label: "Transport Orders",
+        },
       ],
     },
     {
@@ -148,24 +167,6 @@ export const AdminAsideNav = () => {
                 <OverviewIcon className="w-5 h-5" />
                 <span className="font-montserrat text-[#2b2b2b] text-[9.7px] lg:text-[11.8px] font-medium">
                   Overview
-                </span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/admin/track-orders/track-agent"
-                className={`flex items-center gap-3 py-2 px-3 rounded-md transition-colors duration-200 lg:flex-row flex-col ${
-                  pathname.startsWith("/admin/track-orders")
-                    ? "bg-[#cce5cc80]"
-                    : "hover:bg-[#f1f1f1]"
-                }`}
-                aria-current={
-                  pathname.startsWith("/admin/track-orders") ? "page" : undefined
-                }
-              >
-                <Bag2Icon className="w-5 h-5" />
-                <span className="font-montserrat text-[#2b2b2b] text-[9.7px] lg:text-[11.8px] font-medium">
-                  Track Orders
                 </span>
               </Link>
             </li>

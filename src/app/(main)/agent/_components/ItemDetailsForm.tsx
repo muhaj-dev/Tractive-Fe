@@ -9,8 +9,10 @@ import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload";
 import {
   CREATABLE_PRODUCT_UNITS,
   getProductUnit,
+  isCreatableProductUnit,
   requiresUnitWeight,
 } from "@/utils/productUnits";
+import type { CreateProductData } from "@/services/productService";
 
 interface ItemDetailsFormProps {
   onBack: () => void;
@@ -177,14 +179,23 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
         categories.push(subcategory.trim());
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const apiPayload: any = {
+      // The `<select>` hands back a bare string, so the four-value contract is
+      // enforced here rather than trusted — a unit outside it would be rewritten
+      // by the server and the product would carry a weight nobody chose.
+      const trimmedUnit = unit.trim();
+      if (!isCreatableProductUnit(trimmedUnit)) {
+        setErrors({ unit: "Please select a unit" });
+        setIsLoading(false);
+        return;
+      }
+
+      const apiPayload: CreateProductData = {
         name: productName.trim(),
         description: description.trim(),
         price: parseInt(price, 10),
         quantity: Number(quantity),
         discount: discount ? Number(discount) : 0,
-        unit: unit.trim(),
+        unit: trimmedUnit,
         unitWeightKg: unitWeightKg ? Number(unitWeightKg) : null,
         category: selectedCategory,
         subcategory: subcategory.trim() || selectedCategory,

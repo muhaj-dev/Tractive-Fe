@@ -11,6 +11,7 @@ import {
   useAddAccount,
 } from "@/hooks/queries/useUserQueries";
 import { Button } from "@/components/Button";
+import { getApiError } from "@/utils/apiError";
 
 interface RoleOption {
   id: string;
@@ -95,11 +96,12 @@ export default function RegisterAs() {
           router.push(`/onboarding?role=${roleId}`);
         }
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error processing role selection:", error);
       toast.dismiss();
-      toast.error(error.message || "Something went wrong. Please try again.");
+
+      const { message, description } = getApiError(error);
+      toast.error(message, { description, duration: 8000 });
     }
   };
 

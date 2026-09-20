@@ -16,6 +16,7 @@ import {
   OnboardingSchemaType,
 } from "../../../schemas/onboardingSchema";
 import { IoIosCheckmark } from "react-icons/io";
+import { getApiError } from "@/utils/apiError";
 
 const interests = [
   "fish",
@@ -100,6 +101,7 @@ function AddRolePageInner() {
       setValue("address", userProfile.address || "");
       setValue("country", userProfile.country || "");
       setValue("state", userProfile.state || "");
+      setValue("lga", userProfile.lga || "");
       setValue("role", roleParam);
 
       if (userProfile.interests && Array.isArray(userProfile.interests)) {
@@ -130,6 +132,14 @@ function AddRolePageInner() {
     });
   };
 
+  const onInvalid = (formErrors: typeof errors) => {
+    const firstError = Object.values(formErrors).find((e) => e?.message);
+    toast.error(
+      (firstError?.message as string) ||
+        "Please fill in all required fields.",
+    );
+  };
+
   const onSubmit = async (data: OnboardingSchemaType) => {
     if (!session || !roleParam) {
       toast.error("Unauthorized access. Please login.");
@@ -150,10 +160,12 @@ function AddRolePageInner() {
       // Call add-account API to create the new role
       const addAccountPayload = {
         role: roleParam,
+        name: data.name,
         phone: data.phone,
         address: data.address,
         country: data.country,
         state: data.state,
+        lga: data.lga,
       };
 
       console.log("Creating new role with add-account API:", addAccountPayload);
@@ -172,16 +184,15 @@ function AddRolePageInner() {
 
       // Redirect to the new role's dashboard
       router.push(`/${roleParam}`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error) {
       console.error("Add role error:", error);
       toast.dismiss(toastId);
 
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to create account.";
-      toast.error(errorMessage);
+      const { message, description } = getApiError(
+        error,
+        "Failed to create account.",
+      );
+      toast.error(message, { description, duration: 8000 });
     }
   };
 
@@ -278,7 +289,10 @@ function AddRolePageInner() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-6">
+          <form
+            onSubmit={handleSubmit(onSubmit, onInvalid)}
+            className="w-full space-y-6"
+          >
             {/* Name */}
             <div>
               <label className="block text-[13px] font-montserrat font-normal text-[#2b2b2b]">
@@ -365,6 +379,24 @@ function AddRolePageInner() {
               {errors.state && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors.state.message}
+                </p>
+              )}
+            </div>
+
+            {/* Local Government Area (LGA) */}
+            <div>
+              <label className="block text-[13px] font-montserrat font-normal text-[#2b2b2b]">
+                Local Government Area *
+              </label>
+              <input
+                type="text"
+                {...register("lga")}
+                className="mt-1 w-full border-[0.5px] font-montserrat border-[#808080] rounded px-3 py-2 text-[14px] placeholder:text-[12px] placeholder:text-[#808080] focus:outline-none focus:ring-[0.1px] focus:ring-[#538e53] focus:border-[#538e53]"
+                placeholder="Enter your LGA"
+              />
+              {errors.lga && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.lga.message}
                 </p>
               )}
             </div>

@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 import axios from "axios";
+import type { CreatableProductUnit } from "@/utils/productUnits";
 
 export interface Owner {
   id: string;
@@ -189,7 +190,7 @@ export interface CreateProductData {
   price: number;
   quantity: number;
   discount?: number;
-  unit: string;
+  unit: CreatableProductUnit;
   unitWeightKg?: number | null;
   category: string;
   subcategory: string;
@@ -205,8 +206,23 @@ export interface UpdateProductData {
   description?: string;
   price?: number;
   quantity?: number;
+  discount?: number;
+  /**
+   * Deliberately looser than `CreateProductData["unit"]`. There is no unit
+   * editor in the UI: `buildFullProductPayload` re-sends whatever the server
+   * already holds so the item-21 wipe cannot drop the field, and that includes
+   * legacy `bags`/`packet` products a narrower type could only take via a cast.
+   */
+  unit?: string;
+  unitWeightKg?: number | null;
+  category?: string;
+  subcategory?: string;
+  categories?: string[];
   images?: string[];
   videos?: string[];
+  farmer?: string;
+  localTransport?: LocalTransport;
+  status?: "available" | "out_of_stock" | "discontinued";
 }
 
 export interface Bidder {
@@ -334,6 +350,87 @@ const mapBackendToFrontendProduct = (backendProduct: any): ApiProduct => {
     recentReviews: backendProduct.recentReviews,
     isWishlisted: backendProduct.isWishlisted ?? backendProduct.wishlisted,
   };
+};
+
+// Build the payload for a product update.
+//
+// Item 21 in docs/API-FIXES-REQUIRED.md: when an update body does not mention
+// `category` the backend *erases* it and still answers 200, so an agent who
+// edits only the price silently loses the product's category. Until that is
+// fixed on the server we never send a partial body — we send the product's
+// whole current state with the edited fields laid over the top, so no field can
+// be dropped by omission.
+//
+// `existing` is the product as the server last returned it (the edit modal
+// re-fetches it via GET /api/products/{id} before opening). Field names follow
+// the Product schema in the backend OpenAPI spec
+// (https://tractive-be.vercel.app/docs/openapi.yaml) — note `farmer` is an id
+// string there, not the object the GET response embeds.
+export const buildFullProductPayload = (
+  existing: ApiProduct | null | undefined,
+  changes: UpdateProductData,
+): UpdateProductData => {
+  if (!existing) return changes;
+
+  // `category` is the field the bug destroys, and some live products have
+  // already lost theirs. Where the normalised `categories` list survived, we
+  // restore the category from it instead of resending nothing and leaving the
+  // product permanently uncategorised.
+  const category =
+    existing.category ||
+    (existing.categories?.length ? existing.categories[0] : undefined);
+
+  const merged: UpdateProductData = {
+    name: existing.name,
+    description: existing.description,
+    price: existing.price,
+    quantity: existing.quantity,
+    discount: existing.discount,
+    unit: existing.unit,
+    unitWeightKg: existing.unitWeightKg,
+    category,
+    subcategory: existing.subcategory,
+    categories: existing.categories?.length
+      ? existing.categories
+      : category
+        ? [category]
+        : undefined,
+    images: existing.images,
+    videos: existing.videos,
+    // Only the embedded farmer object carries a trustworthy id. `farmerId`
+    // falls back to the owner id in the mapper, so it must not be used here —
+    // it would reassign the product to the wrong farmer.
+    farmer: existing.farmer?.id,
+    localTransport: existing.localTransport,
+    status: existing.status,
+    ...changes,
+  };
+
+  // Send only keys we actually hold a value for. A key present with a null or
+  // undefined value is what caused the data loss in the first place.
+  (Object.keys(merged) as (keyof UpdateProductData)[]).forEach((key) => {
+    if (merged[key] === undefined || merged[key] === null) delete merged[key];
+  });
+
+  return merged;
+};
+
+// List responses do not always carry every field a full product has. If the
+// caller's copy has no category at all we re-read the product before updating,
+// so we merge against complete data rather than quietly dropping fields. A
+// failed re-read is not fatal — we fall back to what the caller gave us.
+const resolveExistingProduct = async (
+  id: string,
+  existing?: ApiProduct | null,
+): Promise<ApiProduct | null> => {
+  if (existing?.category || existing?.categories?.length) return existing;
+
+  try {
+    return await productService.getProduct(id);
+  } catch {
+    console.warn(`⚠️ Could not re-read product ${id} before updating it`);
+    return existing ?? null;
+  }
 };
 
 export const productService = {
@@ -552,17 +649,31 @@ export const productService = {
   },
 
   // PATCH /api/products/:id/status - Update product status
+  //
+  // `existing` is the product's current server state; when it is supplied the
+  // status rides along with the full product payload so the change cannot wipe
+  // the category (item 21). See buildFullProductPayload.
   updateProductStatus: async (
     id: string,
     status: "available" | "out_of_stock" | "discontinued",
+    existing?: ApiProduct | null,
   ): Promise<ApiProduct> => {
     try {
       console.log(`🚀 Updating product ${id} status to:`, status);
 
+      const current = await resolveExistingProduct(id, existing);
+      const payload = buildFullProductPayload(current, { status });
+
+      // The server derives status from quantity: verified against the live API
+      // on 03 Sep 2026, a body carrying both `quantity: 10` and
+      // `status: "out_of_stock"` came back 200 with the product still
+      // `available`, while the same body without `quantity` applied the status
+      // and left the quantity untouched. So a status change sends everything
+      // except quantity.
+      delete payload.quantity;
+
       // Changed to PATCH as requested
-      const response = await api.patch(`/api/products/${id}`, {
-        status,
-      });
+      const response = await api.patch(`/api/products/${id}`, payload);
 
       console.log("✅ Product status updated:", response.data);
       return mapBackendToFrontendProduct(
@@ -574,14 +685,22 @@ export const productService = {
   },
 
   // PUT /api/products/:id - Update product (Full Update)
+  //
+  // `existing` is the product's current server state. When it is supplied the
+  // edited fields are merged onto a full copy of the product, so fields the
+  // form does not show (category, unit, farmer, localTransport…) are resent
+  // rather than dropped — see buildFullProductPayload and item 21.
   updateProduct: async (
     id: string,
     data: UpdateProductData,
+    existing?: ApiProduct | null,
   ): Promise<ApiProduct> => {
     try {
-      console.log(`🚀 Updating product ${id} (PUT):`, data);
+      const current = await resolveExistingProduct(id, existing);
+      const payload = buildFullProductPayload(current, data);
+      console.log(`🚀 Updating product ${id} (PUT):`, payload);
 
-      const response = await api.put(`/api/products/${id}`, data);
+      const response = await api.put(`/api/products/${id}`, payload);
 
       console.log("✅ Product updated:", response.data);
       const updated =
@@ -618,19 +737,11 @@ export const productService = {
     }
   },
 
-  // PATCH /api/products/bulk/status
-  // The backend only registers PATCH here (PUT and POST return 405), and the id
-  // array must be keyed `productIds` — matching bulk/delete. `products` 400s.
-  updateMultipleProductsStatus: async (
-    ids: string[],
-    status: "available" | "out_of_stock" | "discontinued",
-  ): Promise<void> => {
-    try {
-      await api.patch("/api/products/bulk/status", { productIds: ids, status });
-    } catch (error) {
-      return handleApiError(error, "bulk update product status");
-    }
-  },
+  // No bulk status update. `PATCH /api/products/bulk/status` takes one body for
+  // many ids, so it cannot carry each product's own fields — every product it
+  // touched lost its category (item 21). Delete is the only bulk action; status
+  // changes go one product at a time through updateProductStatus, which resends
+  // the full payload.
 
   // GET /api/buyers/biddings - Get all buyers bidding on a product
   getBidders: async (productId: string): Promise<Bidder[]> => {

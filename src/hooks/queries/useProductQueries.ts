@@ -134,8 +134,18 @@ export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateProductData }) =>
-      productService.updateProduct(id, data),
+    // `existing` is the product as the server last returned it. It is merged
+    // under the edited fields so the request carries the product's full state
+    // — see buildFullProductPayload / item 21 in docs/API-FIXES-REQUIRED.md.
+    mutationFn: ({
+      id,
+      data,
+      existing,
+    }: {
+      id: string;
+      data: UpdateProductData;
+      existing?: ApiProduct | null;
+    }) => productService.updateProduct(id, data, existing),
     onSuccess: (updatedProduct) => {
       // Invalidate relevant queries to ensure consistency
       // Ideally we updates cache manually for perfect optimistic UI, but for edit details invalidation is often acceptable
@@ -174,10 +184,14 @@ export const useUpdateProductStatus = () => {
     mutationFn: ({
       id,
       status,
+      existing,
     }: {
       id: string;
       status: "available" | "out_of_stock" | "discontinued";
-    }) => productService.updateProductStatus(id, status),
+      // Current server state, resent with the status so the change cannot wipe
+      // the category (item 21). Falls back to whatever the loaded lists hold.
+      existing?: ApiProduct | null;
+    }) => productService.updateProductStatus(id, status, existing),
     onMutate: async ({ id, status }) => {
       // Cancel queries to avoid overwrites
       await queryClient.cancelQueries({ queryKey: productKeys.lists() });
@@ -351,38 +365,8 @@ export const useBulkDeleteProducts = () => {
   });
 };
 
-/**
- * Hook for bulk status update
- */
-export const useBulkUpdateStatus = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      ids,
-      status,
-    }: {
-      ids: string[];
-      status: "available" | "out_of_stock" | "discontinued";
-    }) => productService.updateMultipleProductsStatus(ids, status),
-    onSuccess: () => {
-      // A status change MOVES a product between the Active and Out of Stock
-      // lists, which are two separate server queries (/api/products and
-      // /api/products/out-of-stock) with their own tab counts.
-      //
-      // This previously hand-rolled the move in the cache, writing the moved
-      // products to `productKeys.list({ status })`. That key never matched a
-      // real query — live lists are keyed by the FULL filter object (search,
-      // page, limit, category, price…) — so the products were removed from the
-      // source list and silently never added to the destination. Combined with
-      // a 10-minute staleTime, the only way to see the product again was a full
-      // page reload.
-      //
-      // Invalidating both lists is the correct move here: the server is the
-      // authority on which list a product belongs to and what the counts are.
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-      toast.success("Products updated successfully");
-    },
-    onError: () => toast.error("Failed to update products"),
-  });
-};
+// There is deliberately no bulk status-update hook. One request covering many
+// ids cannot carry each product's own fields, so every product it touched lost
+// its category (item 21 in docs/API-FIXES-REQUIRED.md). Delete is the only bulk
+// action; status changes go through useUpdateProductStatus one product at a
+// time, which resends the full product payload.

@@ -36,7 +36,7 @@ const columns: ColumnConfig<TransporterData>[] = [
     header: "Produce",
     render: (item: TransporterData) => (
       <div className="flex items-center gap-3">
-        <div className="bg-[#f1f1f1] flex items-center justify-center w-[63px] h-[37px] rounded-[4px]">
+        <div className="bg-[#f1f1f1] flex items-center justify-center w-[63px] h-[37px] rounded-[4px] shrink-0">
           <Image
             src={item.image}
             alt={item.title}
@@ -45,11 +45,18 @@ const columns: ColumnConfig<TransporterData>[] = [
             className="object-cover"
           />
         </div>
-        <div className="flex flex-col">
-          <span className="text-[10px] sm:text-[11px] md:text-[12px] font-montserrat font-normal text-[#2b2b2b]">
+        {/* `min-w-0` is what lets `truncate` bite inside a flex row, and the
+            max width keeps a long description from stretching the Produce
+            column across the table — it used to render in full on one line.
+            The whole text stays available on hover. */}
+        <div className="flex flex-col min-w-0 max-w-[180px] sm:max-w-[260px] md:max-w-[340px]">
+          <span className="truncate text-[10px] sm:text-[11px] md:text-[12px] font-montserrat font-normal text-[#2b2b2b]">
             {item.title}
           </span>
-          <span className="text-[9px] sm:text-[10px] md:text-[11px] font-montserrat font-normal text-[#808080]">
+          <span
+            title={item.description}
+            className="truncate text-[9px] sm:text-[10px] md:text-[11px] font-montserrat font-normal text-[#808080]"
+          >
             {item.description}
           </span>
         </div>

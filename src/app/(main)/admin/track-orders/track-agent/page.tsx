@@ -4,10 +4,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";// Adjust the import path as needed
 import { PaidedTrack } from "./_components/PaidedTrack";
 import { DeliveredTrack } from "./_components/DeliveredTrack";
-import {
-  TrackAgentInfoModal,
-  AgentInfoMode,
-} from "./_components/TrackAgentInfoModal";
+import { TrackAgentInfoModal } from "./_components/TrackAgentInfoModal";
 import { OrderData } from "@/utils/TrackAgentData";
 import { useAgentTrackOrders } from "@/hooks/queries/useAdminTrackOrderQueries";
 import {
@@ -118,11 +115,9 @@ export default function TrackAgentPage() {
     return map;
   }, [orderData]);
 
-  // Buyer/Seller Info popup (A9): which order + which party is shown.
-  const [infoModal, setInfoModal] = useState<{
-    orderId: string;
-    mode: AgentInfoMode;
-  } | null>(null);
+  // Party details popup (A9): which order is open. Both parties are shown
+  // in the one dialog, so there is no second thing to remember.
+  const [infoOrderId, setInfoOrderId] = useState<string | null>(null);
 
   // State to track if all items in the active tab are checked
   const [allChecked, setAllChecked] = useState<boolean>(false);
@@ -234,14 +229,10 @@ export default function TrackAgentPage() {
     );
   };
 
-  // Handle buyer info click
-  const handleBuyerInfo = (id: string) => {
-    if (orderById.has(id)) setInfoModal({ orderId: id, mode: "buyer" });
-  };
-
-  // Handle seller info click
-  const handleSellerInfo = (id: string) => {
-    if (orderById.has(id)) setInfoModal({ orderId: id, mode: "seller" });
+  // Opening a row shows that order's buyer and seller together. Rows whose
+  // parties never loaded stay inert rather than opening an empty dialog.
+  const handleRowClick = (id: string) => {
+    if (orderById.has(id)) setInfoOrderId(id);
   };
 
   // Update the indicator position and width when activeTab changes
@@ -287,8 +278,7 @@ export default function TrackAgentPage() {
       Paid: (
         <PaidedTrack
           order={orderData}
-          handleBuyerInfo={handleBuyerInfo}
-          handleSellerInfo={handleSellerInfo}
+          onRowClick={handleRowClick}
           handleCheckboxChange={handleCheckboxChange}
           handleSelectAll={handleSelectAll}
           allChecked={allChecked}
@@ -298,8 +288,7 @@ export default function TrackAgentPage() {
       Delivered: (
         <DeliveredTrack
           order={orderData}
-          handleBuyerInfo={handleBuyerInfo}
-          handleSellerInfo={handleSellerInfo}
+          onRowClick={handleRowClick}
           handleCheckboxChange={handleCheckboxChange}
           handleSelectAll={handleSelectAll}
           allChecked={allChecked}
@@ -420,17 +409,11 @@ export default function TrackAgentPage() {
         </div>
       )}
 
-      {infoModal && (
+      {infoOrderId && (
         <TrackAgentInfoModal
-          mode={infoModal.mode}
-          parties={
-            infoModal.mode === "buyer"
-              ? [orderById.get(infoModal.orderId)?.buyerInfo].filter(
-                  (p): p is NonNullable<typeof p> => !!p,
-                )
-              : orderById.get(infoModal.orderId)?.sellerInfos ?? []
-          }
-          onClose={() => setInfoModal(null)}
+          buyer={orderById.get(infoOrderId)?.buyerInfo}
+          sellers={orderById.get(infoOrderId)?.sellerInfos ?? []}
+          onClose={() => setInfoOrderId(null)}
         />
       )}
     </div>

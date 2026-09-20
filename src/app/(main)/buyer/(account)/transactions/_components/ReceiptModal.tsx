@@ -12,16 +12,12 @@ interface Props {
 
 const statusLabel: Record<BuyerTransactionRow["status"], string> = {
   pending: "Pending",
-  payment_pending: "Payment pending",
-  paid: "Paid",
-  delivered: "Delivered",
+  approved: "Approved",
 };
 
 const statusTone: Record<BuyerTransactionRow["status"], string> = {
   pending: "bg-[#fff4e5] text-[#b26a00]",
-  payment_pending: "bg-[#fff4e5] text-[#b26a00]",
-  paid: "bg-[#eaf6ea] text-[#2a6b2a]",
-  delivered: "bg-[#eaf6ea] text-[#2a6b2a]",
+  approved: "bg-[#eaf6ea] text-[#2a6b2a]",
 };
 
 const Line: React.FC<{ label: string; value: React.ReactNode }> = ({

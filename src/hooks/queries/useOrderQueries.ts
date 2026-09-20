@@ -11,6 +11,7 @@ import {
   CreateOrderPayload,
   UpdateTransportStatusPayload,
   isOrderUnpaid,
+  isOrderDelivered,
 } from "@/services/OrderService";
 import { toast } from "sonner";
 
@@ -270,6 +271,10 @@ export const useUpdateTransportStatus = () => {
  * `pending`. Drop this `select` once the server honours the param.
  */
 const hasShippingStarted = (order: OrderRecord): boolean => {
+  // A completed delivery is written `status: "delivered"`, not left on `paid`,
+  // so gating on `paid` alone dropped finished orders out of "Shipping &
+  // Delivered" — the one tab where a buyer looks for what they have received.
+  if (isOrderDelivered(order)) return true;
   if (order.status !== "paid") return false;
   if (order.fleetTripId) return true;
   if (order.transporter) return true;

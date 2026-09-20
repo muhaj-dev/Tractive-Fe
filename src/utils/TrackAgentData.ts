@@ -28,8 +28,12 @@ export interface OrderData {
 
 export interface orderDataProps {
   order: OrderData[];
-  handleBuyerInfo: (id: string) => void;
-  handleSellerInfo: (id: string) => void;
+  /**
+   * Opening a row shows the buyer and the seller together. It replaces the
+   * row menu's separate "Buyer Info" / "Seller Info" entries, which forced a
+   * choice between two halves of the same order.
+   */
+  onRowClick: (id: string) => void;
   handleCheckboxChange: (id: string) => void;
   handleSelectAll: () => void;
   allChecked: boolean;

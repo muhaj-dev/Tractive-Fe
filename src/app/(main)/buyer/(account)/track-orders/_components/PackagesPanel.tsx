@@ -1,8 +1,6 @@
 "use client";
 import React from "react";
 import Image from "next/image";
-import { IdCopyIcon } from "@/app/(main)/transporter/_components/Icons/TransporterIcons";
-import { copyToClipboard } from "@/utils/Clipboard";
 import type { TrackOrder } from "./trackOrdersData";
 
 interface Props {
@@ -12,11 +10,10 @@ interface Props {
 export const PackagesPanel: React.FC<Props> = ({ order }) => {
   return (
     <div className="bg-[#fefefe] rounded-[10px] shadow-md p-4 flex flex-col gap-2 max-h-[400px] overflow-y-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <span className="font-montserrat text-[11px] text-[#808080]">
           Package
         </span>
-        <span className="font-montserrat text-[11px] text-[#808080]">ID</span>
       </div>
       <div className="flex flex-col gap-2">
         {order.packages.map((p) => (
@@ -42,20 +39,6 @@ export const PackagesPanel: React.FC<Props> = ({ order }) => {
                   {p.description}
                 </span>
               </div>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <span className="font-montserrat text-[11px] text-[#2b2b2b]">
-                {p.productId.slice(0, 5)}
-              </span>
-              <button
-                type="button"
-                onClick={() => copyToClipboard(p.productId)}
-                aria-label="Copy package ID"
-                title="Copy package ID"
-                className="cursor-pointer"
-              >
-                <IdCopyIcon />
-              </button>
             </div>
           </div>
         ))}
