@@ -70,7 +70,9 @@ const BookingTransport: React.FC = () => {
         id: apiTruck._id,
         image: apiTruck.images?.[0] ?? apiTruck.image ?? "",
         images: apiTruck.images ?? [],
-        rating: (ownerRating ?? 0).toFixed(1),
+        // Unknown until the owner's profile loads — never a placeholder 0.0.
+        rating:
+          typeof ownerRating === "number" ? ownerRating.toFixed(1) : undefined,
         truckName: apiTruck.fleetName,
         amountPerKg: formatCurrency(apiTruck.pricePerKgEquivalent),
         fullLoad: apiTruck.capacityTonnes

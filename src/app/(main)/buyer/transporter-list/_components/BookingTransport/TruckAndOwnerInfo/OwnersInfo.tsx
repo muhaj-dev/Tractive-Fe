@@ -125,7 +125,9 @@ export const OwnersInfo = ({ owner }: { owner?: OwnerInfo }) => {
                   )
                 )}
                 <span className="font-montserrat font-normal text-[13px] text-[#2b2b2b]">
-                  {(owner?.rating ?? 0).toFixed(1)}
+                  {typeof owner?.rating === "number"
+                    ? owner.rating.toFixed(1)
+                    : "—"}
                 </span>
               </div>
               <small className="font-montserrat font-normal text-[11px] text-[#2b2b2b] truncate">

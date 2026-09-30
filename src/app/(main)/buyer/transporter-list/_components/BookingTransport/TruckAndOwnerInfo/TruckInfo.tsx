@@ -30,8 +30,14 @@ export const TruckInfo: React.FC<TruckInfoProps> = ({
   const status = apiTruck?.status;
   const bidSummary = apiTruck?.bidSummary;
 
-  const ratingValue = Number(rating ?? item.rating) || 0;
-  const filledStars = Math.round(ratingValue);
+  // The owner's rating, if it has loaded; unknown otherwise (not 0.0).
+  const rawRating = rating ?? item.rating;
+  const ratingValue =
+    rawRating === undefined || rawRating === null || rawRating === ""
+      ? null
+      : Number(rawRating);
+  const hasRating = ratingValue !== null && Number.isFinite(ratingValue);
+  const filledStars = hasRating ? Math.round(ratingValue) : 0;
   const reviews = reviewCount ?? 0;
 
   const bidders = bidSummary?.activeBidders ?? [];
@@ -57,7 +63,7 @@ export const TruckInfo: React.FC<TruckInfoProps> = ({
                       )
                     )}
                     <span className="font-montserrat font-normal text-[13px] text-[#2b2b2b]">
-                      {ratingValue.toFixed(1)}
+                      {hasRating ? ratingValue.toFixed(1) : "—"}
                     </span>
                   </div>
                   <p className="font-montserrat font-normal text-[13px] text-[#2b2b2b]">

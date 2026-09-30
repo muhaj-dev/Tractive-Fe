@@ -29,12 +29,20 @@ interface Review {
   likes: number;
 }
 
+interface Reviewer {
+  key: string;
+  name: string;
+  avatar?: string;
+}
+
 interface ReviewData {
-  overallRating: number;
+  /** `null` when no source could supply it — shown as unavailable, never 0. */
+  overallRating: number | null;
   totalReviewers: number;
   ratings: Rating[];
   reviews: Review[];
-  reviewerAvatars: string[];
+  /** Real reviewers (up to four) for the avatar stack. Empty hides it. */
+  reviewers: Reviewer[];
 }
 
 // Props interface for the Reviews component
@@ -48,6 +56,18 @@ interface ReviewsProps {
    * is off unless a caller is showing it to the reviewed agent themselves.
    */
   canReply?: boolean;
+  /**
+   * The rating the profile endpoint already returned (e.g. `rating`,
+   * `reviewsCount`, `ratingDistribution` from GET /api/transporters/{id}).
+   * It is the authoritative aggregate, so it is what the summary shows while
+   * the reviews request is still loading. If that request fails, no rating is
+   * shown — only an error message.
+   */
+  summary?: {
+    overallRating?: number | null;
+    totalReviews?: number | null;
+    ratingDistribution?: unknown;
+  };
   onClose: () => void;
 }
 
@@ -65,13 +85,79 @@ const EMPTY_DATA: ReviewData = {
   totalReviewers: 0,
   ratings: EMPTY_RATINGS,
   reviews: [],
-  reviewerAvatars: [],
+  reviewers: [],
+};
+
+// `ratingDistribution` arrives as `{ "5_star": 1, … }` from the seller
+// endpoint and as an array of `{ rating, count, percentage }` elsewhere.
+const mapDistribution = (rawDist: unknown, totalReviewers: number): Rating[] => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dist: any[] = Array.isArray(rawDist)
+    ? rawDist
+    : rawDist && typeof rawDist === "object"
+      ? Object.entries(rawDist).map(([key, count]) => ({
+          rating: Number(String(key).replace(/[^0-9]/g, "")),
+          count,
+        }))
+      : [];
+
+  if (!dist.length) return EMPTY_RATINGS;
+  return [5, 4, 3, 2, 1].map((star) => {
+    const entry = dist.find(
+      (d) => Number(d?.rating ?? String(d?.stars).charAt(0)) === star,
+    );
+    const count = Number(entry?.count) || 0;
+    return {
+      stars: `${star} star`,
+      count,
+      // The object shape carries counts only — derive the bar width.
+      percentage:
+        Number(entry?.percentage) ||
+        (totalReviewers ? (count / totalReviewers) * 100 : 0),
+    };
+  });
+};
+
+/**
+ * Up to four distinct reviewers: the API's `recentReviewers` ({id, name,
+ * avatar}) when present, else the people on the reviews themselves.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toReviewers = (rd: any): Reviewer[] => {
+  // Only named entries count — a bare avatar URL can't say who reviewed.
+  const named: unknown[] = Array.isArray(rd?.recentReviewers)
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rd.recentReviewers.filter((r: any) => r && typeof r === "object" && r.name)
+    : [];
+  const source: unknown[] =
+    named.length > 0 ? named : Array.isArray(rd?.reviews) ? rd.reviews : [];
+  const seen = new Set<string>();
+  const reviewers: Reviewer[] = [];
+  for (const raw of source) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = raw as any;
+    const person = r?.user ?? r?.buyer ?? r ?? {};
+    const name: string = person?.name ?? person?.fullName ?? "";
+    const key = String(person?._id ?? person?.id ?? name);
+    if (!name || seen.has(key)) continue;
+    seen.add(key);
+    reviewers.push({ key, name, avatar: person?.avatar ?? person?.image ?? undefined });
+    if (reviewers.length === 4) break;
+  }
+  return reviewers;
+};
+
+const toFiniteOrNull = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 };
 
 export const Reviews: React.FC<ReviewsProps> = ({
   sellerId,
   transporterId,
   canReply = false,
+  summary,
   onClose,
 }) => {
   const sellerQuery = useGetSellerReviews(sellerId as string);
@@ -79,9 +165,8 @@ export const Reviews: React.FC<ReviewsProps> = ({
 
   const apiReviewData = sellerId ? sellerQuery.data : transporterQuery.data;
   const isLoading = sellerId ? sellerQuery.isLoading : transporterQuery.isLoading;
-  // Distinguish "this user has no reviews" from "the request failed" — the
-  // transporter reviews endpoint currently 400s, and silently showing an empty
-  // state for that reads as a rating of zero.
+  // Distinguish "this user has no reviews" from "the request failed" — silently
+  // showing an empty state for a failed request reads as a rating of zero.
   const loadError = sellerId ? sellerQuery.error : transporterQuery.error;
 
   const likeMutation = useLikeReview();
@@ -116,7 +201,22 @@ export const Reviews: React.FC<ReviewsProps> = ({
   const mappedData: ReviewData = React.useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rd = apiReviewData as any;
-    if (!rd) return EMPTY_DATA;
+    if (!rd) {
+      // No review data yet (still loading). Show the
+      // profile's own aggregate if the caller has it; otherwise say the
+      // rating is unavailable rather than inventing a zero.
+      const overallRating = toFiniteOrNull(summary?.overallRating);
+      if (overallRating === null) {
+        return { ...EMPTY_DATA, overallRating: null };
+      }
+      const totalReviewers = toFiniteOrNull(summary?.totalReviews) ?? 0;
+      return {
+        ...EMPTY_DATA,
+        overallRating,
+        totalReviewers,
+        ratings: mapDistribution(summary?.ratingDistribution, totalReviewers),
+      };
+    }
 
     const rawReviews: unknown[] = Array.isArray(rd.reviews) ? rd.reviews : [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,57 +240,42 @@ export const Reviews: React.FC<ReviewsProps> = ({
       };
     });
 
+    // A plain reviews list (GET /api/reviews?transporterId=) carries no
+    // aggregate, so fall back to the profile's before counting the page.
     const totalReviewers =
-      Number(rd.totalReviewers ?? rd.totalReviews) || reviews.length;
+      Number(rd.totalReviewers ?? rd.totalReviews) ||
+      toFiniteOrNull(summary?.totalReviews) ||
+      reviews.length;
 
-    // `ratingDistribution` arrives as `{ "5_star": 1, … }` from the seller
-    // endpoint and as an array of `{ rating, count }` elsewhere.
-    const rawDist = rd.ratings ?? rd.ratingDistribution;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dist: any[] = Array.isArray(rawDist)
-      ? rawDist
-      : rawDist && typeof rawDist === "object"
-        ? Object.entries(rawDist).map(([key, count]) => ({
-            rating: Number(String(key).replace(/[^0-9]/g, "")),
-            count,
-          }))
-        : [];
-
-    const ratings: Rating[] = dist.length
-      ? [5, 4, 3, 2, 1].map((star) => {
-          const entry = dist.find(
-            (d) => Number(d?.rating ?? String(d?.stars).charAt(0)) === star,
-          );
-          const count = Number(entry?.count) || 0;
-          return {
-            stars: `${star} star`,
-            count,
-            // The object shape carries counts only — derive the bar width.
-            percentage:
-              Number(entry?.percentage) ||
-              (totalReviewers ? (count / totalReviewers) * 100 : 0),
-          };
-        })
-      : EMPTY_RATINGS;
+    const ratings = mapDistribution(
+      rd.ratings ?? rd.ratingDistribution ?? summary?.ratingDistribution,
+      totalReviewers,
+    );
 
     return {
-      overallRating: Number(rd.overallRating ?? rd.averageRating) || 0,
+      // The reviews payload's own aggregate first, then the profile's. With
+      // neither, a reviewer-less payload genuinely means 0; one that has
+      // reviews but no aggregate is unknown, not 0.
+      overallRating:
+        toFiniteOrNull(rd.overallRating ?? rd.averageRating) ??
+        toFiniteOrNull(summary?.overallRating) ??
+        (reviews.length === 0 && totalReviewers === 0 ? 0 : null),
       totalReviewers,
       ratings,
       reviews,
-      reviewerAvatars: (Array.isArray(rd.reviewerAvatars)
-        ? rd.reviewerAvatars
-        : Array.isArray(rd.recentReviewers)
-          ? rd.recentReviewers
-          : []
-      ).filter(
-        (a: unknown): a is string =>
-          typeof a === "string" && /^(https?:\/\/|\/)/.test(a),
-      ),
+      reviewers: toReviewers(rd),
     };
-  }, [apiReviewData]);
+    // Keyed on the fields, not the object: callers pass `summary` inline, and
+    // a new identity every render would restart the bar animation each time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    apiReviewData,
+    summary?.overallRating,
+    summary?.totalReviews,
+    summary?.ratingDistribution,
+  ]);
 
-  const { overallRating, totalReviewers, ratings, reviews, reviewerAvatars } = mappedData;
+  const { overallRating, totalReviewers, ratings, reviews, reviewers } = mappedData;
 
   // Initialize individual animation controls for each rating
   const control1 = useAnimation();
@@ -227,8 +312,29 @@ export const Reviews: React.FC<ReviewsProps> = ({
   };
 
   // Define left offsets for mobile and sm screens
-  const leftOffsetsMobile = [0, 10, 20, 30];
-  const leftOffsetsSm = [0, 12, 28, 40];
+
+  // A failed reviews request shows no rating at all — a figure next to an
+  // error reads as real review data — so only the message is rendered.
+  if (loadError && !isLoading) {
+    return (
+      <div className="relative bg-[#fefefe] flex flex-col items-center w-full max-w-[600px] md:max-w-[721px] px-6 py-6 rounded-[7px] shadow-[0px_4px_20px_rgba(0,0,0,0.1)]">
+        <button
+          type="button"
+          className="absolute top-3 right-3 cursor-pointer"
+          onClick={onClose}
+          aria-label="Close reviews"
+        >
+          <XIcon />
+        </button>
+        <p
+          role="alert"
+          className="font-montserrat text-[13px] text-[#c0392b] pt-6 pb-2 text-center"
+        >
+          Something went wrong, please try again later.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative bg-[#fefefe] flex flex-col items-center w-full max-w-[600px] md:max-w-[721px] overflow-y-auto max-h-[90vh] hide-scrollbar px-6 py-6 gap-3 rounded-[7px] shadow-[0px_4px_20px_rgba(0,0,0,0.1)]">
@@ -244,10 +350,12 @@ export const Reviews: React.FC<ReviewsProps> = ({
         <div className="flex flex-col w-[100%] bg-[#f1f1f1] p-1.5">
           <div className="flex items-center gap-[4px]">
             <div className="flex items-center gap-1.5">
-              {renderStars(overallRating)}
+              {renderStars(overallRating ?? 0)}
             </div>
             <span className="font-montserrat font-normal text-[11px] text-[#2b2b2b]">
-              {overallRating.toFixed(1)}
+              {overallRating === null
+                ? "Rating unavailable"
+                : overallRating.toFixed(1)}
             </span>
           </div>
           <span className="w-full h-[1px] bg-[#fefefe] mt-1"></span>
@@ -288,32 +396,28 @@ export const Reviews: React.FC<ReviewsProps> = ({
           </div>
           <div className="flex gap-2 items-center justify-between">
             <div className="flex items-center gap-6 sm:gap-10">
-              <div className="relative w-[40px] h-[40px] overflow-visible">
-                {reviewerAvatars.length > 0 ? (
-                  reviewerAvatars.map((avatar, index) => (
-                    <Image
-                      key={index}
-                      src={avatar}
-                      alt={`Reviewer ${index + 1}`}
-                      width={50}
-                      height={50}
-                      className={`absolute left-[${leftOffsetsMobile[index]}px] sm:left-[${leftOffsetsSm[index]}px] z-50
-                      }] w-[35px] h-[35px] rounded-full border-2 border-[#fefefe]`}
-                      onError={(e) => {
-                        console.error(`Failed to load image: ${avatar}`);
-                        e.currentTarget.src = "/images/placeholder.png"; // Fallback image
-                      }}
-                    />
-                  ))
-                ) : (
-                  <span className="font-montserrat font-normal text-[11px] text-[#2b2b2b]">
-                    No avatars available
-                  </span>
-                )}
-              </div>
-              <p className="font-montserrat font-normal text-[11px] sm:text-[15px] text-[#2b2b2b]">
-                + {totalReviewers.toLocaleString()}
-              </p>
+              {/* Real reviewers only — nothing at all when the API has none. */}
+              {reviewers.length > 0 && (
+                <>
+                  <div className="flex -space-x-2">
+                    {reviewers.map((reviewer) => (
+                      <UserAvatar
+                        key={reviewer.key}
+                        src={reviewer.avatar}
+                        name={reviewer.name}
+                        size={35}
+                        className="ring-2 ring-[#f1f1f1]"
+                      />
+                    ))}
+                  </div>
+                  <p className="font-montserrat font-normal text-[11px] sm:text-[15px] text-[#2b2b2b]">
+                    {Math.max(totalReviewers, reviewers.length).toLocaleString()}{" "}
+                    {Math.max(totalReviewers, reviewers.length) === 1
+                      ? "review"
+                      : "reviews"}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -324,10 +428,6 @@ export const Reviews: React.FC<ReviewsProps> = ({
         {isLoading ? (
           <p className="font-montserrat text-[12px] text-[#808080] py-6 text-center">
             Loading reviews…
-          </p>
-        ) : loadError ? (
-          <p className="font-montserrat text-[12px] text-[#c0392b] py-6 text-center">
-            Reviews could not be loaded right now.
           </p>
         ) : reviews.length === 0 ? (
           <p className="font-montserrat text-[12px] text-[#808080] py-6 text-center">

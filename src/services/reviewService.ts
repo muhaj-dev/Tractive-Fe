@@ -33,7 +33,8 @@ export interface ReviewSummary {
     count: number;
     percentage: number;
   }[];
-  recentReviewers: string[]; // avatar URLs or user IDs
+  /** Named reviewers, newest first. `avatar` is absent when they have no photo. */
+  recentReviewers: { name: string; avatar?: string }[];
 }
 
 export interface GetReviewsResponse {
@@ -94,13 +95,15 @@ const mapSummaryResponse = (body: any): ReviewSummary | null => {
   );
 
   const rawReviewers = data.recentReviewers ?? data.reviewers ?? [];
-  const recentReviewers: string[] = Array.isArray(rawReviewers)
+  // Only named entries: a bare string (URL or id) can't say who reviewed.
+  const recentReviewers: ReviewSummary["recentReviewers"] = Array.isArray(
+    rawReviewers,
+  )
     ? rawReviewers
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((r: any) =>
-          typeof r === "string" ? r : (r?.name ?? r?.avatar ?? r?.id ?? ""),
-        )
-        .filter(Boolean)
+        .filter((r: any) => r && typeof r === "object" && r.name)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((r: any) => ({ name: String(r.name), avatar: r.avatar || undefined }))
     : [];
 
   return {
@@ -193,9 +196,14 @@ export class ReviewService {
       });
 
       // Get recent reviewers (first 4 for avatars)
-      const recentReviewers = reviews
+      const recentReviewers: ReviewSummary["recentReviewers"] = reviews
+        .filter((review) => !!review.buyer?.name)
         .slice(0, 4)
-        .map((review) => review.buyer.name); // Using names as placeholder for avatars
+        .map((review) => ({
+          name: review.buyer.name,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          avatar: (review.buyer as any).avatar || (review.buyer as any).image || undefined,
+        }));
 
       const summary = {
         overallRating: parseFloat(overallRating.toFixed(1)),

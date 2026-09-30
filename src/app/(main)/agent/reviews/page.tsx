@@ -11,9 +11,10 @@ import {
   useReplyToReview,
 } from "@/hooks/queries/useReviewQueries";
 
-// Sample fallback data
+// Empty state while the summary is unavailable — zeros, never sample people or
+// an invented rating.
 const fallbackReviewData = {
-  overallRating: 4.0,
+  overallRating: 0,
   totalReviewers: 0,
   ratings: [
     { stars: "5 star", count: 0, percentage: 0 },
@@ -23,12 +24,6 @@ const fallbackReviewData = {
     { stars: "1 star", count: 0, percentage: 0 },
   ],
   reviews: [],
-  reviewerAvatars: [
-    "/images/bidder1.png",
-    "/images/bidder2.png",
-    "/images/bidder3.png",
-    "/images/bidder4.png",
-  ],
 };
 
 const ReviewsPage: React.FC = () => {
@@ -66,7 +61,7 @@ const ReviewsPage: React.FC = () => {
           count: rating.count,
           percentage: rating.percentage,
         })),
-        recentReviewers: fallbackReviewData.reviewerAvatars,
+        recentReviewers: [],
       },
     [summary],
   );
@@ -143,9 +138,6 @@ const ReviewsPage: React.FC = () => {
     });
   };
 
-  // Define left offsets for mobile and sm screens
-  const leftOffsetsMobile = [0, 10, 20, 30];
-  const leftOffsetsSm = [0, 12, 28, 40];
 
   if (isLoading) {
     return (
@@ -229,39 +221,26 @@ const ReviewsPage: React.FC = () => {
           </div>
           <div className="flex gap-2 items-center justify-between">
             <div className="flex items-center gap-6 sm:gap-10">
-              <div className="relative w-[40px] h-[40px] overflow-visible">
-                {reviewData?.recentReviewers &&
-                reviewData.recentReviewers.length > 0
-                  ? reviewData.recentReviewers
-                      .slice(0, 4)
-                      .map((reviewer, index) => (
-                        <div
-                          key={index}
-                          className={`absolute left-[${leftOffsetsMobile[index]}px] sm:left-[${leftOffsetsSm[index]}px] z-50 w-[35px] h-[35px] rounded-full bg-gray-300 flex items-center justify-center border-2 border-[#fefefe]`}
-                        >
-                          <span className="font-montserrat text-xs font-bold text-gray-600">
-                            {reviewer.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      ))
-                  : fallbackReviewData.reviewerAvatars.map((avatar, index) => (
-                      <Image
-                        key={index}
-                        src={avatar}
-                        alt={`Reviewer ${index + 1}`}
-                        width={50}
-                        height={50}
-                        className={`absolute left-[${leftOffsetsMobile[index]}px] sm:left-[${leftOffsetsSm[index]}px] z-50 w-[35px] h-[35px] rounded-full border-2 border-[#fefefe]`}
-                        onError={(e) => {
-                          console.error(`Failed to load image: ${avatar}`);
-                          e.currentTarget.src = "/images/placeholder.png";
-                        }}
+              {/* Real reviewers only — nothing at all when the API has none. */}
+              {reviewData.recentReviewers.length > 0 && (
+                <>
+                  <div className="flex -space-x-2">
+                    {reviewData.recentReviewers.slice(0, 4).map((reviewer, index) => (
+                      <UserAvatar
+                        key={`${reviewer.name}-${index}`}
+                        src={reviewer.avatar}
+                        name={reviewer.name}
+                        size={35}
+                        className="ring-2 ring-[#fefefe]"
                       />
                     ))}
-              </div>
-              <p className="font-montserrat font-normal text-[11px] sm:text-[15px] text-[#2b2b2b]">
-                + {(reviewData?.totalReviews || 0).toLocaleString()} reviews
-              </p>
+                  </div>
+                  <p className="font-montserrat font-normal text-[11px] sm:text-[15px] text-[#2b2b2b]">
+                    {(reviewData.totalReviews || 0).toLocaleString()}{" "}
+                    {reviewData.totalReviews === 1 ? "review" : "reviews"}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

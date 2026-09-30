@@ -171,8 +171,12 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
   // Initials stand in when there is no photo, rather than a stock portrait.
   const avatar: string | undefined = t.image || t.profilePicture || undefined;
   const isVerified = t.isVerified ?? true;
-  const ratingValue = t.rating || 0;
-  const followersCount = t.followersCount || 0;
+  // `rating` is the authoritative aggregate from GET /api/transporters/{id}.
+  // If it is missing the rating is unknown — shown as "—", not as 0.0.
+  const ratingValue: number | null =
+    typeof t.rating === "number" && Number.isFinite(t.rating) ? t.rating : null;
+  // GET /api/transporters/{id} has no followersCount; the seller record does.
+  const followersCount = sellerFollowersCount ?? t.followersCount ?? 0;
   const stateLocation = t.state || t.locationFrom || "Various";
   // Field names as the API actually returns them (`deliveriesCount`,
   // `customersCount`, `reviewsCount`); the previous spellings never matched, so
@@ -238,7 +242,7 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
                   <div className="flex gap-1 items-center">
                     <YellowStarIcon />
                     <small className="font-montserrat font-normal text-[10px] sm:text-[11px] text-[#2b2b2b]">
-                      {ratingValue.toFixed(1)}
+                      {ratingValue === null ? "—" : ratingValue.toFixed(1)}
                     </small>
                   </div>
                   <small className="font-montserrat font-normal text-[10px] sm:text-[11px] text-[#2b2b2b]">
@@ -371,41 +375,30 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
                 </p>
               </div>
               <div className="flex gap-2 items-center justify-between">
-                <div className="flex items-center gap-6 sm:gap-10">
-                  <div className="relative w-[30px] h-[30px]">
-                    <Image
-                      src="/images/bidder1.png"
-                      alt="Bidder 1"
-                      width={20}
-                      height={20}
-                      className="absolute left-0 z-10 sm:w-[25px] sm:h-[25px]"
-                    />
-                    <Image
-                      src="/images/bidder2.png"
-                      alt="Bidder 2"
-                      width={20}
-                      height={20}
-                      className="absolute left-[10px] sm:left-[12px] z-20 sm:w-[25px] sm:h-[25px]"
-                    />
-                    <Image
-                      src="/images/bidder3.png"
-                      alt="Bidder 3"
-                      width={20}
-                      height={20}
-                      className="absolute left-[20px] sm:left-[28px] z-30 sm:w-[25px] sm:h-[25px]"
-                    />
-                    <Image
-                      src="/images/bidder4.png"
-                      alt="Bidder 4"
-                      width={20}
-                      height={20}
-                      className="absolute left-[30px] sm:left-[40px] z-40 sm:w-[25px] sm:h-[25px]"
-                    />
+                {/* Real reviewers only. With none from the API, nothing shows. */}
+                {recentReviewers.length > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex -space-x-2">
+                      {recentReviewers.map((reviewer) => (
+                        <UserAvatar
+                          key={reviewer.key}
+                          src={reviewer.avatar}
+                          name={reviewer.name}
+                          initialsSize={9}
+                          className="w-5 h-5 sm:w-[25px] sm:h-[25px] ring-2 ring-[#fefefe]"
+                        />
+                      ))}
+                    </div>
+                    <p className="font-montserrat font-normal text-[10px] sm:text-[11px] text-[#2b2b2b]">
+                      {Math.max(reviewCount, recentReviewers.length).toLocaleString()}{" "}
+                      {Math.max(reviewCount, recentReviewers.length) === 1
+                        ? "review"
+                        : "reviews"}
+                    </p>
                   </div>
-                  <p className="font-montserrat font-normal text-[10px] sm:text-[11px] text-[#2b2b2b]">
-                    + {reviewCount > 0 ? reviewCount.toLocaleString() : "0"}
-                  </p>
-                </div>
+                ) : (
+                  <span />
+                )}
                 <div className="flex items-center gap-3">
                   {/* Rate the transporter from their profile. Reviews posted
                       here recompute the transporter's own rating and
@@ -447,7 +440,15 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
             transition={{ duration: 0.3 }}
             className="absolute right-0 top-[7.6rem] z-60"
           >
-            <Reviews transporterId={transporterId} onClose={handleReviewsToggle} />
+            <Reviews
+              transporterId={transporterId}
+              summary={{
+                overallRating: ratingValue,
+                totalReviews: t.reviewsCount ?? t.totalReviews ?? t.reviewCount,
+                ratingDistribution: t.ratingDistribution,
+              }}
+              onClose={handleReviewsToggle}
+            />
           </motion.div>
         )}
       </div>

@@ -11,13 +11,19 @@ import {
   TransporterReviewBuyer,
 } from "@/services/transporterService";
 
+/** A real reviewer for the avatar stack. */
+interface Reviewer {
+  key: string;
+  name: string;
+  avatar?: string;
+}
+
 interface Rating {
   stars: string;
   count: number;
   percentage: number;
 }
 
-const fallbackAvatar = "/images/placeholder.png";
 
 const resolveBuyer = (
   buyer: TransporterReview["buyer"],
@@ -44,7 +50,7 @@ const ReviewsPage: React.FC = () => {
     { stars: "2 star", count: 0, percentage: 0 },
     { stars: "1 star", count: 0, percentage: 0 },
   ]);
-  const [reviewerAvatars, setReviewerAvatars] = useState<string[]>([]);
+  const [reviewers, setReviewers] = useState<Reviewer[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,22 +115,25 @@ const ReviewsPage: React.FC = () => {
           );
         }
 
-        const recent =
-          response.recentReviewers
-            ?.map((r) => r.avatar)
-            .filter((a): a is string => !!a) ?? [];
-        if (recent.length) {
-          setReviewerAvatars(recent.slice(0, 4));
-        } else {
-          const fromReviews = list
-            .map((r) => {
-              const buyer = resolveBuyer(r.buyer);
-              return buyer.avatar || buyer.image;
-            })
-            .filter((a): a is string => !!a)
-            .slice(0, 4);
-          setReviewerAvatars(fromReviews);
-        }
+        // Named reviewers from the API (photo optional — initials stand in),
+        // else the people on the reviews themselves.
+        const recent: Reviewer[] = (response.recentReviewers ?? [])
+          .filter((r) => !!r.name)
+          .map((r) => ({ key: r.id || r.name!, name: r.name!, avatar: r.avatar }));
+        const fromReviews: Reviewer[] = list
+          .map((r) => resolveBuyer(r.buyer))
+          .filter((b) => !!b.name)
+          .map((b) => ({
+            key: b._id || b.name!,
+            name: b.name!,
+            avatar: b.avatar || b.image,
+          }));
+        const seen = new Set<string>();
+        setReviewers(
+          (recent.length ? recent : fromReviews)
+            .filter((r) => !seen.has(r.key) && !!seen.add(r.key))
+            .slice(0, 4),
+        );
       } catch (err: unknown) {
         if (!isMounted) return;
         console.error("Error fetching transporter reviews:", err);
@@ -160,8 +169,6 @@ const ReviewsPage: React.FC = () => {
     return stars;
   };
 
-  const leftOffsetsMobile = [0, 10, 20, 30];
-  const leftOffsetsSm = [0, 12, 28, 40];
 
   if (isLoading) {
     return (
@@ -236,30 +243,28 @@ const ReviewsPage: React.FC = () => {
           </div>
           <div className="flex gap-2 items-center justify-between">
             <div className="flex items-center gap-6 sm:gap-10">
-              <div className="relative w-[40px] h-[40px] overflow-visible">
-                {reviewerAvatars.length > 0 ? (
-                  reviewerAvatars.map((avatar, index) => (
-                    <Image
-                      key={index}
-                      src={avatar}
-                      alt={`Reviewer ${index + 1}`}
-                      width={50}
-                      height={50}
-                      className={`absolute left-[${leftOffsetsMobile[index]}px] sm:left-[${leftOffsetsSm[index]}px] z-50 w-[35px] h-[35px] rounded-full border-2 border-[#fefefe]`}
-                      onError={(e) => {
-                        e.currentTarget.src = fallbackAvatar;
-                      }}
-                    />
-                  ))
-                ) : (
-                  <span className="font-montserrat font-normal text-[11px] text-[#2b2b2b]">
-                    No avatars available
-                  </span>
-                )}
-              </div>
-              <p className="font-montserrat font-normal text-[11px] sm:text-[15px] text-[#2b2b2b]">
-                + {totalReviewers.toLocaleString()}
-              </p>
+              {/* Real reviewers only — nothing at all when the API has none. */}
+              {reviewers.length > 0 && (
+                <>
+                  <div className="flex -space-x-2">
+                    {reviewers.map((reviewer) => (
+                      <UserAvatar
+                        key={reviewer.key}
+                        src={reviewer.avatar}
+                        name={reviewer.name}
+                        size={35}
+                        className="ring-2 ring-[#fefefe]"
+                      />
+                    ))}
+                  </div>
+                  <p className="font-montserrat font-normal text-[11px] sm:text-[15px] text-[#2b2b2b]">
+                    {Math.max(totalReviewers, reviewers.length).toLocaleString()}{" "}
+                    {Math.max(totalReviewers, reviewers.length) === 1
+                      ? "review"
+                      : "reviews"}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>

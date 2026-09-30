@@ -295,12 +295,25 @@ export const transporterService = {
 
   /**
    * Get transporter reviews
-   * GET /api/transporters/{id}/reviews
+   * GET /api/reviews?agentId={id}
+   *
+   * A user carries one rating across roles, so a transporter's reviews are
+   * filed under their user id and read with `agentId` — the only filter this
+   * route accepts (`transporterId` answers 400 "agentId required", and
+   * `GET /api/transporters/{id}/reviews` answers 400 "Invalid transporter id").
+   * Body: `{ data: { reviews, averageRating, totalReviews, recentReviewers } }`.
    */
   getTransporterReviews: async (id: string): Promise<unknown> => {
     try {
-      const response = await api.get(`/api/transporters/${id}/reviews`);
-      return response.data.data || response.data;
+      const response = await api.get("/api/reviews", {
+        params: { agentId: id },
+      });
+      const body = response.data;
+      if (Array.isArray(body)) return { reviews: body };
+      const payload =
+        body?.data && !Array.isArray(body.data) ? body.data : body;
+      const reviews = payload?.reviews ?? body?.reviews ?? [];
+      return { ...payload, reviews: Array.isArray(reviews) ? reviews : [] };
     } catch (error) {
       console.error(`[TransporterService] getTransporterReviews ${id} error:`, error);
       throw error;
