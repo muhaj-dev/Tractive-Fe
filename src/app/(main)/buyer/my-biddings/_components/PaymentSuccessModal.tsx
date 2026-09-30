@@ -63,12 +63,15 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
             id="payment-success-title"
             className="font-montserrat font-semibold text-[18px] sm:text-[20px] text-[#2b2b2b]"
           >
-            Payment Successful
+            Payment submitted
           </h2>
 
+          {/* The transfer is only declared here; an admin still has to verify
+              it, so this must not read as a completed payment. */}
           <p className="font-montserrat text-[13px] sm:text-[14px] text-[#5a5a5a]">
-            Your payment has been received. Would you like to arrange transport
-            for your products, or keep shopping for more?
+            We&apos;ve received your payment details. We&apos;ll confirm once
+            the transfer is verified. Would you like to arrange transport for
+            your products, or keep shopping for more?
           </p>
         </div>
 

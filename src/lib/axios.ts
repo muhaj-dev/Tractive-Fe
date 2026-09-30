@@ -4,6 +4,13 @@ import { tokenManager } from "./tokenManager";
 import { toast } from "sonner";
 import { API_BASE_URL } from "./config";
 
+declare module "axios" {
+  interface AxiosRequestConfig {
+    /** Skip the global "Server error" toast — for background lookups whose failure the UI already tolerates. */
+    silentServerError?: boolean;
+  }
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {

@@ -46,6 +46,21 @@ export interface CreateFleetPaymentPayload {
   note?: string;
 }
 
+/** A payment the buyer made against a fleet bid, as listed per fleet. */
+export interface FleetBidPaymentRecord {
+  _id: string;
+  status?: string;
+  amount?: number;
+  buyer?: string | { _id?: string };
+  fleetBid?: null | {
+    _id?: string;
+    amount?: number;
+    counterAmount?: number;
+    status?: string;
+  };
+  createdAt?: string;
+}
+
 export interface DirectFleetShipmentItem {
   orderId: string;
   productId: string;
@@ -206,6 +221,23 @@ export class NegotiationService {
       payload
     );
     return response.data;
+  }
+
+  /**
+   * The buyer's payments on one fleet. Fleet bid records carry no payment
+   * field, so this is the only way to tell an accepted bid has been paid.
+   * GET /api/transporters/fleet/payments?fleetId={fleetId} (400 without fleetId)
+   */
+  static async getFleetBidPayments(
+    fleetId: string
+  ): Promise<FleetBidPaymentRecord[]> {
+    const response = await api.get(`/api/transporters/fleet/payments`, {
+      params: { fleetId },
+      // A failed lookup just leaves "Pay Now" showing; don't toast over it.
+      silentServerError: true,
+    });
+    const data = response.data?.data ?? response.data;
+    return Array.isArray(data) ? data : [];
   }
 
   /**

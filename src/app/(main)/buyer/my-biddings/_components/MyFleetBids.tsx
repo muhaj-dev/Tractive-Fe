@@ -3,9 +3,13 @@ import React, { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
   useBuyerFleetBids,
+  useFleetBidPaymentsByBid,
   useRespondToFleetBid,
 } from "@/hooks/queries/useTransporterQueries";
-import { FleetBidResponse } from "@/services/negotiationService";
+import {
+  FleetBidPaymentRecord,
+  FleetBidResponse,
+} from "@/services/negotiationService";
 import { FleetBidPaymentModal } from "./FleetBidPaymentModal";
 import { CounterBackModal } from "./CounterBackModal";
 import { getPriceDelta } from "./bidHelpers";
@@ -16,6 +20,38 @@ const statusStyles: Record<string, { bg: string; text: string; label: string }> 
   accepted: { bg: "bg-[#D4EDDA]", text: "text-[#155724]", label: "Accepted" },
   countered: { bg: "bg-[#CCE5FF]", text: "text-[#004085]", label: "Countered" },
   rejected: { bg: "bg-[#F8D7DA]", text: "text-[#721C24]", label: "Rejected" },
+};
+
+const idOf = (value: unknown): string | undefined => {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object" && "_id" in value) {
+    const id = (value as { _id?: unknown })._id;
+    return typeof id === "string" ? id : undefined;
+  }
+  return undefined;
+};
+
+/**
+ * Where the buyer's payment on an accepted bid stands. Fleet bid records have
+ * no payment field, so this reads the fleet's payment list. Approved wins over
+ * pending, and pending over rejected, so a retry after a rejection shows as
+ * submitted.
+ */
+const getPaymentState = (
+  bid: FleetBidResponse,
+  payments: FleetBidPaymentRecord[] | undefined,
+): "approved" | "pending" | "rejected" | null => {
+  const buyerId = idOf(bid.buyer);
+  const statuses = (payments ?? [])
+    .filter((p) => {
+      const payer = idOf(p.buyer);
+      return !payer || !buyerId || payer === buyerId;
+    })
+    .map((p) => p.status);
+  if (statuses.includes("approved")) return "approved";
+  if (statuses.includes("pending")) return "pending";
+  if (statuses.includes("rejected")) return "rejected";
+  return null;
 };
 
 const ExpandableMessage: React.FC<{
@@ -59,6 +95,11 @@ export const MyFleetBids: React.FC = () => {
   } = useRespondToFleetBid();
   const [payingBid, setPayingBid] = useState<FleetBidResponse | null>(null);
   const [counterBid, setCounterBid] = useState<FleetBidResponse | null>(null);
+  const paymentsByBid = useFleetBidPaymentsByBid(
+    (bids ?? [])
+      .filter((b) => b.status === "accepted")
+      .map((b) => idOf(b.fleet) ?? ""),
+  );
 
   if (isLoading) {
     return (
@@ -156,6 +197,10 @@ export const MyFleetBids: React.FC = () => {
             ? formatDistanceToNow(new Date(bid.updatedAt), { addSuffix: true })
             : "";
           const isRowPending = activeBidId === bid._id;
+          const paymentState =
+            bid.status === "accepted"
+              ? getPaymentState(bid, paymentsByBid.get(bid._id))
+              : null;
 
           return (
             <div
@@ -273,7 +318,26 @@ export const MyFleetBids: React.FC = () => {
                 </div>
               )}
 
-              {bid.status === "accepted" && (
+              {paymentState === "approved" && (
+                <p className="w-full h-9 flex items-center justify-center bg-[#D4EDDA] text-[#155724] font-montserrat text-[12px] font-medium rounded-[4px]">
+                  Paid
+                </p>
+              )}
+              {paymentState === "pending" && (
+                <p className="w-full min-h-9 flex items-center justify-center text-center bg-[#FFF3CD] text-[#856404] font-montserrat text-[12px] font-medium rounded-[4px] px-2 py-1">
+                  Payment submitted — awaiting confirmation
+                </p>
+              )}
+              {paymentState === "rejected" && (
+                <p className="font-montserrat text-[11px] text-[#d32f2f]">
+                  Payment rejected
+                </p>
+              )}
+              {/* A rejected payment can be retried; a pending or approved one
+                  can't, or the buyer could pay twice. */}
+              {bid.status === "accepted" &&
+                paymentState !== "approved" &&
+                paymentState !== "pending" && (
                 <button
                   type="button"
                   onClick={() => setPayingBid(bid)}

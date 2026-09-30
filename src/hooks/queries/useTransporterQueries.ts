@@ -1,5 +1,6 @@
 import {
   useQuery,
+  useQueries,
   useMutation,
   useQueryClient,
   keepPreviousData,
@@ -12,6 +13,7 @@ import {
   TransporterBidRespondPayload,
   CreateFleetPaymentPayload,
   CreateDirectFleetPaymentPayload,
+  FleetBidPaymentRecord,
 } from "@/services/negotiationService";
 import {
   fleetService,
@@ -44,6 +46,9 @@ export const transporterKeys = {
     [...transporterKeys.all, "fleet-bookings", "all", params] as const,
   fleetPayments: (fleetId: string) =>
     [...transporterKeys.all, "fleet-payments", fleetId] as const,
+  fleetBidPayments: () => [...transporterKeys.all, "fleet-bid-payments"] as const,
+  fleetBidPaymentsForFleet: (fleetId: string) =>
+    [...transporterKeys.all, "fleet-bid-payments", fleetId] as const,
   adminFleetPayments: (params?: GetAdminFleetPaymentsParams) =>
     [...transporterKeys.all, "admin-fleet-payments", params] as const,
   adminFleetPayment: (id: string) =>
@@ -196,12 +201,43 @@ export const useCreateFleetPayment = () => {
     onSuccess: () => {
       toast.success("Payment submitted successfully!", { duration: 4000, position: "top-center" });
       queryClient.invalidateQueries({ queryKey: transporterKeys.fleetBids() });
+      // Bid records carry no payment field — the card's paid state comes from these.
+      queryClient.invalidateQueries({ queryKey: transporterKeys.fleetBidPayments() });
     },
     onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
       toast.error(
         error?.response?.data?.message || error?.message || "Payment failed. Please try again.",
         { duration: 4000, position: "top-center" },
       );
+    },
+  });
+};
+
+/**
+ * The buyer's payments on each of the given fleets, keyed by fleet bid id.
+ * One query per distinct fleet, since the endpoint requires `fleetId`. A fleet
+ * whose request fails simply contributes nothing, so its bids still offer
+ * "Pay Now" rather than blocking payment.
+ */
+export const useFleetBidPaymentsByBid = (fleetIds: string[]) => {
+  const distinct = Array.from(new Set(fleetIds.filter(Boolean)));
+  return useQueries({
+    queries: distinct.map((fleetId) => ({
+      queryKey: transporterKeys.fleetBidPaymentsForFleet(fleetId),
+      queryFn: () => NegotiationService.getFleetBidPayments(fleetId),
+      staleTime: 60 * 1000,
+      retry: 1,
+    })),
+    combine: (results) => {
+      const byBid = new Map<string, FleetBidPaymentRecord[]>();
+      for (const result of results) {
+        for (const payment of result.data ?? []) {
+          const bidId = payment.fleetBid?._id;
+          if (!bidId) continue;
+          byBid.set(bidId, [...(byBid.get(bidId) ?? []), payment]);
+        }
+      }
+      return byBid;
     },
   });
 };

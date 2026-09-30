@@ -449,7 +449,11 @@ export class OrdersApiService {
    */
   static async getOrderTracking(orderId: string): Promise<OrderTrackingInfo> {
     try {
-      const response = await api.get(`/api/orders/${orderId}/tracking`);
+      // Optional enrichment on top of the order's own data: a failure here
+      // leaves the page usable, so it must not raise the global error toast.
+      const response = await api.get(`/api/orders/${orderId}/tracking`, {
+        silentServerError: true,
+      });
       return normalizeOrderTracking(response.data);
     } catch (error) {
       console.error(`Error fetching tracking for order ${orderId}:`, error);
