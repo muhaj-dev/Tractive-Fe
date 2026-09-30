@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { useAddToWishlist, useRemoveFromWishlist } from "@/hooks/queries/useUserQueries";
+import { Avatar } from "@/components/ui/Avatar";
 
 interface CardProps {
   id: string;
@@ -229,11 +230,10 @@ export default function BidingCard({
                   height={14}
                   className={`object-cover ${crownImageClass}`}
                 />
-                <Image
+                <Avatar
                   src={leadingProfileImage}
                   alt="leading profile"
-                  width={14}
-                  height={14}
+                  size={14}
                   className={`object-cover ${leadingProfileImageClass}`}
                 />
               </div>

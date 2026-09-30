@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import { useRouter } from "next/navigation";
 
 import { LoaderIcon } from "@/icons/Icons";
@@ -46,12 +46,7 @@ export const TopSellers: React.FC<TopSellersProps> = ({
           >
             <div className="flex items-center gap-2">
               <div>
-                <Image
-                  src={seller.image}
-                  alt={`Top Seller ${seller.name}`}
-                  width={40}
-                  height={40}
-                />
+                <UserAvatar src={seller.image} name={seller.name} size={40} />
               </div>
               <div className="flex flex-col">
                 <span className="truncate text-[0.7rem] text-[#2B2B2B] font-normal">

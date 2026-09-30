@@ -8,6 +8,8 @@ interface ImgShowCaseProps {
   videoSrc?: string;
 }
 
+const PLACEHOLDER_IMAGE = "/images/placeholder.png";
+
 type MediaItem =
   | { type: "video"; src: string }
   | { type: "image"; src: string };
@@ -19,16 +21,18 @@ export const ImgShowCase: React.FC<ImgShowCaseProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Use passed images or fallback defaults for dev/demo
-  const defaultImages = [
-    "/images/videoImg.png",
-    "/images/corn1.png",
-    "/images/corn2.png",
-    "/images/corn3.png",
-  ];
-
+  // A product with no images shows one neutral placeholder, not demo produce
+  // photos that read as this product's own.
   const displayImages =
-    propImages && propImages.length > 0 ? propImages : defaultImages;
+    propImages && propImages.length > 0 ? propImages : [PLACEHOLDER_IMAGE];
+
+  // Image URLs that failed to load. They render the placeholder instead of a
+  // broken image.
+  const [failedSrcs, setFailedSrcs] = useState<Set<string>>(() => new Set());
+  const markFailed = (src: string) =>
+    setFailedSrcs((prev) => (prev.has(src) ? prev : new Set(prev).add(src)));
+  const imageSrc = (src: string) =>
+    !src || failedSrcs.has(src) ? PLACEHOLDER_IMAGE : src;
 
   const mediaItems: MediaItem[] = [];
 
@@ -93,11 +97,12 @@ export const ImgShowCase: React.FC<ImgShowCaseProps> = ({
                       The user wants to MERGE them.
                       So ImgShowCase should now contain the Big Display AND the List.
                  */}
-                  <Image 
-                    src={selectedMedia?.src || ""} 
+                  <Image
+                    src={imageSrc(selectedMedia?.src || "")}
                     alt="Selected Product"
                     fill
                     className="object-contain"
+                    onError={() => selectedMedia && markFailed(selectedMedia.src)}
                   />
              </div>
          )}
@@ -128,7 +133,8 @@ export const ImgShowCase: React.FC<ImgShowCaseProps> = ({
                   </div>
               ) : (
                   <Image
-                    src={item.src}
+                    src={imageSrc(item.src)}
+                    onError={() => markFailed(item.src)}
                     alt={`Product content ${index + 1}`}
                     width={180}
                     height={100}

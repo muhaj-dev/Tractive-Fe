@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { Avatar } from "@/components/ui/Avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { PhoneCall, TickIcon, XModalIcon } from "./Icons/TransporterIcons";
@@ -142,11 +143,10 @@ const TripMapTimeline: React.FC<{
 
 const BuyerEntry: React.FC<{ buyer: FleetTripBuyer }> = ({ buyer }) => (
   <div className="flex flex-col gap-2 items-center justify-center">
-    <Image
+    <Avatar
       src={buyerImage(buyer)}
       alt={buyer.name || "Buyer avatar"}
-      width={40}
-      height={40}
+      size={40}
       className="rounded-full object-cover w-10 h-10 sm:w-12 sm:h-12"
     />
     <span className="font-montserrat font-normal text-[13px] sm:text-[14px] text-[#2b2b2b] text-center">

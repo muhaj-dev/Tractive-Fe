@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import { XModalIcon } from "../../_components/Icons/TransporterIcons";
 import { Driver } from "@/utils/DriverData";
 import { useGetFleets } from "@/hooks/queries/useFleetQueries";
@@ -21,7 +21,7 @@ export const AssignFleetModal: React.FC<AssignFleetModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     truckId: "",
-    image: "/images/bidder1.png",
+    image: "",
   });
   const [errors, setErrors] = useState({
     truckId: "",
@@ -35,10 +35,10 @@ export const AssignFleetModal: React.FC<AssignFleetModalProps> = ({
     if (isOpen && editDriver) {
         setFormData({
             truckId: editDriver.fleet || "",
-            image: editDriver.image || "/images/bidder1.png",
+            image: editDriver.image || "",
         });
     } else {
-        setFormData({ truckId: "", image: "/images/bidder1.png" });
+        setFormData({ truckId: "", image: "" });
     }
     setErrors({ truckId: "" });
   }, [isOpen, editDriver]);
@@ -121,12 +121,11 @@ export const AssignFleetModal: React.FC<AssignFleetModalProps> = ({
         </h2>
         <div className="flex justify-center mb-2">
           <div className="relative w-20 h-20 group">
-            <Image
+            <UserAvatar
               src={formData.image}
-              alt="Driver profile"
-              width={86}
-              height={86}
-              className="w-20 h-20 rounded-[100px] object-cover border-2 border-gray-300"
+              name={editDriver?.name || "Driver"}
+              size={80}
+              className="border-2 border-gray-300"
             />
             {/* Image upload seems unrelated to assign fleet, but keeping it for consistency if needed. */}
           </div>

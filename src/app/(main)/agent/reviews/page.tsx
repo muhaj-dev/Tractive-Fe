@@ -4,6 +4,7 @@ import { ReviewIcon } from "@/icons/Icon1";
 import { LikeIcon, ReplyIcon, StarIcon, YellowStarIcon } from "@/icons/Icons";
 import { useAnimation, motion } from "framer-motion";
 import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import {
   useReviews,
   useReviewsSummary,

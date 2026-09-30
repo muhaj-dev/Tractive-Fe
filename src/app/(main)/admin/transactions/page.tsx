@@ -63,7 +63,7 @@ const mapToTransaction = (t: any): Transaction => {
 
   return {
     id: (t?._id as string) || (t?.id as string) || "",
-    image: (payer?.avatar as string) || "/images/placeholder-avatar.png",
+    image: (payer?.avatar as string) || "",
     fullname: (payer?.name as string) || "Unknown",
     email: (payer?.email as string) || "",
     paidTo: (payee?.name as string) || "—",

@@ -9,7 +9,6 @@ import AdminTable, {
   ColumnConfig,
 } from "../../../_components/table/AdminTableList";
 import { UserActionMenu } from "../UserActionMenu";
-import Image from "next/image";
 import Link from "next/link";
 import {
   adminUserService,
@@ -23,6 +22,7 @@ import {
   ConfirmActionModal,
   ConfirmActionTone,
 } from "../../../_components/ConfirmActionModal";
+import { UserAvatar } from "@/components/UserAvatar";
 
 // List of months in a Year
 const months = [
@@ -137,35 +137,12 @@ const avatarColors = [
   "#D6B611",
   "#c0392b",
 ];
-const initialsFor = (name: string) =>
-  (name || "?").trim().charAt(0).toUpperCase() || "?";
 const colorFor = (name: string) => {
   let sum = 0;
   for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i);
   return avatarColors[sum % avatarColors.length];
 };
 
-const UserAvatar: React.FC<{ image?: string; name: string }> = ({
-  image,
-  name,
-}) =>
-  image ? (
-    <Image
-      src={image}
-      alt={name}
-      width={32}
-      height={32}
-      className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex-shrink-0 object-cover"
-    />
-  ) : (
-    <span
-      aria-hidden="true"
-      className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[12px] sm:text-[13px] font-montserrat font-semibold"
-      style={{ backgroundColor: colorFor(name) }}
-    >
-      {initialsFor(name)}
-    </span>
-  );
 
 // Define table columns with improved responsive min-widths
 const columns: ColumnConfig<User>[] = [
@@ -182,7 +159,15 @@ const columns: ColumnConfig<User>[] = [
         className="flex items-center gap-2 sm:gap-3 cursor-pointer rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#538e53]"
         aria-label={`Open ${item.fullname}'s profile`}
       >
-        <UserAvatar image={item.image} name={item.fullname} />
+        {/* The shared initials avatar, in this table's per-name colour. It
+            also falls back to initials when the photo URL is broken. */}
+        <UserAvatar
+          src={item.image}
+          name={item.fullname}
+          color={colorFor(item.fullname || "")}
+          initialsCount={1}
+          className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10"
+        />
         <div className="flex flex-col min-w-0 flex-1">
           <span className="text-[10px] sm:text-[11px] md:text-[12px] font-montserrat font-normal text-[#2b2b2b] truncate">
             {item.fullname}

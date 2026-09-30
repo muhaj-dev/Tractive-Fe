@@ -2,6 +2,7 @@ import { ReviewIcon, XIcon } from "@/icons/Icon1";
 import { LikeIcon, ReplyIcon, StarIcon, YellowStarIcon } from "@/icons/Icons";
 import { useAnimation, motion } from "framer-motion";
 import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import React, { useEffect, useMemo, useState } from "react";
 import { useReplyToReview } from "@/hooks/queries/useReviewQueries";
 
@@ -335,12 +336,10 @@ export const Reviews: React.FC<ReviewsProps> = ({
             >
               <div className="flex items-center justify-between gap-1.5 flex-wrap">
                 <div className="relative flex items-center gap-2 flex-wrap">
-                  <Image
-                    src={review.user.avatar || "/images/sellerprofile.png"}
-                    alt={`${review.user.name} profile`}
-                    width={30}
-                    height={30}
-                    className="w-[30px] h-[30px] rounded-full object-cover"
+                  <UserAvatar
+                    src={review.user.avatar}
+                    name={review.user.name}
+                    size={30}
                   />
                   <p className="font-montserrat font-normal text-[14px] text-[#2b2b2b]">
                     {review.user.name}

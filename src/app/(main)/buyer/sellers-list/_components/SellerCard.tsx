@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/Button";
 import { AwardIcon, YellowStarIcon } from "@/icons/Icons";
-import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import Link from "next/link";
 import React from "react";
 
@@ -32,12 +32,10 @@ export const SellerCard: React.FC<SellerCardProps> = ({
   return (
     <div className="border-[1px] border-[#808080] w-full rounded-lg">
       <div className="flex flex-col justify-center w-full p-3 rounded-lg">
-        <Image
-          width={100}
-          height={100}
+        <UserAvatar
           src={image}
-          alt={sellerName}
-          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full"
+          name={sellerName}
+          className="w-10 h-10 sm:w-12 sm:h-12"
         />
         <h2 className="font-montserrat font-medium text-[13px] sm:text-[15px] text-[#2b2b2b] mt-2">
           {sellerName}

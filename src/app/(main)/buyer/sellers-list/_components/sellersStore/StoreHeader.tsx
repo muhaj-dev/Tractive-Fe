@@ -10,6 +10,7 @@ import {
 } from "@/icons/Icon1";
 import { ArrowRightIcon, YellowStarIcon } from "@/icons/Icons";
 import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { toast } from "sonner";
@@ -169,12 +170,10 @@ export const StoreHeader = ({
               Sellers information
             </p>
             <div className="flex items-center gap-2">
-              <Image
-                src={seller?.image || "/images/sellerprofile.png"}
-                alt={seller?.name ? `${seller.name} profile` : "Seller Profile"}
-                width={40}
-                height={40}
-                className="object-cover rounded-full w-[40px] h-[40px] sm:w-[50px] sm:h-[50px]"
+              <UserAvatar
+                src={seller?.image}
+                name={seller?.name || "Seller"}
+                className="w-10 h-10 sm:w-[50px] sm:h-[50px]"
               />
               <div className="flex flex-col gap-1 sm:gap-2">
                 <div className="flex gap-2 sm:gap-1 xl:gap-3 flex-wrap items-center w-full">

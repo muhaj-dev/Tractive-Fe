@@ -4,6 +4,7 @@ import { ReviewIcon } from "@/icons/Icon1";
 import { LikeIcon, ReplyIcon, StarIcon, YellowStarIcon } from "@/icons/Icons";
 import { useAnimation, motion } from "framer-motion";
 import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import {
   transporterService,
   TransporterReview,
@@ -274,7 +275,7 @@ const ReviewsPage: React.FC = () => {
         ) : (
           reviews.map((review) => {
             const buyer = resolveBuyer(review.buyer);
-            const avatar = buyer.avatar || buyer.image || fallbackAvatar;
+            const avatar = buyer.avatar || buyer.image;
             const reviewKey = review._id || review.id || buyer._id || Math.random();
             return (
               <div
@@ -283,12 +284,10 @@ const ReviewsPage: React.FC = () => {
               >
                 <div className="flex items-center justify-between gap-1.5 flex-wrap">
                   <div className="relative flex items-center gap-2 flex-wrap">
-                    <Image
+                    <UserAvatar
                       src={avatar}
-                      alt="Comment Profile"
-                      width={30}
-                      height={30}
-                      className="rounded-full w-[30px] h-[30px] object-cover"
+                      name={buyer.name || "Anonymous"}
+                      size={30}
                     />
                     <p className="font-montserrat font-normal text-[14px] text-[#2b2b2b]">
                       {buyer.name || "Anonymous"}

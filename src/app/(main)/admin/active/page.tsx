@@ -94,7 +94,9 @@ const mapToAdminControl = (u: AdminUser): AdminControl => {
     id,
     fullName: (u.name as string) || "Unknown",
     email: (u.email as string) || "",
-    image: (u.avatar as string) || "/images/placeholder-avatar.png",
+    // Raw URL; the table's <Avatar> supplies the fallback, including for
+    // URLs that are present but broken.
+    image: (u.avatar as string) || "",
     location: (u.state as string) || (u.address as string) || "—",
     mobile: (u.phone as string) || "",
     status,

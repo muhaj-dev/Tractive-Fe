@@ -7,6 +7,7 @@ import {
   YellowStarIcon,
 } from "@/icons/Icons";
 import Image from "next/image";
+import UserAvatar from "@/components/UserAvatar";
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -76,12 +77,10 @@ export const OwnersInfo = ({ owner }: { owner?: OwnerInfo }) => {
         </p>
         <div className="flex items-center gap-2 flex-wrap">
           <div>
-            <Image
-              src={owner?.image || "/images/sellerprofile.png"}
-              alt={owner?.name ? `${owner.name} profile` : "Transporter profile"}
-              width={45}
-              height={45}
-              className="w-[45px] h-[45px] rounded-full object-cover"
+            <UserAvatar
+              src={owner?.image}
+              name={owner?.name || "Transporter"}
+              size={45}
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -145,12 +144,10 @@ export const OwnersInfo = ({ owner }: { owner?: OwnerInfo }) => {
           <>
             <div className="flex items-center justify-between gap-1.5 flex-wrap">
               <div className="relative flex items-center gap-2 flex-wrap">
-                <Image
-                  src={latestReview.user.avatar || "/images/sellerprofile.png"}
-                  alt={`${latestReview.user.name} profile`}
-                  width={30}
-                  height={30}
-                  className="w-[30px] h-[30px] rounded-full object-cover"
+                <UserAvatar
+                  src={latestReview.user.avatar}
+                  name={latestReview.user.name}
+                  size={30}
                 />
                 <p className="font-montserrat font-normal text-[14px] text-[#2b2b2b]">
                   {latestReview.user.name}

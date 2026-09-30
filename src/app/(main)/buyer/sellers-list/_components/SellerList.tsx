@@ -95,7 +95,7 @@ export const SellerList: React.FC<SellerListProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formattedSellers = accumulatedSellers.map((seller: any) => ({
     id: seller.sellerId,
-    image: seller.image || "/images/bidder3.png",
+    image: seller.image || "",
     sellerName: seller.name,
     rating: seller.rating || 0,
     rateStatus: seller.rateStatus || "Not rated",

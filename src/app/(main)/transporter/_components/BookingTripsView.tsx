@@ -58,18 +58,20 @@ const TripStars: React.FC<{ rating: number }> = ({ rating }) => (
   </div>
 );
 
-/** Transporter logo, or a branded initials box when there's no image. */
+/** Transporter logo, or a branded initials box when there's no image or it fails to load. */
 const TransporterLogo: React.FC<{ src: string; name: string }> = ({
   src,
   name,
-}) =>
-  src ? (
+}) => {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  return src && failedSrc !== src ? (
     <Image
       src={src}
       alt={name}
       width={50}
       height={35}
       className="object-cover rounded-[4px] w-10 h-7 sm:w-12 sm:h-8"
+      onError={() => setFailedSrc(src)}
     />
   ) : (
     <div className="flex items-center justify-center w-10 h-7 sm:w-12 sm:h-8 rounded-[4px] bg-[#538e53]">
@@ -78,6 +80,7 @@ const TransporterLogo: React.FC<{ src: string; name: string }> = ({
       </span>
     </div>
   );
+};
 
 interface TripCardProps {
   trip: FleetTripSummary;

@@ -3,7 +3,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { bidService, SingleBid } from "@/services/bidService";
 import { toast } from "sonner";
-import Image from "next/image";
+import { useModalA11y } from "@/hooks/useModalA11y";
+import { Avatar } from "@/components/ui/Avatar";
 
 interface BiddersModalProps {
   isOpen: boolean;
@@ -272,17 +273,12 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
               <div className="overflow-y-auto flex-grow p-6 scrollbar-thin scrollbar-thumb-gray-200">
                 {/* Bidder Info */}
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                    <Image
-                      src={
-                        selectedBidder.bidderAvatar ||
-                        "/images/placeholder-avatar.png"
-                      }
-                      alt={selectedBidder.bidderName}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
+                  <Avatar
+                    src={selectedBidder.bidderAvatar}
+                    alt={selectedBidder.bidderName}
+                    size={48}
+                    className="w-12 h-12 rounded-full object-cover bg-gray-200 flex-shrink-0"
+                  />
                   <div>
                     <h3 className="font-montserrat font-semibold text-base text-[#2b2b2b]">
                       {selectedBidder.bidderName}
@@ -416,17 +412,12 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
                             >
                               {/* Name & Avatar */}
                               <div className="w-1/5 flex items-center gap-3">
-                                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-                                  <Image
-                                    src={
-                                      bidder?.bidderAvatar ||
-                                      "/images/placeholder-avatar.png"
-                                    }
-                                    alt={bidder?.bidderName}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                </div>
+                                <Avatar
+                                  src={bidder?.bidderAvatar}
+                                  alt={bidder?.bidderName}
+                                  size={32}
+                                  className="w-8 h-8 rounded-full object-cover bg-gray-200 flex-shrink-0"
+                                />
                                 <span className="font-montserrat text-sm text-[#2b2b2b] truncate pr-2">
                                   {bidder?.bidderName}
                                 </span>

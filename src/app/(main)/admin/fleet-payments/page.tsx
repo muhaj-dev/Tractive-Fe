@@ -72,8 +72,7 @@ const mapToRow = (p: AdminFleetPaymentRecord): FleetPaymentRow => {
     status: ((p.status as string) || "pending").toLowerCase(),
     payerName: partyField(buyer, "name") || partyField(buyer, "email") || "—",
     payerEmail: partyField(buyer, "email") || "",
-    payerAvatar:
-      partyField(buyer, "avatar") || "/images/placeholder-avatar.png",
+    payerAvatar: partyField(buyer, "avatar") || "",
     fleetName,
     fleetImage: fleetImg,
     plateNumber: stringField(fleet, "plateNumber"),

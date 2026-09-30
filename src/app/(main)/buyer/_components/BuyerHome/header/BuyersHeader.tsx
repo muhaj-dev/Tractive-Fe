@@ -60,7 +60,7 @@ export const BuyersHeader: React.FC = () => {
   const topSellers = rawTopSellers.map((seller: any) => ({
     id: seller.sellerId || seller._id || seller.id,
     name: seller.name,
-    image: seller.image || "/images/sellersProfiles.png",
+    image: seller.image || "",
     rating: seller.rating || 0,
     storeLink: `/store/${seller.sellerId || seller._id}`,
   }));

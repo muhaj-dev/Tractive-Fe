@@ -7,7 +7,8 @@ import {
   YellowStarIcon,
 } from "@/icons/Icons";
 import Image from "next/image";
-import React, { useState, useEffect } from "react";
+import UserAvatar from "@/components/UserAvatar";
+import React, { useState, useEffect, useRef } from "react";
 import { Owner } from "@/services/productService";
 import { useFollowFarmer, useUnfollowFarmer } from "@/hooks/queries/useUserQueries";
 import { useQuery } from "@tanstack/react-query";
@@ -94,12 +95,10 @@ export const SellersInfo: React.FC<SellersInfoProps> = ({ owner, onRefresh }) =>
         </p>
         <div className="flex items-center gap-2">
           <div>
-            <Image
-              src={sellerDetails?.image || "/images/bidder2.png"}
-              alt={`${sellerDetails?.name || owner?.name || "Seller"}'s profile`}
-              width={45}
-              height={45}
-              className="rounded-full object-cover w-[45px] h-[45px]"
+            <UserAvatar
+              src={sellerDetails?.image || owner?.image}
+              name={sellerDetails?.name || owner?.name || "Seller"}
+              size={45}
             />
           </div>
           <div className="flex flex-col gap-1.5 flex-1">

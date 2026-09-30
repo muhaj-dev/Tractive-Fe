@@ -4,8 +4,9 @@ import React from "react";
 import { useGetRecommendedTransporters } from "@/hooks/queries/useTransporterQueries";
 import { RecommendedTransporter } from "@/services/transporterService";
 
-/** Decorative fallback only — used when a transporter has no profile image. */
-const FALLBACK_IMAGE = "/images/monsterTruck.png";
+/** Decorative fallback for a transporter with no profile image. A plain photo:
+ * the old monsterTruck.png was a mockup with "$40" prices baked into it. */
+const FALLBACK_IMAGE = "/images/transportTruck.png";
 
 const displayName = (transporter: RecommendedTransporter) =>
   transporter.businessName || transporter.name || "Transporter";
@@ -33,7 +34,7 @@ export const TransporterRecommendation = ({
             Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="w-full rounded-md bg-gray-200 animate-pulse aspect-[2/1]"
+                className="w-full rounded-md bg-gray-200 animate-pulse aspect-[2/1] min-h-[88px]"
               />
             ))
           ) : isError ? (
@@ -48,18 +49,18 @@ export const TransporterRecommendation = ({
                 className="w-full rounded-md overflow-hidden transition-transform hover:scale-105 cursor-pointer"
               >
                 <div
-                  className="w-full aspect-[2/1] bg-cover bg-center relative"
+                  className="w-full aspect-[2/1] min-h-[88px] bg-cover bg-center relative overflow-hidden"
                   style={{
                     backgroundImage: `url(${transporter.image || FALLBACK_IMAGE})`,
                   }}
                 >
                   <div className="absolute inset-0 bg-black/35" />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center px-1 text-center">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 px-1.5 text-center">
                     <span className="text-white text-[12px] sm:text-[13px] font-medium font-montserrat drop-shadow-md line-clamp-2">
                       {displayName(transporter)}
                     </span>
                     {transporter.matchedLocation && transporter.locationMatch && (
-                      <span className="text-white/80 text-[10px] font-montserrat">
+                      <span className="text-white/80 text-[10px] font-montserrat line-clamp-1">
                         {transporter.matchedLocation}
                       </span>
                     )}

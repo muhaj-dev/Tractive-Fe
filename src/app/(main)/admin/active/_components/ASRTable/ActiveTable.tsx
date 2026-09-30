@@ -8,8 +8,8 @@ import AdminTable, {
   ColumnConfig,
 } from "../../../_components/table/AdminTableList";
 import { ActiveActionMenu } from "../ASRActionMenu/ActiveActionMenu";
-import Image from "next/image";
 import { BulkActionButtons } from "../../../_components/BulkActionButtons";
+import { Avatar } from "@/components/ui/Avatar";
 
 const months = [
   "Jan",
@@ -73,12 +73,12 @@ const columns: ColumnConfig<AdminControl>[] = [
     header: "FullName",
     render: (item: AdminControl) => (
       <div className="flex items-center gap-3">
-        <Image
+        {/* Falls back to the placeholder for a missing or broken URL. */}
+        <Avatar
           src={item.image}
           alt={item.fullName}
-          width={10}
-          height={10}
-          className="w-10 h-10 rounded-full"
+          size={40}
+          className="w-10 h-10 rounded-full object-cover"
         />
         <div className="flex flex-col">
           <span className="text-[10px] sm:text-[11px] md:text-[12px] font-montserrat font-normal text-[#2b2b2b]">
