@@ -148,11 +148,15 @@ export const useBuyerUpdateBidStatus = () => {
       counterOffer?: number;
       message?: string;
     }) =>
-      bidService.updateBidStatus(id, {
-        status,
-        ...(counterOffer !== undefined ? { counterOffer } : {}),
-        ...(message ? { message } : {}),
-      }),
+      // The API refuses `status: "countered"` from a buyer (400 "Buyer can
+      // accept, reject, or send a new offer"). A buyer's counter is a new
+      // `amount` on the same bid.
+      bidService.updateBidStatus(
+        id,
+        status === "countered"
+          ? { amount: counterOffer ?? 0, ...(message ? { message } : {}) }
+          : { status, ...(message ? { message } : {}) },
+      ),
     onSuccess: (_data, variables) => {
       const label =
         variables.status === "countered"

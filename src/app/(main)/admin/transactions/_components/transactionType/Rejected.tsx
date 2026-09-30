@@ -15,7 +15,7 @@ const statusPill = (item: Transaction) => {
       ? "bg-green-50 text-green-600 border-green-100"
       : s === "pending"
       ? "bg-yellow-50 text-yellow-700 border-yellow-100"
-      : s === "failed"
+      : s === "rejected" || s === "failed"
       ? "bg-red-50 text-red-600 border-red-100"
       : s === "refunded"
       ? "bg-blue-50 text-blue-600 border-blue-100"
@@ -101,7 +101,7 @@ const columns: ColumnConfig<Transaction>[] = [
   { key: "date", header: "Date", minWidth: "min-w-[100px]" },
 ];
 
-interface FailedProps {
+interface RejectedProps {
   transactions: Transaction[];
   handleApprove: (id: string) => void;
   handleDecline: (id: string) => void;
@@ -111,7 +111,7 @@ interface FailedProps {
   onRowClick?: (id: string) => void;
 }
 
-export const Failed: React.FC<FailedProps> = ({
+export const Rejected: React.FC<RejectedProps> = ({
   transactions,
   handleApprove,
   handleDecline,
@@ -124,7 +124,7 @@ export const Failed: React.FC<FailedProps> = ({
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
-      if (t.status !== "Failed") return false;
+      if (t.status !== "Rejected") return false;
       if (!searchTerm) return true;
       const q = searchTerm.toLowerCase();
       return (

@@ -45,6 +45,11 @@ export const BidsCheckout: React.FC<BidsCheckoutProps> = ({
   // The payment steps themselves live in OrderPaymentModal so that an order
   // left unpaid can be picked up again later from My Orders.
   const [payingOrderId, setPayingOrderId] = useState<string>("");
+  // Frozen at order creation. Creating the order refetches the won bids, the
+  // paid bid drops out of the selection and `totalAmount` falls to 0 while the
+  // payment modal is still open, and the payment then failed with 400
+  // "Order and amount required".
+  const [payingAmount, setPayingAmount] = useState(0);
 
   const createOrderMutation = useCreateOrder();
   const { data: profile } = useProfile();
@@ -96,6 +101,7 @@ export const BidsCheckout: React.FC<BidsCheckoutProps> = ({
             d?._id ||
             d?.id;
           if (createdOrderId) {
+            setPayingAmount(totalAmount);
             setPayingOrderId(createdOrderId);
           } else {
             console.error("Could not extract order ID from response:", data);
@@ -184,7 +190,7 @@ export const BidsCheckout: React.FC<BidsCheckoutProps> = ({
           order — it can be paid later from My Orders → Pending payment. */}
       <OrderPaymentModal
         orderId={payingOrderId}
-        totalAmount={totalAmount}
+        totalAmount={payingAmount}
         isOpen={!!payingOrderId}
         onClose={handleCloseModal}
         onPaid={() => onTransactionSuccess?.()}

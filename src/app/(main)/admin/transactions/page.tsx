@@ -12,13 +12,13 @@ import {
 import { Approved } from "./_components/transactionType/Approved";
 import { Pending } from "./_components/transactionType/Pending";
 import { Refunded } from "./_components/transactionType/Refunded";
-import { Failed } from "./_components/transactionType/Failed";
+import { Rejected } from "./_components/transactionType/Rejected";
 import { All } from "./_components/transactionType/All";
 import { TransactionDetailModal } from "./_components/TransactionDetailModal";
 import { ConfirmActionModal } from "../_components/ConfirmActionModal";
 import { TableSkeleton } from "../_components/TableSkeleton";
 
-type SlideType = "All" | "Pending" | "Approved" | "Failed" | "Refunded";
+type SlideType = "All" | "Pending" | "Approved" | "Rejected" | "Refunded";
 
 interface IndicatorStyle {
   left: number;
@@ -35,10 +35,16 @@ interface TabConfig {
   colorClassFaded: string;
 }
 
+// GET /api/admin/transactions documents exactly four statuses — pending,
+// approved, rejected, refunded. A rejection is an admin's decision and must
+// read as "Rejected"; it used to be relabelled "Failed". "failed" is not in the
+// spec, but if the API ever sends it, it keeps its own label rather than being
+// folded into Rejected.
 const apiStatusToUi = (s: string): Transaction["status"] => {
   const v = (s || "").toLowerCase();
   if (v === "approved") return "Approved";
-  if (v === "rejected") return "Failed";
+  if (v === "rejected") return "Rejected";
+  if (v === "failed") return "Failed";
   if (v === "refunded") return "Refunded";
   return "Pending";
 };
@@ -92,7 +98,7 @@ const tabToApiStatus = (
   switch (tab) {
     case "Approved":
       return "approved";
-    case "Failed":
+    case "Rejected":
       return "rejected";
     case "Refunded":
       return "refunded";
@@ -139,7 +145,7 @@ export default function TransactionPage() {
     All: 0,
     Pending: 0,
     Approved: 0,
-    Failed: 0,
+    Rejected: 0,
     Refunded: 0,
   });
 
@@ -174,6 +180,7 @@ export default function TransactionPage() {
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
+
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -220,10 +227,10 @@ export default function TransactionPage() {
         colorClassFaded: "text-[#fefefe]",
       },
       {
-        id: "failed-tab",
-        label: "Failed",
-        displayLabel: "Failed",
-        count: counts.Failed,
+        id: "rejected-tab",
+        label: "Rejected",
+        displayLabel: "Rejected",
+        count: counts.Rejected,
         colorClass: "bg-[#538e53]",
         textColor: "text-[#538e53]",
         colorClassFaded: "text-[#fefefe]",
@@ -394,8 +401,8 @@ export default function TransactionPage() {
           onRowClick={setDetailId}
         />
       ),
-      Failed: (
-        <Failed
+      Rejected: (
+        <Rejected
           transactions={transactions}
           handleApprove={handleApprove}
           handleDecline={handleDecline}

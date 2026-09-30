@@ -49,7 +49,7 @@ export const OrderTrackingMap: React.FC<Props> = ({ order }) => {
 
   return (
     <div className="w-full bg-[#fefefe] rounded-[10px] shadow-md flex flex-col gap-3 overflow-hidden">
-      <div className="relative w-full h-[260px] sm:h-[320px]">
+      <div className="relative w-full h-[260px] sm:h-[320px] shrink-0">
         {position ? (
           <LiveTrackingMap
             lat={position.lat}
@@ -69,7 +69,7 @@ export const OrderTrackingMap: React.FC<Props> = ({ order }) => {
         )}
       </div>
 
-      <div className="relative w-[92%] mx-auto h-[60px]">
+      <div className="relative w-[92%] mx-auto h-[60px] shrink-0">
         <div className="absolute top-[7px] left-[10%] right-[55%] h-[2px] border-t border-dashed border-[#808080]" />
         <div className="absolute top-[7px] left-[45%] right-[10%] h-[2px] border-t border-dashed border-[#808080]" />
 
@@ -99,7 +99,11 @@ export const OrderTrackingMap: React.FC<Props> = ({ order }) => {
             Delivered
           </span>
           <span className="font-montserrat text-[10px] sm:text-[11px] text-[#2b2b2b]">
-            Est date: {order.estDeliveryDate}
+            {delivered
+              ? order.deliveredAt !== "N/A"
+                ? order.deliveredAt
+                : "Date not recorded"
+              : `Est date: ${order.estDeliveryDate}`}
           </span>
         </div>
       </div>

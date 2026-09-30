@@ -52,7 +52,11 @@ export const AllTransactionActionMenu: React.FC<AdminActionMenuProps> = ({
   type MenuItem = { key: string; label: string; onClick: () => void };
   const items: MenuItem[] = [];
 
-  if (rowStatus === "pending" || rowStatus === "failed") {
+  if (
+    rowStatus === "pending" ||
+    rowStatus === "rejected" ||
+    rowStatus === "failed"
+  ) {
     if (handleApprove) {
       items.push({
         key: "approve",

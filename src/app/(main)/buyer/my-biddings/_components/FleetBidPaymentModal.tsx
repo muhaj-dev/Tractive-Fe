@@ -46,6 +46,7 @@ export const FleetBidPaymentModal: React.FC<FleetBidPaymentModalProps> = ({
     submitPayment(
       {
         fleetBidId: bid._id,
+        fleetId: fleet?._id ?? (typeof bid.fleet === "string" ? bid.fleet : ""),
         paymentMethod: paymentMethodMap[selectedMethod] || selectedMethod,
         note: routeNote,
       },

@@ -40,6 +40,8 @@ export interface FleetBidResponse {
 
 export interface CreateFleetPaymentPayload {
   fleetBidId: string;
+  /** Required by the API: 400 "fleetId is required in the request body" without it. */
+  fleetId: string;
   paymentMethod: string;
   note?: string;
 }

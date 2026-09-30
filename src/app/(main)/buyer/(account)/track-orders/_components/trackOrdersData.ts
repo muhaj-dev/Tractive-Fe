@@ -103,6 +103,7 @@ export const formatDateShort = (iso?: unknown): string => {
 
 const TRANSPORT_STATUS_TO_TRACK: Record<string, TrackOrderStatus> = {
   pending: "pending",
+  ready: "pending",
   picked: "picked",
   on_transit: "on_transit",
   in_transit: "on_transit",
@@ -112,6 +113,29 @@ const TRANSPORT_STATUS_TO_TRACK: Record<string, TrackOrderStatus> = {
 export const mapTransportStatus = (s: unknown): TrackOrderStatus => {
   const v = (typeof s === "string" ? s : "").toLowerCase();
   return TRANSPORT_STATUS_TO_TRACK[v] ?? "pending";
+};
+
+/**
+ * Whether an order belongs on Track Orders at all. An allowlist, so a status
+ * the page doesn't know (a `cancelled` trip, or any new order status) is left
+ * out instead of landing on the New tab as fresh work.
+ *
+ * Paid orders qualify while their trip status is known or not yet set.
+ * Delivered or receipt-confirmed orders always qualify, whatever the trip
+ * status still reads.
+ */
+export const isTrackableOrder = (raw: OrderRecord): boolean => {
+  const o = raw as ApiObject;
+  const status = String(o.status ?? "").toLowerCase();
+  const receiptConfirmed =
+    o.receiptConfirmed === true || typeof o.receiptConfirmedAt === "string";
+  if (status === "delivered" || receiptConfirmed) return true;
+  if (status !== "paid") return false;
+  const ts = String(o.transportStatus ?? "").toLowerCase();
+  return (
+    ts === "" ||
+    Object.prototype.hasOwnProperty.call(TRANSPORT_STATUS_TO_TRACK, ts)
+  );
 };
 
 export const orderToTrackOrder = (raw: OrderRecord): TrackOrder => {
@@ -134,7 +158,15 @@ export const orderToTrackOrder = (raw: OrderRecord): TrackOrder => {
   // told the buyer their goods were with a carrier that does not exist yet.
   const hasTransporter = Object.keys(transporter).length > 0;
   const productImages = asArray(firstProduct.images);
-  const status = mapTransportStatus(o.transportStatus);
+  // A receipt the buyer has confirmed, or an order the backend itself marks
+  // `delivered`, is delivered whatever `transportStatus` still reads — so it
+  // stays on the Delivered tab instead of dropping to New or vanishing.
+  const receiptConfirmed =
+    o.receiptConfirmed === true || typeof o.receiptConfirmedAt === "string";
+  const status: TrackOrderStatus =
+    receiptConfirmed || String(o.status ?? "").toLowerCase() === "delivered"
+      ? "delivered"
+      : mapTransportStatus(o.transportStatus);
 
   // Live GPS embedded in the order list response. Only a real numeric pair
   // counts as a position; { lat: null, lng: null } stays null so the map
@@ -162,12 +194,9 @@ export const orderToTrackOrder = (raw: OrderRecord): TrackOrder => {
       : status === "on_transit" || status === "delivered"
         ? updatedAt
         : NA;
-  const deliveredAt =
-    formatDateShort(o.deliveredAt) !== NA
-      ? formatDateShort(o.deliveredAt)
-      : status === "delivered"
-        ? updatedAt
-        : NA;
+  // The recorded delivery time only. `updatedAt` is not a delivery date — a
+  // receipt confirmation, say, moves it — so it is not used as a stand-in here.
+  const deliveredAt = formatDateShort(o.deliveredAt);
 
   return {
     id,
@@ -241,8 +270,7 @@ export const orderToTrackOrder = (raw: OrderRecord): TrackOrder => {
       o.toLocation ?? firstLine.localTransportTo ?? o.address,
     ),
     // A timestamp implies confirmation even if the boolean flag is absent.
-    receiptConfirmed:
-      o.receiptConfirmed === true || typeof o.receiptConfirmedAt === "string",
+    receiptConfirmed,
     receiptConfirmedAt:
       typeof o.receiptConfirmedAt === "string" ? o.receiptConfirmedAt : null,
     liveLocation,

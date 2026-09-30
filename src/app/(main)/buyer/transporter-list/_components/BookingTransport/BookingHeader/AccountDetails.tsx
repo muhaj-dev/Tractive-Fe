@@ -159,6 +159,7 @@ export const AccountDetails: React.FC<AccountDetailsProps> = ({
     submitBidPayment(
       {
         fleetBidId: fleetBidId!,
+        fleetId: fleetId ?? "",
         paymentMethod: mappedMethod,
         note,
       },

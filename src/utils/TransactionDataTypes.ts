@@ -8,7 +8,9 @@ export interface Transaction {
   Amount: string;
   date: string;
   checked: boolean;
-  status: "Pending" | "Approved" | "Failed" | "Refunded";
+  // "Rejected" is an admin decision (`status: "rejected"`); "Failed" is kept
+  // separate for a payment that failed, so the two are never shown as one.
+  status: "Pending" | "Approved" | "Rejected" | "Failed" | "Refunded";
   productName?: string;
   productImage?: string;
   productCount?: number;

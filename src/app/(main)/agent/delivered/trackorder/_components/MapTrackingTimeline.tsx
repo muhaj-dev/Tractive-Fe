@@ -109,7 +109,11 @@ export const MapTrackingTimeline = ({ order }: Props) => {
               Delivered
             </span>
             <span className="font-montserrat font-medium text-[10px] sm:text-[11px] text-[#2b2b2b]">
-              EST date {order.estDeliveryDate}
+              {delivered
+                ? order.deliveredAt !== "N/A"
+                  ? order.deliveredAt
+                  : "Date not recorded"
+                : `EST date ${order.estDeliveryDate}`}
             </span>
           </div>
         </div>

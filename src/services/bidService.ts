@@ -248,11 +248,14 @@ export const bidService = {
   // PATCH /api/bids/{id} - Update bid status (Accept/Reject/Counter)
   updateBidStatus: async (
     id: string,
-    updates: {
-      status: "accepted" | "rejected" | "countered";
-      counterOffer?: number;
-      message?: string;
-    },
+    updates:
+      | {
+          status: "accepted" | "rejected" | "countered";
+          counterOffer?: number;
+          message?: string;
+        }
+      // A buyer's new offer on a countered bid: `amount` with no status.
+      | { amount: number; message?: string },
   ) => {
     try {
       const response = await api.patch(`/api/bids/${id}`, updates);

@@ -268,10 +268,14 @@ export const TableList = <T extends BaseData>({
                         ? handleDelivered || defaultHandleDelivered
                         : undefined
                     }
+                    // The order tabs (new / packed / delivered) also show a
+                    // "Customer Care" item and pass a handler for it; gating on
+                    // the transaction tabs alone left that item doing nothing.
                     handleCustomerCare={
-                      dataType === "pending" || dataType === "received"
-                        ? handleCustomerCare || defaultHandleCustomerCare
-                        : undefined
+                      handleCustomerCare ??
+                      (dataType === "pending" || dataType === "received"
+                        ? defaultHandleCustomerCare
+                        : undefined)
                     }
                     handleApprove={
                       dataType === "pending" ? handleApprove : undefined
