@@ -18,6 +18,8 @@ import {
   tripTransporterObject,
   tripCurrentCoords,
 } from "@/app/(main)/transporter/_components/tripHelpers";
+import { formatUnitAfterQuantity } from "@/utils/productUnits";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface TrackTransporterDetailModalProps {
   trip: FleetTripSummary;
@@ -352,7 +354,7 @@ export const TrackTransporterDetailModal: React.FC<
                         {p.name || "—"}
                       </span>
                       <span className="font-montserrat text-[11px] text-[#808080]">
-                        {(p.quantity ?? "—")} {p.unit || ""}
+                        {(p.quantity ?? "—")} {formatUnitAfterQuantity(p.unit, p.quantity)}
                         {typeof p.loadWeightKg === "number"
                           ? ` · ${p.loadWeightKg} kg`
                           : ""}

@@ -9,10 +9,14 @@ import { Avatar } from "@/components/ui/Avatar";
 interface CardProps {
   id: string;
   image: string; // Required
-  timeImage: string; // Required
+  /** Clock icon for `time`; shown only alongside a real `time`. */
+  timeImage?: string;
   crownImage: string; // Required
-  leadingProfileImage: string; // Required
-  time: string; // Required
+  /** Leading bidder's photo; the shared Avatar fallback covers it when absent. */
+  leadingProfileImage?: string | null;
+  /** Time or availability from the API. Leave it out when there is none —
+   * the card never shows an invented countdown. */
+  time?: string;
   title: string; // Required
   description?: string;
   amount?: string;
@@ -156,16 +160,20 @@ export default function BidingCard({
       </div>
       <Link href={`/buyer/product/${id}`}>
         <div className="p-4 ">
-          <div className="flex items-center gap-2">
-            <Image
-              src={timeImage}
-              alt="clock"
-              width={15}
-              height={15}
-              className={`object-cover ${imageClockClass}`}
-            />
-            <small className="text-[#F51919]">{time}</small>
-          </div>
+          {time && (
+            <div className="flex items-center gap-2">
+              {timeImage && (
+                <Image
+                  src={timeImage}
+                  alt="clock"
+                  width={15}
+                  height={15}
+                  className={`object-cover ${imageClockClass}`}
+                />
+              )}
+              <small className="text-[#F51919]">{time}</small>
+            </div>
+          )}
           {/* Title */}
           <div>
             <h2

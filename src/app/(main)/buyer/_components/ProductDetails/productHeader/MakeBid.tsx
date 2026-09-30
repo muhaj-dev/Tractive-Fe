@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { bidService } from "@/services/bidService";
 import { toast } from "sonner";
+import { formatUnitAfterQuantity } from "@/utils/productUnits";
 
 interface MakeBidProps {
   productId: string;
@@ -100,7 +101,7 @@ export const MakeBid: React.FC<MakeBidProps> = ({
             htmlFor="quantity"
             className="font-montserrat text-[13px] md:text-[14px] font-normal"
           >
-            Quantity{unit ? ` (${unit})` : ""}
+            Quantity{unit ? ` (${formatUnitAfterQuantity(unit)})` : ""}
           </label>
           <input
             type="number"

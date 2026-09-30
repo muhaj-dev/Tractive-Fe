@@ -7,9 +7,24 @@
  */
 export const CURRENCY_SYMBOL = "₦";
 
-export const formatCurrency = (value: number | null | undefined): string => {
+/**
+ * ₦ with thousands separators: 1250000 → "₦1,250,000". Pass `decimals` where a
+ * screen shows a fixed number of places, e.g. 999999 → "₦999,999.00" with
+ * `{ decimals: 2 }`. Presentation only — the value itself is never rounded
+ * before it is sent anywhere.
+ */
+export const formatCurrency = (
+  value: number | null | undefined,
+  options?: { decimals?: number },
+): string => {
   const n = typeof value === "number" && Number.isFinite(value) ? value : 0;
-  return `${CURRENCY_SYMBOL}${n.toLocaleString()}`;
+  const decimals = options?.decimals;
+  return `${CURRENCY_SYMBOL}${n.toLocaleString(
+    "en-US",
+    decimals === undefined
+      ? undefined
+      : { minimumFractionDigits: decimals, maximumFractionDigits: decimals },
+  )}`;
 };
 
 /** Compact money for tight spots like chart axes: ₦210M, ₦4.5K, ₦0. */

@@ -2,6 +2,7 @@ import { RecommendationProduct } from "@/services/productService";
 import BidingCard from "@/components/cards/BidingCard";
 import React from "react";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
 
 interface OtherStoreProductProps {
   products?: RecommendationProduct[];
@@ -83,12 +84,9 @@ export const OtherStoreProduct: React.FC<OtherStoreProductProps> = ({
             key={product._id}
             image={product.images?.[0] || "/images/placeholder.png"}
             title={product.name}
-            time="24:08:07" // Placeholder
             description={product.description}
-            timeImage="/images/redclock.png"
             crownImage="/images/leadingcrown.png"
-            leadingProfileImage="/images/placeholder-avatar.png"
-            quantity={`${product.quantity} ${product.unit}`}
+            quantity={formatQuantityWithUnit(product.quantity, product.unit)}
             amount={`₦${product.price?.toLocaleString()}`}
             biddingPrice={`₦${product.price?.toLocaleString()}`} // Using same price for now
             bottomLabel="Price:"

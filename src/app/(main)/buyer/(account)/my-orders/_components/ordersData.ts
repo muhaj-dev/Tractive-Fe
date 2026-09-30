@@ -3,6 +3,7 @@ import {
   isOrderAwaitingApproval,
   isOrderDelivered,
 } from "@/services/OrderService";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
 
 /** What a buyer needs to see about an order, flattened for a table row. */
 export interface BuyerOrderRow {
@@ -109,7 +110,7 @@ export const orderToRow = (record: OrderRecord): BuyerOrderRow | null => {
     id,
     item: extra > 0 ? `${name} +${extra} more` : name,
     image: asString(images[0], "/images/noData.png"),
-    quantity: totalQty ? `${totalQty}${unit ? ` ${unit}` : ""}` : "—",
+    quantity: totalQty ? formatQuantityWithUnit(totalQty, unit) : "—",
     amount: asNumber(o.totalAmount, 0),
     seller: asString(owner.businessName ?? owner.name, "—"),
     date: formatDate(asString(o.createdAt)),

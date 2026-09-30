@@ -27,6 +27,16 @@ const toneForTitle = (title?: string) => {
 };
 
 /**
+ * "transaction_approved" → "Transaction approved". Only snake_case codes are
+ * rewritten; a title the backend already wrote as a sentence is left alone.
+ */
+const humanizeCode = (value: string) => {
+  if (!/^[a-z0-9]+(_[a-z0-9]+)+$/i.test(value)) return value;
+  const words = value.replace(/_/g, " ").toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
+/**
  * Where a notification should take you.
  *
  * The backend never sets `link` — it sends `type` plus a `metadata` bag
@@ -130,9 +140,9 @@ export const Notifications = () => {
         ) : (
           <ul className="divide-y divide-[#f0f0f0]">
             {notifications.map((n: AppNotification) => {
-              const title = n.title || n.type || "Notification";
+              const title = humanizeCode(n.title || n.type || "Notification");
               const time = formatTime(n.createdAt);
-              const category = n.type || "";
+              const category = humanizeCode(n.type || "");
               const content = (
                 <div className="flex gap-3 px-4 sm:px-5 py-4">
                   {/* Unread accent dot — keeps a stable width so text aligns */}

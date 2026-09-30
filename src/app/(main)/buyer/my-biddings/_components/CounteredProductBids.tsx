@@ -7,6 +7,7 @@ import { useBuyerUpdateBidStatus } from "@/hooks/queries/useBidQueries";
 import { CounterBackModal } from "./CounterBackModal";
 import { getAgentName, getPriceDelta } from "./bidHelpers";
 import { getApiErrorMessage } from "@/lib/apiError";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
 
 interface CounteredProductBidsProps {
   bids: BidResponse[];
@@ -143,7 +144,7 @@ export const CounteredProductBids: React.FC<CounteredProductBidsProps> = ({
                         {bid.product.name}
                       </p>
                       <p className="font-montserrat text-[10.5px] text-[#808080] truncate">
-                        {bid.quantity} {bid.unit} · {agentName}
+                        {formatQuantityWithUnit(bid.quantity, bid.unit)} · {agentName}
                       </p>
                     </div>
                     {submittedAgo && (

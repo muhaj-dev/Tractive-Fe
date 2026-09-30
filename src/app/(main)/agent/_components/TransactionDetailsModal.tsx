@@ -3,6 +3,8 @@ import React from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { FrontendTransaction } from "@/services/transactionService";
+import { formatUnitAfterQuantity } from "@/utils/productUnits";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface TransactionDetailsModalProps {
   transaction: FrontendTransaction | null;
@@ -126,7 +128,10 @@ export const TransactionDetailsModal: React.FC<
                             )}
                             <span className="text-[11px] font-montserrat text-[#2b2b2b]">
                               {item.quantity ?? product?.quantity ?? 0}{" "}
-                              {item.unit || product?.unit || ""}
+                              {formatUnitAfterQuantity(
+                                item.unit || product?.unit,
+                                item.quantity ?? product?.quantity,
+                              )}
                             </span>
                             {typeof item.lineSubtotal === "number" && (
                               <span className="text-[11px] font-montserrat text-[#538e53] font-medium">

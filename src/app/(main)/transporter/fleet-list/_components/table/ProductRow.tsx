@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { ActionMenu } from "./ActionMenu";
 import Image from "next/image";
-import { Fleet } from "@/utils/Fleet";
+import { Fleet, fleetStatusToLabel } from "@/utils/Fleet";
 
 // Animation variants for table rows
 const rowVariants = {
@@ -80,11 +80,11 @@ export const ProductRow: React.FC<ProductRowProps> = ({
   // Map status to color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Under maintenance":
+      case "Under Maintenance":
         return "text-[#8B4513]";
       case "Available":
         return "text-[#538e53]";
-      case "On transit":
+      case "On Transit":
         return "text-[#2b2b2b]";
       default:
         return "text-[#2b2b2b]";
@@ -173,10 +173,10 @@ export const ProductRow: React.FC<ProductRowProps> = ({
       </td>
       <td
         className={`py-2.5 px-4 text-[10px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-montserrat font-normal ${getStatusColor(
-          fleet.status
+          fleetStatusToLabel(fleet.status)
         )} border-y border-gray-200`}
       >
-        {fleet.status === "On transit" ? "On Transit" : fleet.status}
+        {fleetStatusToLabel(fleet.status)}
       </td>
       <td className="py-2.5 px-4 text-[10px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-montserrat font-medium text-[#2b2b2b] border-y border-gray-200">
         ₦{fleet.price.toLocaleString()}

@@ -23,6 +23,7 @@ import {
 } from "@/hooks/queries/useOrderQueries";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { OrderDetailsModal } from "../OrderDetailsModal";
+import { formatCurrency } from "@/lib/format";
 
 interface ColumnConfig<T> {
   header: string;
@@ -72,7 +73,9 @@ const productColumns: ColumnConfig<Order>[] = [
     key: "amount",
     minWidth: "min-w-[100px]",
     render: (product) =>
-      typeof product.amount === "number" ? `₦${product.amount.toFixed(2)}` : "—",
+      typeof product.amount === "number"
+        ? formatCurrency(product.amount, { decimals: 2 })
+        : "—",
   },
   {
     header: "Buyer",

@@ -5,6 +5,7 @@ import { formatDistanceToNow } from "date-fns";
 import { BidResponse } from "@/services/bidService";
 import { useWithdrawBid } from "@/hooks/queries/useBidQueries";
 import { getAgentName } from "./bidHelpers";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
 
 interface PendingProductBidsProps {
   bids: BidResponse[];
@@ -74,7 +75,7 @@ export const PendingProductBids: React.FC<PendingProductBidsProps> = ({
                     {bid.product.name}
                   </p>
                   <p className="font-montserrat text-[10.5px] text-[#808080] truncate">
-                    {bid.quantity} {bid.unit} · ₦{bid.amount.toLocaleString()} ·{" "}
+                    {formatQuantityWithUnit(bid.quantity, bid.unit)} · ₦{bid.amount.toLocaleString()} ·{" "}
                     {getAgentName(bid)}
                   </p>
                 </div>

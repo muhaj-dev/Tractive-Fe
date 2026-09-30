@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { ActionMenu } from "./ActionMenu";
 import Image from "next/image";
 import { Product } from "@/services/productService";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
+import { formatCurrency } from "@/lib/format";
 
 // Animation variants for table rows
 const rowVariants = {
@@ -103,10 +105,8 @@ const truncateId = (id: string): string => {
 };
 
 // Format price with proper currency
-const formatPrice = (price: number): string => {
-  if (price === 0 || !price) return "₦0.00";
-  return `₦${price.toFixed(2)}`;
-};
+const formatPrice = (price: number): string =>
+  formatCurrency(price, { decimals: 2 });
 
 export const ProductRow: React.FC<ProductRowProps> = ({
   product,
@@ -205,7 +205,9 @@ export const ProductRow: React.FC<ProductRowProps> = ({
 
       {/* Quantity / Stock */}
       <td className="py-1.5 px-4 text-[10px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-montserrat font-normal text-[#2b2b2b]">
-        {product.quantity ? `${product.quantity} ${product.unit || ""}` : "-"}
+        {product.quantity
+          ? formatQuantityWithUnit(product.quantity, product.unit)
+          : "-"}
       </td>
 
       {/* Categories */}

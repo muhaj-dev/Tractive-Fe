@@ -13,6 +13,8 @@ import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload";
 import { toast } from "sonner";
 import Image from "next/image";
 import { MediaUpload } from "../../../_components/MediaUpload";
+import { formatUnitAfterQuantity } from "@/utils/productUnits";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface EditProductModalProps {
   isOpen: boolean;
@@ -489,7 +491,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                               <p className="text-xl font-medium text-[#2b2b2b] font-montserrat">
                                 {product.quantity}{" "}
                                 <span className="text-sm text-gray-500">
-                                  {product.unit}
+                                  {formatUnitAfterQuantity(
+                                    product.unit,
+                                    product.quantity,
+                                  )}
                                 </span>
                               </p>
                             </div>

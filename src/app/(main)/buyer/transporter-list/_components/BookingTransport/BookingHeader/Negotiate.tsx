@@ -4,6 +4,7 @@ import { TruckItem } from "@/utils/TruckData";
 import { computeTransportCost } from "@/utils/transportPricing";
 import { useCreateFleetBid } from "@/hooks/queries/useTransporterQueries";
 import { DisplayProduct } from "./TruckDetailsAndShipProduct";
+import { formatCurrency } from "@/lib/format";
 
 interface NegotiateProps {
   selectedProducts: string[];
@@ -91,7 +92,7 @@ export const Negotiate: React.FC<NegotiateProps> = ({
         </p>
         <p className="font-montserrat text-[11px] sm:text-[12px] md:text-[13px] text-[#808080] font-normal">
           Amount:
-          <span className="text-[#2b2b2b]"> ₦{totalAmount.toFixed(2)}</span>
+          <span className="text-[#2b2b2b]"> {formatCurrency(totalAmount, { decimals: 2 })}</span>
         </p>
       </div>
       <div className="flex flex-col gap-2">

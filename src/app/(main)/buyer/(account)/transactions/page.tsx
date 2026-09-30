@@ -10,6 +10,7 @@ import type {
 import { TransactionsFilters } from "./_components/TransactionsFilters";
 import { TransactionsTable } from "./_components/TransactionsTable";
 import { TableSkeleton } from "@/app/(main)/admin/_components/TableSkeleton";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
 
 type TabKey = "pending" | "approved";
 
@@ -102,7 +103,7 @@ const transactionToRow = (
     productId: asString(firstProduct._id ?? firstProduct.id, "—"),
     item: asString(firstProduct.name, "—"),
     image: asString(productImages[0], "/images/maize.png"),
-    quantity: totalQty ? `${totalQty}${unit ? ` ${unit}` : ""}` : "—",
+    quantity: totalQty ? formatQuantityWithUnit(totalQty, unit) : "—",
     // The amount actually paid, which is the transaction's own figure.
     amount: asNumber(t.amount, asNumber(o.totalAmount, 0)),
     seller: asString(seller.businessName ?? seller.name, "—"),

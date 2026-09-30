@@ -100,19 +100,38 @@ export const isCreatableProductUnit = (
  * placed with, so legacy values still turn up here and must still resolve.
  * An unrecognised value is returned as-is, with its underscores softened,
  * rather than dropped: a wrong-looking unit is better than a missing one.
+ *
+ * Pass the quantity when there is one, so a single unit reads "1 100kg bag"
+ * rather than "1 100kg bags". Without it the plural is used, which is what a
+ * label such as "Quantity (100kg bags)" wants.
  */
-const UNIT_AFTER_QUANTITY: Record<string, string> = {
-  kg: "kg",
-  bags: "bags",
-  "50kg_bag": "50kg bags",
-  "100kg_bag": "100kg bags",
-  packet: "packets",
-  tonne: "tonnes",
+const UNIT_AFTER_QUANTITY: Record<string, { one: string; many: string }> = {
+  kg: { one: "kg", many: "kg" },
+  bags: { one: "bag", many: "bags" },
+  "50kg_bag": { one: "50kg bag", many: "50kg bags" },
+  "100kg_bag": { one: "100kg bag", many: "100kg bags" },
+  packet: { one: "packet", many: "packets" },
+  tonne: { one: "tonne", many: "tonnes" },
 };
 
-export const formatUnitAfterQuantity = (value?: string | null): string => {
+export const formatUnitAfterQuantity = (
+  value?: string | null,
+  quantity?: number | string | null,
+): string => {
   if (!value) return "";
-  return UNIT_AFTER_QUANTITY[value] ?? value.replace(/_/g, " ");
+  const forms = UNIT_AFTER_QUANTITY[value];
+  if (!forms) return value.replace(/_/g, " ");
+  return Number(quantity) === 1 ? forms.one : forms.many;
+};
+
+/** "12 100kg bags", "1 tonne" — the quantity followed by its readable unit. */
+export const formatQuantityWithUnit = (
+  quantity: number | string | null | undefined,
+  unit?: string | null,
+): string => {
+  if (quantity === undefined || quantity === null || quantity === "") return "—";
+  const readable = formatUnitAfterQuantity(unit, quantity);
+  return readable ? `${quantity} ${readable}` : `${quantity}`;
 };
 
 /**

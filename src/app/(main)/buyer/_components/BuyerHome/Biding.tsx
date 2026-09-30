@@ -4,6 +4,7 @@ import BidingCard from "@/components/cards/BidingCard";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { productService, ApiProduct } from "@/services/productService";
 import { toast } from "sonner";
+import { formatUnitAfterQuantity } from "@/utils/productUnits";
 
 // productCode1001
 
@@ -118,7 +119,7 @@ export const Biding = () => {
                   timeImage="/images/redclock.png"
                   crownImage="/images/leadingcrown.png"
                   leadingProfileImage="/images/leadingProfileImage.png"
-                  quantity={`${product.quantity} ${product.unit || "Units"}`}
+                  quantity={`${product.quantity} ${formatUnitAfterQuantity(product.unit, product.quantity) || "Units"}`}
                   amount={formattedPrice}
                   biddingPrice="" // Hide price beside view button
                   bottomLabel=""

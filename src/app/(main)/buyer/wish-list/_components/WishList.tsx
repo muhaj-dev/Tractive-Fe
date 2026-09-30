@@ -2,6 +2,8 @@ import BidingCard from "@/components/cards/BidingCard";
 import React from "react";
 import { WishlistItem } from "@/services/productService";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
+import { getProductAvailability } from "@/utils/productAvailability";
 
 type WishListProps = {
   data?: WishlistItem[];
@@ -87,12 +89,11 @@ export const WishList: React.FC<WishListProps> = ({
               key={wishlistItem._id || product.id || product._id}
               image={product.images?.[0] || "/images/placeholder.png"}
               title={product.name}
-              time="Available"
+              time={getProductAvailability(product)}
               description={product.description}
               timeImage="/images/redclock.png"
               crownImage="/images/leadingcrown.png"
-              leadingProfileImage="/images/placeholder-avatar.png"
-              quantity={`${product.quantity} ${product.unit}`}
+              quantity={formatQuantityWithUnit(product.quantity, product.unit)}
               amount={`₦${product.price?.toLocaleString()}`}
               biddingPrice=""
               isWishlisted={true}

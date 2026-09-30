@@ -181,7 +181,7 @@ export const OrderDetailsModal: React.FC<Props> = ({ order, onClose }) => {
                     <p className="font-montserrat text-[11px] text-[#808080]">
                       Qty: {line.quantity ?? 0}
                       {isObj && prod.unit
-                        ? ` ${formatUnitAfterQuantity(prod.unit)}`
+                        ? ` ${formatUnitAfterQuantity(prod.unit, line.quantity)}`
                         : ""}
                     </p>
                   </div>

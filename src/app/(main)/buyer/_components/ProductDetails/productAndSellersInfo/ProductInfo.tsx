@@ -4,6 +4,15 @@ import { StarIcon, YellowStarIcon } from "@/icons/Icons";
 import Image from "next/image";
 import { ApiProduct } from "@/services/productService";
 import { useAddToWishlist, useRemoveFromWishlist } from "@/hooks/queries/useUserQueries";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
+
+/** "out_of_stock" → "Out of stock". The API sends snake_case status codes. */
+const formatProductStatus = (status?: string) => {
+  if (!status) return "";
+  if (status === "available") return "Available";
+  const words = status.replace(/_/g, " ").toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
 
 interface ProductInfoProps {
   item: ApiProduct;
@@ -113,7 +122,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             <p className="font-montserrat font-normal text-xs sm:text-sm text-[#808080]">
               Quantity{" "}
               <span className="text-[#2b2b2b]">
-                {item.quantity} {item.unit}
+                {formatQuantityWithUnit(item.quantity, item.unit)}
               </span>
             </p>
             <span className="w-[1.5px] h-3 sm:h-4 bg-[#2b2b2b] hidden sm:block"></span>
@@ -126,7 +135,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
               <span
                 className={`font-bold ${item.status === "available" ? "text-green-600 uppercase text-sm" : "text-red-500"}`}
               >
-                {item.status === "available" ? "Available" : item.status}
+                {formatProductStatus(item.status)}
               </span>
             </p>
           </div>

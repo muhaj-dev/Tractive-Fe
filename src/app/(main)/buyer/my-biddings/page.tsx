@@ -16,6 +16,7 @@ import {
 } from "@/hooks/queries/useBidQueries";
 import { BidResponse } from "@/services/bidService";
 import { getAgentName } from "./_components/bidHelpers";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
 
 type TopTab = "product-bids" | "fleet-bids";
 type ProductSubTab = "countered" | "pending" | "ready" | "rejected";
@@ -65,24 +66,28 @@ const Page: React.FC = () => {
   const {
     data: counteredData,
     isLoading: isLoadingCountered,
+    isError: isErrorCountered,
     isFetching: isFetchingCountered,
     refetch: refetchCountered,
   } = useCounteredBids(counteredPage, PAGE_LIMIT);
   const {
     data: pendingData,
     isLoading: isLoadingPending,
+    isError: isErrorPending,
     isFetching: isFetchingPending,
     refetch: refetchPending,
   } = usePendingBids(pendingPage, PAGE_LIMIT);
   const {
     data: rejectedData,
     isLoading: isLoadingRejected,
+    isError: isErrorRejected,
     isFetching: isFetchingRejected,
     refetch: refetchRejected,
   } = useRejectedBids(rejectedPage, PAGE_LIMIT);
   const {
     data: checkoutData,
     isLoading: isLoadingCheckout,
+    isError: isErrorCheckout,
     isFetching,
     refetch: refetchCheckout,
   } = useWonBidsCheckout();
@@ -117,7 +122,7 @@ const Page: React.FC = () => {
       wonBids.map((item: BidResponse) => ({
         id: item._id,
         title: item.product.name,
-        quantity: `${item.quantity} ${item.unit}`,
+        quantity: formatQuantityWithUnit(item.quantity, item.unit),
         seller: getAgentName(item),
         price: agreedUnitPrice(item),
         lineTotal: agreedUnitPrice(item) * item.quantity,
@@ -357,6 +362,31 @@ const Page: React.FC = () => {
                   </span>
                 </button>
               )}
+
+              {/* A failed load used to render as "No rejected bids." etc. */}
+              {(() => {
+                const failed = {
+                  countered: [isErrorCountered, refetchCountered],
+                  pending: [isErrorPending, refetchPending],
+                  rejected: [isErrorRejected, refetchRejected],
+                  ready: [isErrorCheckout, refetchCheckout],
+                } as const;
+                const [isErr, retry] = failed[activeSub as keyof typeof failed] ?? [false, null];
+                return isErr && retry ? (
+                  <div role="alert" className="mb-3 flex items-center justify-between gap-3 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3">
+                    <span className="font-montserrat text-[13px] text-red-700">
+                      We couldn&apos;t load these bids just now.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => retry()}
+                      className="font-montserrat text-[13px] font-medium text-red-700 underline"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                ) : null;
+              })()}
 
               {/* Scoped content */}
               <div className="flex flex-col">

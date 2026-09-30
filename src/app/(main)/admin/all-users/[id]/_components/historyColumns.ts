@@ -3,6 +3,7 @@ import {
   HistoryResource,
   HistoryRole,
 } from "@/services/adminUserService";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
 
 export interface HistoryColumn {
   header: string;
@@ -237,7 +238,7 @@ const salesColumns: HistoryColumn[] = [
       const qty = asString(get(item, "quantity"));
       const unit = asString(get(item, "unit", "product.unit"));
       if (qty === "—") return "—";
-      return unit !== "—" ? `${qty} ${unit}` : qty;
+      return unit !== "—" ? formatQuantityWithUnit(qty, unit) : qty;
     },
   },
   {
@@ -307,7 +308,7 @@ const productsColumns: HistoryColumn[] = [
       const qty = asString(get(item, "quantity", "stock"));
       const unit = asString(get(item, "unit"));
       if (qty === "—") return "—";
-      return unit !== "—" ? `${qty} ${unit}` : qty;
+      return unit !== "—" ? formatQuantityWithUnit(qty, unit) : qty;
     },
   },
   {

@@ -1,4 +1,5 @@
 import { TruckItem } from "./TruckData";
+import { formatCurrency } from "@/lib/format";
 
 /**
  * What a fleet booking actually costs, and how to describe it.
@@ -39,6 +40,6 @@ export const computeTransportCost = (
   return {
     amount: totalWeightKg * pricePerKg,
     isWholeTruck: false,
-    basisLabel: `(₦${pricePerKg}/kg)`,
+    basisLabel: `(${formatCurrency(pricePerKg)}/kg)`,
   };
 };

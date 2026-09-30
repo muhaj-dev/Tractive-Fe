@@ -3,6 +3,8 @@ import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { TransporterCustomer } from "@/services/transporterService";
+import { formatCurrency } from "@/lib/format";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface CustomerInfoModalProps {
   customer: TransporterCustomer | null;
@@ -79,9 +81,9 @@ export const CustomerInfoModal: React.FC<CustomerInfoModalProps> = ({
                 <span className="font-medium">State:</span> {customer.state}
               </p>
               <p>
-                <span className="font-medium">Revenue:</span> $
+                <span className="font-medium">Revenue:</span>{" "}
                 {typeof customer.revenue === "number"
-                  ? customer.revenue.toFixed(2)
+                  ? formatCurrency(customer.revenue, { decimals: 2 })
                   : customer.revenue}
               </p>
               <p>

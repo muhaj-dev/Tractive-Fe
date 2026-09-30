@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useAppSelector } from "@/lib/hooks";
 import { useGetTruckById } from "@/hooks/queries/useTransporterQueries";
 import { useGetSeller } from "@/hooks/queries/useSellerQueries";
+import { formatCurrency } from "@/lib/format";
 
 const BookingTransport: React.FC = () => {
   const router = useRouter();
@@ -71,7 +72,7 @@ const BookingTransport: React.FC = () => {
         images: apiTruck.images ?? [],
         rating: (ownerRating ?? 0).toFixed(1),
         truckName: apiTruck.fleetName,
-        amountPerKg: `₦${apiTruck.pricePerKgEquivalent}`,
+        amountPerKg: formatCurrency(apiTruck.pricePerKgEquivalent),
         fullLoad: apiTruck.capacityTonnes
           ? `${apiTruck.capacityTonnes} tonnes`
           : apiTruck.capacity,

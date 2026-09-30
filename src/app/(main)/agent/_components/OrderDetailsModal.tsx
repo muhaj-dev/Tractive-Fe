@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import type { OrderRecord, OrderProductLine } from "@/services/OrderService";
 import { useCustomerById } from "@/hooks/queries/useCustomerQueries";
+import { formatUnitAfterQuantity } from "@/utils/productUnits";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface OrderDetailsModalProps {
   order: OrderRecord | null;
@@ -262,7 +264,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
                           {line.product &&
                           typeof line.product === "object" &&
                           line.product.unit
-                            ? ` ${line.product.unit}`
+                            ? ` ${formatUnitAfterQuantity(line.product.unit, line.quantity)}`
                             : ""}
                         </span>
                       </span>

@@ -2,6 +2,7 @@ import BidingCard from "@/components/cards/BidingCard";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { BidResponse } from "@/services/bidService";
 import React from "react";
+import { formatQuantityWithUnit } from "@/utils/productUnits";
 
 interface BiddingProductProps {
   /** The bids to render. Supplied by MyBiding based on the active filter pill. */
@@ -64,12 +65,12 @@ export const BiddingProduct: React.FC<BiddingProductProps> = ({
             key={bid?._id}
             image={bid?.product?.images?.[0] || "/images/placeholder.png"}
             title={bid?.product?.name}
-            time="24:08:07" // Placeholder as API doesn't provide expiration time yet
             description={bid?.message}
-            timeImage="/images/redclock.png" // Static asset
             crownImage="/images/leadingcrown.png" // Static asset
-            leadingProfileImage="/images/placeholder-avatar.png" // Static asset - API doesn't provide leading bidder image
-            quantity={`${bid?.product?.quantity} ${bid?.product?.unit}`}
+            quantity={formatQuantityWithUnit(
+              bid?.product?.quantity,
+              bid?.product?.unit,
+            )}
             // "amount" prop (Main price on card) -> My Bid Amount
             amount={`₦${bid?.amount?.toLocaleString()}`}
             // "biddingPrice" prop (Small bottom price) -> Product Original Price

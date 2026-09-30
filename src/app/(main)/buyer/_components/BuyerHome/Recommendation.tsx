@@ -4,6 +4,8 @@ import BidingCard from "@/components/cards/BidingCard";
 import React from "react";
 import { useGetRecommendations } from "@/hooks/queries/useProductQueries";
 import { RecommendationProduct } from "@/services/productService";
+import { formatUnitAfterQuantity } from "@/utils/productUnits";
+import { formatCurrency } from "@/lib/format";
 
 export const Recommendation = () => {
   const { data: recommendationsResponse, isLoading } = useGetRecommendations();
@@ -28,14 +30,15 @@ export const Recommendation = () => {
               id={product.id || product._id}
               image={product.images?.[0] || "/images/tomatoes.png"}
               title={product.name}
-              time="24h" // Fallback since actual API might not have this for non-bidding
-              description={`${product.quantity} ${product.unit || 'units'} available from ${product.owner?.name || product.farmer?.name || 'Seller'}`}
-              timeImage="/images/redclock.png" // Placeholder or remove from BidingCard eventually
+              description={`${product.quantity} ${formatUnitAfterQuantity(product.unit, product.quantity) || 'units'} available from ${product.owner?.name || product.farmer?.name || 'Seller'}`}
               crownImage="/images/leadingcrown.png"
               leadingProfileImage={product.owner?.image || "/images/sellersProfiles.png"}
-              quantity={`${product.quantity} ${product.unit || 'units'}`}
-              amount={product.price.toString()}
-              biddingPrice={product.price.toString()} // Fallback to price if not bidding
+              quantity={`${product.quantity} ${formatUnitAfterQuantity(product.unit, product.quantity) || 'units'}`}
+              amount={formatCurrency(product.price)}
+              // The list price, not a bid. Labelled as the starting price.
+              biddingPrice={formatCurrency(product.price)}
+              bottomLabel="Starting price:"
+              showLeadingImages={false}
               imageClass="h-[200px] object-cover"
               isWishlisted={product.isWishlisted ?? product.wishlisted}
             />

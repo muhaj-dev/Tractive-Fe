@@ -2,6 +2,7 @@ import BidingCard from "@/components/cards/BidingCard";
 import React from "react";
 import { useSimilarProducts } from "@/hooks/queries/useProductQueries";
 import { ApiProduct } from "@/services/productService";
+import { formatUnitAfterQuantity } from "@/utils/productUnits";
 
 interface SimilarProductProps {
   productId: string;
@@ -41,14 +42,15 @@ export const SimilarProduct: React.FC<SimilarProductProps> = ({ productId }) => 
             key={product.id}
             image={product.images?.[0] || "/images/pp_onion.png"}
             title={product.name}
-            time="24:00:00" // Placeholder since it's not always a bidding item
             description={product.description}
-            timeImage="/images/redclock.png"
             crownImage="/images/leadingcrown.png"
             leadingProfileImage="/images/leadingProfileImage.png"
-            quantity={product.quantity ? `${product.quantity} ${product.unit || 'Units'}` : 'N/A'}
+            quantity={product.quantity ? `${product.quantity} ${formatUnitAfterQuantity(product.unit, product.quantity) || 'Units'}` : 'N/A'}
             amount={`₦${product.price.toLocaleString()}`}
-            biddingPrice={`₦${product.price.toLocaleString()}`} // Defaulting bidding to price
+            // The list price, not a bid. Labelled as the starting price.
+            biddingPrice={`₦${product.price.toLocaleString()}`}
+            bottomLabel="Starting price:"
+            showLeadingImages={false}
             isWishlisted={product.isWishlisted ?? product.wishlisted}
           />
         ))}
