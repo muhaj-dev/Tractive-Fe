@@ -9,7 +9,11 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { userService } from "@/services/UserService";
-import { useGetTopSellers } from "@/hooks/queries/useUserQueries";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  syncFollowerCount,
+  useGetTopSellers,
+} from "@/hooks/queries/useUserQueries";
 
 // Define the shape of the following context. Keyed by sellerId (not name) so
 // the state maps 1:1 onto the real follow endpoints.
@@ -44,6 +48,7 @@ export const FollowingProvider = ({ children }: { children: ReactNode }) => {
   // Seed initial follow states from the top-sellers list (replaces the old
   // hardcoded seller names). Each seller may carry an `isFollowing` flag.
   const { data: topSellersResponse } = useGetTopSellers();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const sellers = topSellersResponse?.data;
@@ -65,12 +70,12 @@ export const FollowingProvider = ({ children }: { children: ReactNode }) => {
     const currentlyFollowing = !!followStates[sellerId];
     const label = sellerName ?? "seller";
     try {
-      if (currentlyFollowing) {
-        await userService.unfollowFarmer(sellerId);
-      } else {
-        await userService.followFarmer(sellerId);
-      }
+      const response = currentlyFollowing
+        ? await userService.unfollowFarmer(sellerId)
+        : await userService.followFarmer(sellerId);
       const newFollowState = !currentlyFollowing;
+      // Keep the seller's follower count on other screens in step with the API.
+      syncFollowerCount(queryClient, sellerId, response, newFollowState);
       setFollowStates((prev) => ({ ...prev, [sellerId]: newFollowState }));
       toast.success(
         newFollowState

@@ -13,6 +13,8 @@ export interface TrackOrderPackage {
 export interface TrackOrder {
   id: string;
   transporter: {
+    /** Empty until a transporter is assigned — follow stays hidden then. */
+    id: string;
     name: string;
     logo: string;
     rating: number;
@@ -170,6 +172,9 @@ export const orderToTrackOrder = (raw: OrderRecord): TrackOrder => {
   return {
     id,
     transporter: {
+      id: hasTransporter
+        ? asString(transporter._id ?? transporter.id, "")
+        : "",
       name: hasTransporter
         ? firstString(transporter.name, transporter.businessName)
         : UNASSIGNED,

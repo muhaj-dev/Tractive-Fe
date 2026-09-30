@@ -7,6 +7,7 @@ import {
 } from "@/app/(main)/transporter/_components/Icons/TransporterIcons";
 import { YellowStarIcon, StarIcon } from "@/icons/Icons";
 import type { TrackOrder } from "./trackOrdersData";
+import { useTransporterFollow } from "@/hooks/useTransporterFollow";
 
 interface Props {
   order: TrackOrder;
@@ -31,6 +32,18 @@ const Stars: React.FC<{ rating: number }> = ({ rating }) => (
 
 export const TransporterInfoPanel: React.FC<Props> = ({ order }) => {
   const t = order.transporter;
+  const {
+    canFollow,
+    isFollowing,
+    isPending,
+    isStatusLoading,
+    followersCount,
+    toggleFollow,
+  } =
+    useTransporterFollow(order.transporter.id);
+  // The order payload's count goes stale after a follow; the seller record
+  // is re-read on every follow/unfollow, so prefer it when it answers.
+  const followers = followersCount ?? t.followers;
   return (
     <div className="bg-[#fefefe] rounded-[10px] shadow-md p-4 flex flex-col items-center gap-2">
       <p className="self-start font-montserrat text-[11px] text-[#808080]">
@@ -53,14 +66,25 @@ export const TransporterInfoPanel: React.FC<Props> = ({ order }) => {
         </span>
       )}
       <Stars rating={t.rating} />
-      <button
-        type="button"
-        className="border border-[#808080] rounded-[20px] px-6 py-1 font-montserrat text-[11px] text-[#2b2b2b] hover:bg-[#f5f5f5] cursor-pointer"
-      >
-        Follow
-      </button>
+      {/* Hidden until a transporter is assigned, and for transporters that
+          aren't agents — the backend only accepts follows for agent accounts. */}
+      {t.id && canFollow && (
+        <button
+          type="button"
+          onClick={toggleFollow}
+          disabled={isPending || isStatusLoading}
+          aria-pressed={isFollowing}
+          className={`border rounded-[20px] px-6 py-1 font-montserrat text-[11px] hover:bg-[#f5f5f5] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+            isFollowing
+              ? "border-[#d2d2d2] text-[#808080]"
+              : "border-[#808080] text-[#2b2b2b]"
+          }`}
+        >
+          {isPending ? "..." : isFollowing ? "Following" : "Follow"}
+        </button>
+      )}
       <span className="font-montserrat text-[11px] text-[#808080]">
-        {t.followers} {t.followers === 1 ? "follower" : "followers"}
+        {followers} {followers === 1 ? "follower" : "followers"}
       </span>
       <span className="font-montserrat text-[11px] text-[#2b2b2b]">
         {t.location}

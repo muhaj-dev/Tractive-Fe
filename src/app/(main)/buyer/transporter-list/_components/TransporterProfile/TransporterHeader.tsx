@@ -14,7 +14,11 @@ import UserAvatar from "@/components/UserAvatar";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { Reviews } from "@/components/Reviews";
-import { useGetTransporter } from "@/hooks/queries/useTransporterQueries";
+import {
+  useGetTransporter,
+  useGetTransporterReviews,
+} from "@/hooks/queries/useTransporterQueries";
+import { useTransporterFollow } from "@/hooks/useTransporterFollow";
 import { LeaveReviewButton } from "@/app/(main)/buyer/(account)/track-orders/_components/LeaveReviewButton";
 import { Loader2 } from "lucide-react";
 
@@ -29,6 +33,53 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t = transporter as any;
+
+  // Same query (and cache entry) the Reviews panel uses.
+  const { data: reviewsData } = useGetTransporterReviews(transporterId, {
+    enabled: !!transporterId,
+  });
+
+  /**
+   * Up to four distinct people who actually reviewed this transporter: the
+   * API's own `recentReviewers` ({id, name, avatar}), else the reviewers on
+   * the reviews themselves.
+   */
+  const recentReviewers = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rd = reviewsData as any;
+    // Only named entries count — a bare avatar URL can't say who reviewed.
+    const named: unknown[] = Array.isArray(rd?.recentReviewers)
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        rd.recentReviewers.filter((r: any) => r && typeof r === "object" && r.name)
+      : [];
+    const list: unknown[] =
+      named.length > 0 ? named : Array.isArray(rd?.reviews) ? rd.reviews : [];
+    const seen = new Set<string>();
+    const reviewers: { key: string; name: string; avatar?: string }[] = [];
+    for (const raw of list) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const r = raw as any;
+      const person = r?.user ?? r?.buyer ?? r ?? {};
+      const name: string = person?.name ?? person?.fullName ?? "";
+      const key: string = String(person?._id ?? person?.id ?? name);
+      if (!name || seen.has(key)) continue;
+      seen.add(key);
+      reviewers.push({ key, name, avatar: person?.avatar ?? person?.image });
+      if (reviewers.length === 4) break;
+    }
+    return reviewers;
+  }, [reviewsData]);
+
+  // Follow state comes from the seller record (see useTransporterFollow);
+  // the transporter profile does not say whether the buyer follows them.
+  const {
+    canFollow,
+    followersCount: sellerFollowersCount,
+    isFollowing,
+    isPending: isFollowPending,
+    isStatusLoading: isFollowStatusLoading,
+    toggleFollow: handleFollowToggle,
+  } = useTransporterFollow(transporterId);
 
   /**
    * Star breakdown straight from the API — `GET /api/transporters/{id}` now
@@ -161,10 +212,27 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
                       />
                     )}
                   </div>
+                  {/* Only agent accounts can be followed — the backend rejects the rest. */}
+                  {canFollow && (
+                  <>
                   <span className="w-[8px] h-[8px] sm:w-[10px] sm:h-[10px] rounded-[100px] bg-[#2b2b2b]"></span>
-                  <span className="font-montserrat font-normal text-[12px] sm:text-[14px] text-[#538e53] cursor-pointer">
-                    Follow
-                  </span>
+                  <button
+                    type="button"
+                    onClick={handleFollowToggle}
+                    disabled={!transporterId || isFollowPending || isFollowStatusLoading}
+                    aria-pressed={isFollowing}
+                    className={`cursor-pointer font-montserrat font-normal text-[12px] sm:text-[14px] transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                      isFollowing ? "text-[#808080]" : "text-[#538e53]"
+                    }`}
+                  >
+                    {isFollowPending
+                      ? "..."
+                      : isFollowing
+                        ? "Following"
+                        : "Follow"}
+                  </button>
+                  </>
+                  )}
                 </div>
                 <div className="flex gap-1 items-center flex-wrap">
                   <div className="flex gap-1 items-center">

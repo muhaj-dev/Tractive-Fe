@@ -5,6 +5,7 @@ import api from "@/lib/axios";
 import { userService } from "@/services/UserService";
 import { toast } from "sonner";
 import { productKeys } from "./useProductQueries";
+import { transporterKeys } from "./useTransporterQueries";
 
 // Types
 export interface ContentPayload {
@@ -125,35 +126,71 @@ export const useUpdateProfile = () => {
     })
 }
 
-export const useFollowFarmer = () => {
+/**
+ * After a follow/unfollow, re-read the profiles that show this seller's
+ * follower count. The count is never incremented locally: the follow
+ * endpoints' response body is not documented, so the seller record
+ * (`followersCount` on GET /api/sellers/{id} and GET /api/transporters/{id})
+ * is the source of truth. If the response does carry a count it is applied at
+ * once, and the refetch then confirms it.
+ */
+export const syncFollowerCount = (
+    queryClient: ReturnType<typeof useQueryClient>,
+    sellerId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    response: any,
+    isFollowing: boolean,
+) => {
+    const count = [
+        response?.followersCount,
+        response?.data?.followersCount,
+    ].find((v) => typeof v === "number" && Number.isFinite(v));
+    if (typeof count === "number") {
+        const apply = (old: unknown) =>
+            old && typeof old === "object"
+                ? { ...old, followersCount: count, isFollowing }
+                : old;
+        queryClient.setQueryData(["seller", sellerId], apply);
+        queryClient.setQueryData(transporterKeys.detail(sellerId), apply);
+    }
+    queryClient.invalidateQueries({ queryKey: ["seller", sellerId] });
+    queryClient.invalidateQueries({ queryKey: transporterKeys.detail(sellerId) });
+    queryClient.invalidateQueries({ queryKey: ["sellers"] });
+    // Product pages embed the owner's follow status.
+    queryClient.invalidateQueries({ queryKey: productKeys.all });
+};
+
+/**
+ * `subject` names who is being followed in the toasts — transporters use the
+ * same seller follow endpoint, and "following this farmer" misreads there.
+ */
+export const useFollowFarmer = (subject = "farmer") => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (farmerId: string) => userService.followFarmer(farmerId),
-        onSuccess: () => {
-            toast.success("You are now following this farmer");
-             // Invalidate product queries to refresh checking status if needed
-             // Using productKeys.all to be safe, or we could try to be more specific if we had the product ID
-             queryClient.invalidateQueries({ queryKey: productKeys.all });
+        onSuccess: (response, farmerId) => {
+            toast.success(`You are now following this ${subject}`);
+            syncFollowerCount(queryClient, farmerId, response, true);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
-            const message = error?.response?.data?.message || "Failed to follow farmer";
+            const message = error?.response?.data?.message || `Failed to follow ${subject}`;
             toast.error(message);
         }
     })
 }
 
-export const useUnfollowFarmer = () => {
+export const useUnfollowFarmer = (subject = "farmer") => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (farmerId: string) => userService.unfollowFarmer(farmerId),
-        onSuccess: () => {
-             toast.success("You have unfollowed this farmer");
-             queryClient.invalidateQueries({ queryKey: productKeys.all });
+        onSuccess: (response, farmerId) => {
+             toast.success(`You have unfollowed this ${subject}`);
+             syncFollowerCount(queryClient, farmerId, response, false);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
-             const message = error?.response?.data?.message || "Failed to unfollow farmer";
+             const message = error?.response?.data?.message || `Failed to unfollow ${subject}`;
              toast.error(message);
         }
     })

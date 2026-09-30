@@ -111,6 +111,10 @@ const BookingTransport: React.FC = () => {
         followersCount: ownerSeller?.followersCount,
         state: ownerSeller?.location,
         isFollowing: ownerSeller?.isFollowing,
+        // Only agent accounts can be followed; the seller record has roles.
+        canFollow: (
+          (ownerSeller as { roles?: string[] } | null | undefined)?.roles ?? []
+        ).includes("agent"),
       }
     : undefined;
 

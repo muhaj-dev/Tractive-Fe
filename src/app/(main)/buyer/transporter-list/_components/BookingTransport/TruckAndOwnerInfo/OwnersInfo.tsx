@@ -10,7 +10,6 @@ import Image from "next/image";
 import UserAvatar from "@/components/UserAvatar";
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 import {
   useFollowFarmer,
   useUnfollowFarmer,
@@ -25,6 +24,12 @@ export interface OwnerInfo {
   followersCount?: number;
   state?: string;
   isFollowing?: boolean;
+  /**
+   * True when the owner is also an agent. The backend rejects follows for any
+   * other account (400 "Seller must be an agent account"), so the button is
+   * hidden unless this is set.
+   */
+  canFollow?: boolean;
 }
 
 export const OwnersInfo = ({ owner }: { owner?: OwnerInfo }) => {
@@ -39,8 +44,8 @@ export const OwnersInfo = ({ owner }: { owner?: OwnerInfo }) => {
     ownerId as string,
   );
   const latestReview = reviewData?.reviews?.[0];
-  const followMutation = useFollowFarmer();
-  const unfollowMutation = useUnfollowFarmer();
+  const followMutation = useFollowFarmer("transporter");
+  const unfollowMutation = useUnfollowFarmer("transporter");
   const [isFollowing, setIsFollowing] = useState<boolean>(!!owner?.isFollowing);
   const isFollowPending =
     followMutation.isPending || unfollowMutation.isPending;
@@ -60,8 +65,8 @@ export const OwnersInfo = ({ owner }: { owner?: OwnerInfo }) => {
         await followMutation.mutateAsync(ownerId);
       }
     } catch {
+      // The mutation hook already shows the error toast.
       setIsFollowing(previous); // revert on failure
-      toast.error("Failed to update follow status. Please try again.");
     }
   };
 
@@ -89,6 +94,8 @@ export const OwnersInfo = ({ owner }: { owner?: OwnerInfo }) => {
                 <span className="font-montserrat font-normal text-[14px] text-[#2b2b2b] truncate">
                   {owner?.name || "Transporter"}
                 </span>
+                {owner?.canFollow && (
+                <>
                 <span className="w-[10px] h-[10px] rounded-[100px] bg-[#2b2b2b]"></span>
                 <button
                   type="button"
@@ -104,6 +111,8 @@ export const OwnersInfo = ({ owner }: { owner?: OwnerInfo }) => {
                       ? "Following"
                       : "Follow"}
                 </button>
+                </>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-4 flex-wrap">
