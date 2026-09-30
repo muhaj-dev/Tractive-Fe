@@ -46,7 +46,7 @@ export default function RegisterAs() {
   const router = useRouter();
   const { data: session, update } = useSession();
 
-  const { data: availableRolesData } = useAvailableRoles();
+  const { data: availableRolesData, isError: rolesError } = useAvailableRoles();
   const switchRoleMutation = useSwitchRole();
   const addAccountMutation = useAddAccount();
 
@@ -55,7 +55,9 @@ export default function RegisterAs() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedRole || !session) return;
+    // Without the role list every role looks new, which sends an existing
+    // user to onboarding, so wait for it (Continue stays disabled until then).
+    if (!selectedRole || !session || !availableRolesData) return;
 
     const roleId = selectedRole;
     const isRoleAvailable =
@@ -205,11 +207,17 @@ export default function RegisterAs() {
 
           <Button
             onClick={handleSubmit}
-            disabled={!selectedRole || isLoading}
+            disabled={!selectedRole || isLoading || !availableRolesData}
             textClass="text-center mx-auto"
             text={isLoading ? "Processing..." : "Continue"}
             className="w-full md:w-[50%]  mx-auto block"
           />
+
+          {rolesError && (
+            <p role="alert" className="text-center text-[12px] text-red-500 font-montserrat mt-3">
+              We couldn&apos;t load your accounts. Refresh the page to try again.
+            </p>
+          )}
 
           <p className="text-center text-[12px] text-[#808080] font-montserrat mt-6">
             Want to change your role later?{" "}

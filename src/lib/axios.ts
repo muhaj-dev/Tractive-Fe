@@ -30,18 +30,42 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+/**
+ * Fired once when the session can no longer be recovered (a 401 the refresh
+ * could not fix). `SessionExpiredNotice` listens for it and covers the page, so
+ * the requests that failed with 401 are never read as "there is no data" while
+ * the redirect to /login is in flight. Only a genuine 401 gets here — a 404, a
+ * 500, a network error or an empty list never does.
+ */
+export const SESSION_EXPIRED_EVENT = "tractive:session-expired";
+
+let isForcingLogout = false;
+
 const forceLogout = async () => {
-  tokenManager.clearToken();
-  await signOut({ redirect: false });
+  // Several requests usually fail together; sign out and redirect once.
+  if (isForcingLogout) return;
+  isForcingLogout = true;
 
   const current = window.location.pathname + window.location.search;
   const isOnAuthPage =
     current.startsWith("/login") || current.startsWith("/signup");
-  const redirectParam = !isOnAuthPage
-    ? `?redirect=${encodeURIComponent(current)}`
-    : "";
 
-  window.location.href = `/login${redirectParam}`;
+  tokenManager.clearToken();
+  if (!isOnAuthPage) window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  await signOut({ redirect: false });
+
+  // Already on the login/signup page: the user is where they need to be, and
+  // redirecting to it again would only reload it.
+  if (isOnAuthPage) {
+    isForcingLogout = false;
+    return;
+  }
+
+  const params = new URLSearchParams({
+    reason: "session-expired",
+    redirect: current,
+  });
+  window.location.href = `/login?${params.toString()}`;
 };
 
 api.interceptors.response.use(
