@@ -888,3 +888,14 @@ export const lgaData: { [key: string]: string[] } = {
     "Zurmi",
   ],
 };
+/**
+ * Stored profiles hold free-typed values ("ilorin south"), but the selects need
+ * the exact option ("Ilorin South"). A value that matches no option leaves the
+ * select on its first option, and that is what gets saved. Returns the
+ * canonical option, or "" when nothing matches.
+ */
+export const matchOption = (options: string[] | undefined, value?: string | null): string => {
+  const wanted = (value ?? "").trim().toLowerCase();
+  if (!wanted || !options) return "";
+  return options.find((o) => o.toLowerCase() === wanted) ?? "";
+};

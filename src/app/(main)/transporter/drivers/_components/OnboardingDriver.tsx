@@ -117,8 +117,9 @@ export const OnboardingDriver: React.FC<AddDriverProps> = ({
         if (!formData.phone.trim()) {
             newErrors.phone = "Phone number is required";
             isValid = false;
-        } else if (!/^\d{10,11}$/.test(formData.phone)) {
-            newErrors.phone = "Phone number must be 10-11 digits";
+        } else if (!/^(\+?234|0)\d{10}$/.test(formData.phone)) {
+            // Same rule as onboarding, so a number saved there can be saved again here.
+            newErrors.phone = "Invalid phone number format";
             isValid = false;
         }
     }

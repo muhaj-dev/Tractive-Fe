@@ -322,9 +322,10 @@ export const useChangePassword = () => {
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
+      // The endpoint reports failures as { error: "Invalid current password" }.
       toast.error(
-        error?.response?.data?.message ||
-          error?.message ||
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
           "Failed to change password. Please try again.",
         { duration: 4000, position: "top-center" },
       );

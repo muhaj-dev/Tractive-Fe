@@ -36,6 +36,17 @@ const overlayVariants = {
   exit: { opacity: 0 },
 };
 
+/** The editable fields, as the form holds them, for a given product. */
+const formFromProduct = (product: Product) => ({
+  price: product.price || 0,
+  quantity: product.quantity || ("" as number | string),
+  name: product.name || "",
+  description: product.description || "",
+  discount: product.discount || (0 as number | string),
+  images: product.images || [],
+  videos: product.videos || [],
+});
+
 export const EditProductModal: React.FC<EditProductModalProps> = ({
   isOpen,
   onClose,
@@ -115,27 +126,46 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
     }
   }, [isOpen, initialMode]);
 
-  // Initialize form data when product ID changes or fetched data arrives
-  // Using JSON.stringify for deep comparison on product data to avoid loop if product ref changes but data is same
+  // The form opens straight away on the row's own data, and the fresh
+  // GET /api/products/{id} (which can take ~9s) is laid over it when it lands.
+  // A late response must never overwrite what the agent has typed meanwhile,
+  // so every field they change is recorded here and left alone by the refill.
+  // The record is cleared when a different product is shown or the edit is
+  // saved or cancelled.
+  const touchedFieldsRef = useRef<Set<keyof typeof formData>>(new Set());
+  const seededProductIdRef = useRef<string | null>(null);
+  const touch = (field: keyof typeof formData) =>
+    touchedFieldsRef.current.add(field);
+
   useEffect(() => {
-    if (product) {
-      setFormData({
-        price: product.price || 0,
-        quantity: product.quantity || "",
-        name: product.name || "",
-        description: product.description || "",
-        discount: product.discount || 0,
-        images: product.images || [],
-        videos: product.videos || [],
-      });
+    // Closing discards the record, so reopening — even on the same product —
+    // starts from the product again rather than from an abandoned edit.
+    if (!isOpen) {
+      seededProductIdRef.current = null;
+      touchedFieldsRef.current.clear();
+      return;
+    }
+    if (!product) return;
+    if (seededProductIdRef.current !== product.id) {
+      seededProductIdRef.current = product.id;
+      touchedFieldsRef.current.clear();
       setIsDeleteConfirmOpen(false);
     }
-  }, [product]);
+    const fromProduct = formFromProduct(product);
+    setFormData((prev) => {
+      const next = { ...fromProduct };
+      touchedFieldsRef.current.forEach((field) => {
+        (next as Record<string, unknown>)[field] = prev[field];
+      });
+      return next;
+    });
+  }, [product, isOpen]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
+    touch(name as keyof typeof formData);
     setFormData((prev) => ({
       ...prev,
       [name]:
@@ -162,6 +192,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         toast.info(`Uploading ${validFiles.length} images...`);
         const urls = await Promise.all(uploadPromises);
 
+        touch("images");
         setFormData((prev) => ({
           ...prev,
           images: [...prev.images, ...urls],
@@ -195,6 +226,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       try {
         toast.info("Uploading video...");
         const url = await uploadToCloudinary(file);
+        touch("videos");
         setFormData((prev) => ({
           ...prev,
           videos: [...prev.videos, url],
@@ -207,6 +239,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const removeImage = (index: number) => {
+    touch("images");
     setFormData((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
@@ -214,6 +247,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const removeVideo = (index: number) => {
+    touch("videos");
     setFormData((prev) => ({
       ...prev,
       videos: prev.videos.filter((_, i) => i !== index),
@@ -267,8 +301,9 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             });
           }
           // Optimistically update local product state to reflect changes in View mode
+          touchedFieldsRef.current.clear();
+          // useUpdateProduct already shows the success toast.
           setMode("view");
-          toast.success("Product updated successfully");
         },
       },
     );
@@ -299,6 +334,13 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         onClose();
       },
     });
+  };
+
+  // Cancel discards the edit, so the form goes back to the product as it is.
+  const cancelEdit = () => {
+    touchedFieldsRef.current.clear();
+    if (product) setFormData(formFromProduct(product));
+    setMode("view");
   };
 
   const handleClose = () => {
@@ -361,12 +403,17 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
 
             {/* Content */}
             <div className="p-6 overflow-y-auto flex-1">
-              {isFetching && !fetchedProduct ? (
-                <div className="text-center py-4 text-gray-500 font-montserrat">
+              {/* The row's own data is already on screen and editable; this
+                  only says a fresher copy is on its way. */}
+              {isFetching && !fetchedProduct && (
+                <p
+                  className="mb-4 text-xs text-gray-500 font-montserrat"
+                  role="status"
+                >
                   Loading latest details...
-                </div>
-              ) : (
-                <div className="space-y-6">
+                </p>
+              )}
+              <div className="space-y-6">
                   {/* Common: Images & Details (Read-only in both modes, but styled differently if needed) */}
                   {/* Media Gallery is now integrated into View Mode */}
 
@@ -783,7 +830,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                         <div className="flex gap-3 pt-4">
                           <button
                             type="button"
-                            onClick={() => setMode("view")}
+                            onClick={cancelEdit}
                             className="flex-1 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-montserrat font-medium"
                           >
                             Cancel
@@ -840,8 +887,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                       </div>
                     </motion.div>
                   )}
-                </div>
-              )}
+              </div>
             </div>
           </motion.div>
         </motion.div>

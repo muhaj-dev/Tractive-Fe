@@ -88,9 +88,10 @@ export const useUpdateFarmer = () => {
       // 1. Update the detail cache
       queryClient.setQueryData(farmerKeys.detail(variables.id), updatedFarmer);
 
-      // 2. Update the specific farmer in the list cache
-      queryClient.setQueryData(
-        farmerKeys.lists(),
+      // 2. Update the farmer in every cached list (keyed by filters), then
+      // refetch so the list reflects the server's copy.
+      queryClient.setQueriesData(
+        { queryKey: farmerKeys.lists() },
         (oldData: FarmersResponse | undefined) => {
           if (!oldData) return undefined;
           return {
@@ -101,6 +102,7 @@ export const useUpdateFarmer = () => {
           };
         },
       );
+      queryClient.invalidateQueries({ queryKey: farmerKeys.lists() });
 
       toast.success("Farmer updated successfully!");
     },
@@ -126,9 +128,11 @@ export const useDeleteFarmer = () => {
       // 1. Remove from detail cache
       queryClient.removeQueries({ queryKey: farmerKeys.detail(deletedId) });
 
-      // 2. Remove from list cache
-      queryClient.setQueryData(
-        farmerKeys.lists(),
+      // 2. Remove from every cached list. Lists are keyed ["farmers","list",filters],
+      // so setQueryData on farmerKeys.lists() alone matched nothing and the
+      // deleted farmer stayed on screen.
+      queryClient.setQueriesData(
+        { queryKey: farmerKeys.lists() },
         (oldData: FarmersResponse | undefined) => {
           if (!oldData) return undefined;
           return {
@@ -138,6 +142,7 @@ export const useDeleteFarmer = () => {
           };
         },
       );
+      queryClient.invalidateQueries({ queryKey: farmerKeys.lists() });
 
       toast.success("Farmer deleted successfully!");
     },

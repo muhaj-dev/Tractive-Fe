@@ -131,8 +131,11 @@ export default function ApprovalPage() {
   const fetchAgents = useCallback(async () => {
     setAgentsLoading(true);
     try {
+      // Without status the API returns every applicant, approved ones included,
+      // which buried the one pending agent among eight approved accounts.
       const { data, pagination } = await approvalService.getPendingAgents({
         ...queryParams,
+        status: "pending",
         page,
         limit,
       });
@@ -150,7 +153,7 @@ export default function ApprovalPage() {
     setTransportersLoading(true);
     try {
       const { data, pagination } = await approvalService.getPendingTransporters(
-        { ...queryParams, page, limit },
+        { ...queryParams, status: "pending", page, limit },
       );
       setTransporters(data.map((t) => ({ ...t, checked: false })));
       setTransportersTotal(pagination?.total ?? data.length);

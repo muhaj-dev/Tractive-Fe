@@ -143,6 +143,9 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
         : capacityTonnes > MAX_CAPACITY_TONNES
           ? `That is ${capacityTonnes.toLocaleString()} tons — the maximum is ${MAX_CAPACITY_TONNES}`
           : "";
+  // The field is validated as tonnes, but the backend reads a bare number as
+  // kilograms ("12" → 12 kg, "12 tons" → 12,000 kg), so always send the unit.
+  const capacityForApi = `${capacityTonnes} tons`;
   const priceError =
     formData.price === ""
       ? ""
@@ -253,14 +256,14 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
       const payload: Partial<FleetPayload> = editFleetData
         ? {
             model: formData.model,
-            capacity: formData.size,
+            capacity: capacityForApi,
           }
         : {
             fleetName: formData.fleetName,
             fleetNumber: formData.fleetNumber,
             iot: formData.iot,
             model: formData.model,
-            capacity: formData.size,
+            capacity: capacityForApi,
             price: Number(formData.price),
             priceNegotiation: formData.isNegotiable,
             images: formData.images.filter(Boolean), // remove undefined/null slots

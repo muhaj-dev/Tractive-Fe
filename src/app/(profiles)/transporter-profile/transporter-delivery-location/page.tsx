@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { nigerianStates, lgaData } from "@/utils/state&LGA";
+import { nigerianStates, lgaData, matchOption } from "@/utils/state&LGA";
 import { ArrowDownIcon } from "@/icons/Icons";
 import { useProfile, useUpdateProfile } from "@/hooks/queries/useUserQueries";
 
@@ -17,9 +17,11 @@ const DeliveryLocation = () => {
   // Populate the form once profile data arrives
   useEffect(() => {
     if (!profile) return;
+    // Match case-insensitively so "ilorin south" preselects "Ilorin South".
+    const state = matchOption(nigerianStates, profile.state);
     setFormData({
-      state: profile.state || "",
-      lga: profile.lga || "",
+      state,
+      lga: matchOption(lgaData[state], profile.lga),
       street: profile.address || "",
     });
   }, [profile]);

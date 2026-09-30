@@ -146,7 +146,17 @@ export const useUpdateProduct = () => {
       data: UpdateProductData;
       existing?: ApiProduct | null;
     }) => productService.updateProduct(id, data, existing),
-    onSuccess: (updatedProduct) => {
+    onSuccess: async (updatedProduct, { id }) => {
+      // The edit modal reads this product's detail query. A GET started before
+      // the save can still be in flight and would land with the pre-save
+      // values, so cancel it and store what the server just returned.
+      await queryClient.cancelQueries({ queryKey: productKeys.detail(id) });
+      queryClient.setQueryData(
+        productKeys.detail(id),
+        (old: ApiProduct | undefined) =>
+          old ? { ...old, ...updatedProduct } : updatedProduct,
+      );
+
       // Invalidate relevant queries to ensure consistency
       // Ideally we updates cache manually for perfect optimistic UI, but for edit details invalidation is often acceptable
       // However, let's try to update the cache for better UX
