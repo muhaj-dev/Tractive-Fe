@@ -154,7 +154,6 @@ export default function TransactionPage() {
         page,
         limit,
       });
-      console.log("🔎 /api/admin/transactions response:", res);
       setTransactions(res.data.map(mapToTransaction));
       setTotalItems(res.pagination?.total ?? res.data.length);
       setCounts((c) => ({

@@ -80,7 +80,6 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
     setUploadProgress(10);
 
     try {
-      console.log("🚀 Step 1: Starting product upload...");
 
       // Guard: farmer / product name / category are chosen in step 1, so if
       // they're missing the user needs to go back rather than fix a field here.
@@ -117,7 +116,6 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
         return;
       }
 
-      console.log("✅ Step 2: All fields validated");
 
       // Upload media to Cloudinary. Failures here are reported separately from
       // failures creating the product — "Failed to create product" is the wrong
@@ -129,31 +127,23 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
       try {
         if (imageFiles.length > 0) {
           setUploadProgress(20);
-          console.log(
-            `🔄 Step 3a: Uploading ${imageFiles.length} images to Cloudinary...`,
-          );
 
           const uploadPromises = imageFiles.map((file) =>
             uploadToCloudinary(file),
           );
           imageUrls = await Promise.all(uploadPromises);
 
-          console.log("✅ Images uploaded:", imageUrls);
         }
 
         // Upload videos to Cloudinary
         if (videoFiles.length > 0) {
           setUploadProgress(40);
-          console.log(
-            `🔄 Step 3b: Uploading ${videoFiles.length} videos to Cloudinary...`,
-          );
 
           const uploadPromises = videoFiles.map((file) =>
             uploadToCloudinary(file),
           );
           videoUrls = await Promise.all(uploadPromises);
 
-          console.log("✅ Videos uploaded:", videoUrls);
         }
       } catch (uploadError) {
         console.error("❌ Media upload failed:", uploadError);
@@ -215,11 +205,9 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
         };
       }
 
-      console.log("✅ Step 5: Payload prepared", apiPayload);
       setUploadProgress(80);
 
       // Make API call using the hook
-      console.log("🚀 Step 6: sending mutation...");
 
       await createProduct(apiPayload);
 

@@ -51,7 +51,6 @@ export default function AdminLayout({
   };
 
   const closeDropdown = () => {
-    console.log("Closing profile dropdown");
     setIsDropdownOpen(false);
   };
 

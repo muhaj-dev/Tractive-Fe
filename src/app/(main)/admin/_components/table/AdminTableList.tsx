@@ -127,99 +127,78 @@ export const AdminTable = <T extends BaseData>({
   }, [dataType, fetchData, initialData]);
 
   const defaultHandleViewProfile = (id: string) => {
-    console.log(`Default handleEdit called for id: ${id}`);
     alert(`Edit ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleSuspended = (id: string) => {
-    console.log(`Default handleRemove called for id: ${id}`);
     alert(`Remove ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleApprove = (id: string) => {
-    console.log(`Default handleApprove called for id: ${id}`);
     alert(`Approve ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleDeclined = (id: string) => {
-    console.log(`Default handleDeclined called for id: ${id}`);
     alert(`Decline ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleRefund = (id: string) => {
-    console.log(`Default handleRefund called for id: ${id}`);
     alert(`Refund ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleAgentApprove = (id: string) => {
-    console.log(`Default handleAgentApprove called for id: ${id}`);
     alert(`Approve ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleAgentDecline = (id: string) => {
-    console.log(`Default handleAgentDecline called for id: ${id}`);
     alert(`Decline ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleFarmerApprove = (id: string) => {
-    console.log(`Default handleFarmerApprove called for id: ${id}`);
     alert(`Approve ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleFarmerDecline = (id: string) => {
-    console.log(`Default handleFarmerDecline called for id: ${id}`);
     alert(`Decline ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleTransporterApprove = (id: string) => {
-    console.log(`Default handleTransporterApprove called for id: ${id}`);
     alert(`Approve ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleTransporterDecline = (id: string) => {
-    console.log(`Default handleTransporterDecline called for id: ${id}`);
     alert(`Decline ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleProfile = (id: string) => {
-    console.log(`Default handleProfile called for id: ${id}`);
     alert(`Profile ${dataType} with ID: ${id}`);
   };
   const defaultHandleAdminSuspended = (id: string) => {
-    console.log(`Default handleAdminSuspended called for id: ${id}`);
     alert(`Suspend ${dataType} with ID: ${id}`);
   };
   const defaultHandleReactivate = (id: string) => {
-    console.log(`Default handleAdminReactivate called for id: ${id}`);
     alert(`Reactivate ${dataType} with ID: ${id}`);
   };
   const defaultHandleAdminRemoved = (id: string) => {
-    console.log(`Default handleAdminRemoved called for id: ${id}`);
     alert(`Remove ${dataType} with ID: ${id}`);
   };
   const defaultHandleAdminOnboarding = (id: string) => {
-    console.log(`Default handleAdminOnboarding called for id: ${id}`);
     alert(`Onboarding ${dataType} with ID: ${id}`);
   };
 
   const defaultHandleSellerInfo = (id: string) => {
-    console.log(`Default handleSellerInfo called for id: ${id}`);
     alert(`Seller Info ${dataType} with ID: ${id}`);
   };
   const defaultHandleBuyerInfo = (id: string) => {
-    console.log(`Default handleBuyerInfo called for id: ${id}`);
     alert(`Buyer Info ${dataType} with ID: ${id}`);
   };
   const defaultHandleTBuyerInfo = (id: string) => {
-    console.log(`Default handleTBuyerInfo called for id: ${id}`);
     alert(`Buyer Info ${dataType} with ID: ${id}`);
   };
   const defaultHandleTransporterInfo = (id: string) => {
-    console.log(`Default handleTransporterInfo called for id: ${id}`);
     alert(`Transporter Info ${dataType} with ID: ${id}`);
   };
   const defaultHandleTrackOrder = (id: string) => {
-    console.log(`Default handleTrackOrder called for id: ${id}`);
     alert(`Track Order Info ${dataType} with ID: ${id}`);
   };
 

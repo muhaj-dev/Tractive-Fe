@@ -272,7 +272,6 @@ const NegotiationListPage: React.FC = () => {
   const handleAccept = (id?: string) => respond("accept", id);
 
   const handleCheckboxChange = (id: string) => {
-    console.log(`Checkbox toggled for ID: ${id}`);
     setNegotiated(
       negotiated.map((p: NegotiationProps) =>
         p.id === id ? { ...p, checked: !p.checked } : p

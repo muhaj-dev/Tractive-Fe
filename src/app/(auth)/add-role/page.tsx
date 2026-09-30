@@ -168,14 +168,10 @@ function AddRolePageInner() {
         lga: data.lga,
       };
 
-      console.log("Creating new role with add-account API:", addAccountPayload);
       await addAccount(addAccountPayload);
-      console.log("✓ Role created successfully");
 
       // Refresh session to get updated roles and activeRole
-      console.log("Refreshing session...");
       await update();
-      console.log("✓ Session updated");
 
       toast.dismiss(toastId);
       toast.success(

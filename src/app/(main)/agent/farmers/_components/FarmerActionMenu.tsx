@@ -46,7 +46,6 @@ export const FarmerActionMenu: React.FC<FarmerActionMenuProps> = ({
 
   const handleDeleteConfirm = async () => {
     try {
-      // console.log(`🗑️ Deleting farmer: ${productId}`);
       await deleteFarmerMutation.mutateAsync(productId);
       setShowDeleteModal(false);
       setActiveMenu(null);
@@ -108,7 +107,6 @@ export const FarmerActionMenu: React.FC<FarmerActionMenuProps> = ({
                   {handleEdit && (
                     <button
                       onClick={() => {
-                        console.log(`Edit clicked for farmer: ${productId}`);
                         handleEdit(productId);
                         setActiveMenu(null);
                       }}

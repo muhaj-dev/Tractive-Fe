@@ -83,15 +83,9 @@ export default function RegisterAs() {
 
         if (hasExistingRoles) {
           // Existing user adding a new role - redirect to add-role page
-          console.log(
-            "Existing user adding new role, redirecting to add-role page",
-          );
           router.push(`/add-role?role=${roleId}`);
         } else {
           // Brand new user - first role creation via onboarding
-          console.log(
-            "New user creating first role, redirecting to onboarding",
-          );
           localStorage.setItem("pendingRole", roleId);
           router.push(`/onboarding?role=${roleId}`);
         }

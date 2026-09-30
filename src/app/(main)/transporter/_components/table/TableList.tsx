@@ -85,19 +85,16 @@ export const TableList = <T extends BaseData>({
   }, [dataType, fetchData, initialData]);
 
   const defaultHandleEdit = (id: string) => {
-    console.log(`Default handleEdit called for id: ${id}`);
     alert(`Edit ${dataType} with ID: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleRemove = (id: string) => {
-    console.log(`Default handleRemove called for id: ${id}`);
     alert(`Remove ${dataType} with ID: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleAssignFleet = (id: string) => {
-    console.log(`Default handleAssignFleet called for id: ${id}`);
     if (handleAssignFleet) {
       handleAssignFleet(id);
     } else {
@@ -107,43 +104,35 @@ export const TableList = <T extends BaseData>({
   };
   
   const defaultHandleBuyerInfo = (id: string) => {
-    console.log(`Default handleBuyerInfo called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleParked = (id: string) => {
-    console.log(`Default handleParked called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleDelivered = (id: string) => {
-    console.log(`Default handleDelivered called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleCustomerCare = (id: string) => {
-    console.log(`Default handleCustomerCare called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleCustomerInfo = (id: string) => {
-    console.log(`Default handleCustomerInfo called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleSupport = (id: string) => {
-    console.log(`Default handleSupport called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleReject = (id: string) => {
-    console.log(`Default handleReject called for id: ${id}`);
     alert(`Reject ${dataType} with ID: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleAccept = (id: string) => {
-    console.log(`Default handleAccept called for id: ${id}`);
     alert(`Accept ${dataType} with ID: ${id}`);
     setActiveMenu(null);
   };

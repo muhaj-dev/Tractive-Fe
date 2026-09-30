@@ -44,7 +44,6 @@ export default function EmailVerification() {
       try {
         const result = await verifyOtpCode(email, otpValue);
 
-        console.log("Verification result:", result); // Debug log
 
         if (result.success) {
           toast.success("Email verified successfully!");

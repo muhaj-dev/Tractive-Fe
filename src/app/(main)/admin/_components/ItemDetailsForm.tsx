@@ -64,16 +64,6 @@ export const ItemDetailsForm: React.FC<ItemDetailsFormProps> = ({
   // Handle form submission
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    console.log({
-      available,
-      description,
-      unit,
-      totalWeight,
-      price,
-      selectedCategory,
-      selectedProduce,
-      selectedProfiles,
-    });
     // Implement upload logic here
     onClose();
   };

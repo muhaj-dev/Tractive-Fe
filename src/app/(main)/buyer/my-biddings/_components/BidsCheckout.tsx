@@ -87,7 +87,6 @@ export const BidsCheckout: React.FC<BidsCheckoutProps> = ({
       },
       {
         onSuccess: (data) => {
-          console.log("Order creation response:", JSON.stringify(data));
           const d = data as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
           const createdOrderId =
             d?.data?._id ||

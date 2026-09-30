@@ -72,7 +72,6 @@ const FarmersListPage: React.FC = () => {
 
   // Handlers
   const handleView = (id: string) => {
-    console.log(`Viewing farmer with ID: ${id}`);
     const farmer = farmersData.find((f) => f.id === id);
     if (farmer) {
       setViewFarmer(farmer);
@@ -89,7 +88,6 @@ const FarmersListPage: React.FC = () => {
   };
 
   const handleEdit = (id: string) => {
-    console.log(`Editing farmer with ID: ${id}`);
     const farmer = farmersData.find((f) => f.id === id);
     if (farmer) {
       setEditFarmer(farmer);

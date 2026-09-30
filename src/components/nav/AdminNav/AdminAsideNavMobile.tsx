@@ -413,7 +413,6 @@ export const AdminAsideNavMobile = ({
                 </button>
                 <button
                   onClick={() => {
-                    console.log("Add to store submitted");
                     toggleModal();
                   }}
                   className="px-4 py-2 bg-[#538e53] text-[#fefefe] rounded-[4px] font-montserrat text-[14px] hover:bg-[#468246]"

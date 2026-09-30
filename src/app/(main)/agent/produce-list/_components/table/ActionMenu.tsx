@@ -80,20 +80,16 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
   }, [activeMenu, productId, setActiveMenu]);
 
   const handleEditClick = () => {
-    console.log("📝 Editing product:", productId);
     handleEdit(productId);
     setActiveMenu(null);
   };
 
   const handleStatusClick = () => {
-    const newStatus = isOutOfStockPage ? "available" : "out_of_stock";
-    console.log(`🔄 Changing product status to: ${newStatus}`);
     handleOutOfStock(productId);
     setActiveMenu(null);
   };
 
   const handleDeleteConfirm = () => {
-    // console.log("🗑️ Deleting product:", productId);
     handleDelete(productId);
     setShowDeleteModal(false);
     setActiveMenu(null);

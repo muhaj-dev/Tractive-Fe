@@ -34,10 +34,6 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      console.log("🚀 Signup Data:", {
-        fullName: data.name,
-        email: data.email,
-      });
 
       const { newUser, otpSentTo } = await registerUserWithOtp(
         data.name,

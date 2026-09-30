@@ -439,7 +439,6 @@ export const productService = {
     filters: SearchFilters = {},
   ): Promise<ProductsResponse> => {
     try {
-      console.log("🚀 Fetching products with filters:", filters);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const params: any = {
@@ -452,7 +451,6 @@ export const productService = {
         params,
       });
 
-      console.log("✅ Products fetched successfully:", response.data);
 
       let mappedProducts: ApiProduct[] = [];
       const data = response.data.data || [];
@@ -481,11 +479,9 @@ export const productService = {
   // GET /api/products/:id - Get single product
   getProduct: async (id: string): Promise<ApiProduct> => {
     try {
-      console.log(`🚀 Fetching product details for ${id}`);
 
       const response = await api.get(`/api/products/${id}`);
 
-      console.log("✅ Product details fetched:", response.data);
       const productData =
         response.data.data || response.data.product || response.data;
       return mapBackendToFrontendProduct(productData);
@@ -497,11 +493,9 @@ export const productService = {
   // GET /api/product/:id/similar - Get similar products
   getSimilarProducts: async (id: string): Promise<ApiProduct[]> => {
     try {
-      console.log(`🚀 Fetching similar products for ${id}`);
 
       const response = await api.get(`/api/products/${id}/similar`);
 
-      console.log("✅ Similar products fetched:", response.data);
       let mappedProducts: ApiProduct[] = [];
       const data = response.data.data || response.data.products || response.data || [];
       
@@ -570,7 +564,6 @@ export const productService = {
     filters: Omit<SearchFilters, "status"> = {},
   ): Promise<ProductsResponse> => {
     try {
-      console.log("Fetching out-of-stock products:", filters);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const params: any = {
@@ -603,7 +596,6 @@ export const productService = {
 // }
 
 
-      console.log("✅ Out-of-stock products fetched:", response.data);
 
       let mappedProducts: ApiProduct[] = [];
       const data =
@@ -635,11 +627,9 @@ export const productService = {
     productData: CreateProductData,
   ): Promise<ApiProduct> => {
     try {
-      console.log("🚀 Creating product:", productData);
 
       const response = await api.post("/api/products", productData);
 
-      console.log("✅ Product created:", response.data);
       return mapBackendToFrontendProduct(
         response.data.product || response.data,
       );
@@ -659,7 +649,6 @@ export const productService = {
     existing?: ApiProduct | null,
   ): Promise<ApiProduct> => {
     try {
-      console.log(`🚀 Updating product ${id} status to:`, status);
 
       const current = await resolveExistingProduct(id, existing);
       const payload = buildFullProductPayload(current, { status });
@@ -675,7 +664,6 @@ export const productService = {
       // Changed to PATCH as requested
       const response = await api.patch(`/api/products/${id}`, payload);
 
-      console.log("✅ Product status updated:", response.data);
       return mapBackendToFrontendProduct(
         response.data.product || response.data,
       );
@@ -698,11 +686,9 @@ export const productService = {
     try {
       const current = await resolveExistingProduct(id, existing);
       const payload = buildFullProductPayload(current, data);
-      console.log(`🚀 Updating product ${id} (PUT):`, payload);
 
       const response = await api.put(`/api/products/${id}`, payload);
 
-      console.log("✅ Product updated:", response.data);
       const updated =
         response.data.data || response.data.product || response.data;
       return mapBackendToFrontendProduct(updated);
@@ -714,11 +700,9 @@ export const productService = {
   // DELETE /api/products/:id - Delete product
   deleteProduct: async (id: string): Promise<void> => {
     try {
-      console.log(`🚀 Deleting product ${id}`);
 
       await api.delete(`/api/products/${id}`);
 
-      console.log("✅ Product deleted successfully");
     } catch (error) {
       return handleApiError(error, "delete product");
     }
@@ -727,11 +711,9 @@ export const productService = {
   // POST /api/products/bulk/delete
   deleteMultipleProducts: async (ids: string[]): Promise<void> => {
     try {
-      console.log(`🚀 Bulk deleting ${ids.length} products`);
 
       await api.post("/api/products/bulk/delete", { productIds: ids });
 
-      console.log("✅ All products deleted successfully");
     } catch (error) {
       return handleApiError(error, "bulk delete products");
     }
@@ -746,7 +728,6 @@ export const productService = {
   // GET /api/buyers/biddings - Get all buyers bidding on a product
   getBidders: async (productId: string): Promise<Bidder[]> => {
     try {
-      console.log(`🚀 Fetching bidders for product ${productId}`);
       // Assuming productId is passed as a query param or part of the path.
       // The prompt says: GET /api/buyers/biddings
       // Be safer to send it as query param
@@ -754,7 +735,6 @@ export const productService = {
         params: { productId },
       });
 
-      console.log("✅ Bidders fetched:", response.data);
       return response.data.data || response.data || [];
     } catch (error) {
       // Return empty list instead of throwing to avoid breaking the UI for this section
@@ -766,12 +746,10 @@ export const productService = {
   // GET /api/buyers/biddings/won - Get winning/leading bidder
   getWinningBidder: async (productId: string): Promise<Bidder | null> => {
     try {
-      console.log(`🚀 Fetching winning bidder for product ${productId}`);
       const response = await api.get("/api/buyers/biddings/won", {
         params: { productId },
       });
 
-      console.log("✅ Winning bidder fetched:", response.data);
       return response.data.data || response.data || null;
     } catch {
       // It's okay if there is no winner yet
@@ -785,13 +763,11 @@ export const productService = {
     data: BidRequest,
   ): Promise<BidResponse> => {
     try {
-      console.log(`🚀 Placing bid for product ${productId}:`, data);
       const response = await api.post(
         `/api/buyers/products/${productId}/bid`,
         data,
       );
 
-      console.log("✅ Bid placed successfully:", response.data);
       return {
         success: true,
         message: response.data.message || "Bid placed successfully",

@@ -89,7 +89,6 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
       .getTransactionById(transactionId)
       .then((data) => {
         if (cancelled) return;
-        console.log("🔎 /api/transactions/{id} response:", data);
         setTx(data);
       })
       .catch((err) => {

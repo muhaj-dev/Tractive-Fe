@@ -33,10 +33,8 @@ export default function BuyerProfileSettingLayout({
 
   const toggleAside = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent event bubbling
-    console.log("Toggle aside clicked, current state:", isAsideOpen); // Debug log
     setIsAsideOpen((prev) => {
       const newState = !prev;
-      console.log("New aside state:", newState); // Debug log
       return newState;
     });
   };

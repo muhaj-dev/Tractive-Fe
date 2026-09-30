@@ -64,7 +64,6 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
         // 2. Auth Check
         if (!isAuthenticated || !session) {
-            console.log("[AuthGuard] Not authenticated, redirecting to login");
             router.replace("/login");
             return;
         }
@@ -88,7 +87,6 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         if (!hasRoles && !hasActiveRole) {
             // Allow register-as, onboarding, add-role pages
             if (!isRegisterAs && !isOnboarding && !isAddRole) {
-                console.log("[AuthGuard] New user with no roles, redirecting to register-as");
                 router.replace("/register-as");
             }
             return;
@@ -98,7 +96,6 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         // If user has roles but NO active role, they MUST go to switch/select role (register-as handles this view too)
         if (hasRoles && !hasActiveRole) {
             if (!isRegisterAs && !isAddRole) {
-                console.log("[AuthGuard] User has roles but no active role, redirecting to register-as (selection)");
                 router.replace("/register-as");
             }
             return;

@@ -182,7 +182,6 @@ export const ApprovedTableList = ({
   }, []);
 
   const handleCustomerCare = (transactionId: string) => {
-    console.log(transactionId);
     setIsCustomerCareModalOpen(true);
   };
 

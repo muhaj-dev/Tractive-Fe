@@ -82,61 +82,50 @@ export const TableList = <T extends BaseData>({
     }
   }, [dataType, fetchData, initialData]);
 
-  // These are fallbacks for when a caller does not pass a handler. They log and
+  // These are fallbacks for when a caller does not pass a handler. They just
   // close the menu, matching the other defaults below — never a native alert().
   const defaultHandleEdit = (id: string) => {
-    console.log(`Default handleEdit called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleView = (id: string) => {
-    console.log(`Default handleView called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleReport = (id: string) => {
-    console.log(`Default handleReport called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleViewBidders = (id: string) => {
-    console.log(`Default handleViewBidders called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleBuyerInfo = (id: string) => {
-    console.log(`Default handleBuyerInfo called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleParked = (id: string) => {
-    console.log(`Default handleParked called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleDelivered = (id: string) => {
-    console.log(`Default handleDelivered called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleCustomerCare = (id: string) => {
-    console.log(`Default handleCustomerCare called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleCustomerInfo = (id: string) => {
-    console.log(`Default handleCustomerInfo called for id: ${id}`);
     setActiveMenu(null);
   };
 
   const defaultHandleSupport = (id: string) => {
-    console.log(`Default handleSupport called for id: ${id}`);
     setActiveMenu(null);
   };
 
   // const defaultHandleDelete = (id: string) => {
   //   if (window.confirm(`Are you sure you want to delete this ${dataType}?`)) {
-  //     console.log(`Default handleDelete called for id: ${id}`);
   //     alert(`Delete ${dataType} with ID: ${id}`);
   //     setActiveMenu(null);
   //   }

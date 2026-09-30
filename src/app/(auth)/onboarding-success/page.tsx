@@ -17,7 +17,6 @@ export default function OnboardingSuccessPage() {
       if (userRole) {
         // Redirect to the appropriate dashboard based on user role
         const dashboardRoute = `/${userRole}`;
-        console.log("🎯 Redirecting to dashboard:", dashboardRoute);
         router.replace(dashboardRoute);
       } else {
         // Fallback to register-as if no role found

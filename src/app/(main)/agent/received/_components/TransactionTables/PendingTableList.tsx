@@ -186,7 +186,6 @@ export const PendingTableList = ({ onCountChange }: PendingTableListProps) => {
   }, []);
 
   const handleCustomerCare = (transactionId: string) => {
-    console.log(transactionId);
     setIsCustomerCareModalOpen(true);
   };
 

@@ -36,9 +36,6 @@ export function useRoleGuard(requiredRole: UserRole): UseRoleGuardReturn {
 
     // Not authenticated - redirect to login
     if (!isAuthenticated || !session) {
-      console.log(
-        `[useRoleGuard] User not authenticated, redirecting to login`,
-      );
       toast.error("Please log in to continue", {
         duration: 3000,
         position: "top-center",
@@ -50,14 +47,9 @@ export function useRoleGuard(requiredRole: UserRole): UseRoleGuardReturn {
     const activeRole = session.user?.activeRole;
     const userRoles = session.user?.role || [];
 
-    console.log(
-      `[useRoleGuard] Required: ${requiredRole}, Active: ${activeRole}, All roles:`,
-      userRoles,
-    );
 
     // No active role - redirect to role selection
     if (!activeRole) {
-      console.log(`[useRoleGuard] No active role, redirecting to register-as`);
       toast.info("Please select a role to continue", {
         duration: 3000,
         position: "top-center",
@@ -68,9 +60,6 @@ export function useRoleGuard(requiredRole: UserRole): UseRoleGuardReturn {
 
     // Active role doesn't match required role - redirect to their dashboard or register-as
     if (activeRole !== requiredRole) {
-      console.log(
-        `[useRoleGuard] Role mismatch. Required: ${requiredRole}, Active: ${activeRole}`,
-      );
 
       // If they have the required role but it's not active, suggest switching
       if (userRoles.includes(requiredRole)) {
@@ -94,9 +83,6 @@ export function useRoleGuard(requiredRole: UserRole): UseRoleGuardReturn {
     }
 
     // All checks passed
-    console.log(
-      `[useRoleGuard] ✓ Authorization successful for ${requiredRole}`,
-    );
   }, [isLoading, isAuthenticated, session, requiredRole, router]);
 
   const isAuthorized =

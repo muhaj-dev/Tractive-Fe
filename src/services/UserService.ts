@@ -23,10 +23,8 @@ export const userService = {
   // GET /api/profile - Get current user profile
   getCurrentUser: async (): Promise<UserProfile> => {
     try {
-      console.log("🔄 Fetching current user profile...");
       const response = await api.get("/api/profile");
 
-      console.log("✅ User profile response:", response.data);
 
       // Your API returns the user object directly
       const userData = response.data.user || response.data;
@@ -128,7 +126,6 @@ export const userService = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   addToWishlist: async (productId: string): Promise<any> => {
     try {
-      console.log(`🚀 Adding product ${productId} to wishlist`);
       const response = await api.post(`/api/wishlist`, { productId });
       return response.data;
     } catch (error) {
@@ -155,7 +152,6 @@ export const userService = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   removeFromWishlist: async (productId: string): Promise<any> => {
     try {
-      console.log(`🚀 Removing product ${productId} from wishlist`);
       const response = await api.delete(`/api/wishlist`, {
         data: { productId },
       });

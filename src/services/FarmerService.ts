@@ -125,7 +125,6 @@ export const farmerService = {
   // GET /api/farmers
   getFarmers: async (filters: FarmerFilters = {}): Promise<FarmersResponse> => {
     try {
-      console.log("🔄 Fetching farmers from API with filters:", filters);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const params: any = {
@@ -136,7 +135,6 @@ export const farmerService = {
 
       const response = await api.get("/api/farmers", { params });
 
-      console.log("✅ API Response:", response.data);
 
       let farmers: ApiFarmer[] = [];
       let total = 0;
@@ -203,14 +201,11 @@ export const farmerService = {
   // POST /api/farmers
   createFarmer: async (data: Partial<Farmer>): Promise<Farmer> => {
     try {
-      console.log("📝 Creating farmer with data:", data);
 
       const backendData = mapFrontendToBackendFarmerFull(data);
-      console.log("📤 Sending to backend:", backendData);
 
       const response = await api.post("/api/farmers", backendData);
 
-      console.log("✅ Farmer created successfully:", response.data);
 
       let createdFarmer: ApiFarmer;
       if (response.data._id) {
@@ -253,11 +248,9 @@ export const farmerService = {
   // GET /api/farmers/:id
   getFarmerById: async (id: string): Promise<Farmer> => {
     try {
-      console.log(`🔄 Fetching farmer ${id} from API...`);
 
       const response = await api.get(`/api/farmers/${id}`);
 
-      console.log("✅ Farmer fetched:", response.data);
 
       let farmer: ApiFarmer;
       if (response.data._id) {
@@ -298,14 +291,11 @@ export const farmerService = {
   // PUT /api/farmers/:id (Full replace)
   updateFarmer: async (id: string, data: Partial<Farmer>): Promise<Farmer> => {
     try {
-      console.log(`📝 Updating farmer ${id} with data:`, data);
 
       const backendData = mapFrontendToBackendFarmerFull(data);
-      console.log("📤 Sending to backend:", backendData);
 
       const response = await api.put(`/api/farmers/${id}`, backendData);
 
-      console.log("✅ Farmer updated successfully:", response.data);
 
       let updatedFarmer: ApiFarmer;
       if (response.data._id) {
@@ -350,11 +340,9 @@ export const farmerService = {
   // DELETE /api/farmer/:id (Note: USER specified singular 'farmer' for matching 3rd party API)
   deleteFarmer: async (id: string): Promise<void> => {
     try {
-      // console.log(`🗑️ Deleting farmer ${id}...`);
 
       await api.delete(`/api/farmers/${id}`);
 
-      console.log("✅ Farmer deleted successfully");
       toast.success("Farmer deleted successfully!");
     } catch (error) {
       console.error("❌ Error deleting farmer:", error);

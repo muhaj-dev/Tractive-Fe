@@ -197,21 +197,11 @@ function OnboardingFormInner() {
       // 2. Add Account (POST /api/auth/add-account)
 
       // Step 1: Update profile with all user data (name, interests, lga, etc.)
-      console.log("Calling update profile API with:", finalData);
       await updateProfile(finalData);
-      console.log("✓ update profile API completed successfully");
 
       // Step 2: Check if this is a new role and call add-account
       const isNewRole = !session.user?.role?.includes(targetRole);
 
-      console.log(
-        "Is new role:",
-        isNewRole,
-        "Target role:",
-        targetRole,
-        "Current roles:",
-        session.user?.role,
-      );
 
       if (isNewRole) {
         const addAccountPayload = {
@@ -224,15 +214,11 @@ function OnboardingFormInner() {
           lga: finalData.lga,
         };
 
-        console.log("Calling add-account API with:", addAccountPayload);
         await addAccount(addAccountPayload);
-        console.log("✓ add-account API completed successfully");
       }
 
       // Step 4: Refresh session to get updated user data from backend
-      console.log("Refreshing session...");
       await update();
-      console.log("✓ Session updated successfully");
 
       // Clear draft
       localStorage.removeItem(`onboarding-data-${targetRole}`);

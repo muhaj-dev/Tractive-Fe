@@ -180,7 +180,6 @@ const DriversListPage: React.FC = () => {
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
-      console.log(error); // Keep or remove console log if desired
       const errorMessage = error.response?.data?.message || error.message || "Failed to create driver";
       toast.error(errorMessage);
     },
