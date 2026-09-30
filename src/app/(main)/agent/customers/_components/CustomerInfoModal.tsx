@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar } from "@/components/ui/Avatar";
 import { Customer } from "@/services/customerService";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface CustomerInfoModalProps {
   customer: Customer | null;
@@ -30,15 +31,7 @@ export const CustomerInfoModal: React.FC<CustomerInfoModalProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [onClose]);
+  useModalA11y(isOpen && !!customer, modalRef, { onEscape: onClose });
 
   if (!isOpen || !customer) return null;
 
@@ -74,6 +67,9 @@ export const CustomerInfoModal: React.FC<CustomerInfoModalProps> = ({
       >
         <motion.div
           ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="agent-customer-info-title"
           className="bg-[#fefefe] rounded-[10px] shadow-lg w-[90%] max-w-[500px] p-6 max-h-[90vh] overflow-y-auto"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -82,7 +78,10 @@ export const CustomerInfoModal: React.FC<CustomerInfoModalProps> = ({
         >
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-[18px] font-montserrat font-semibold text-[#2b2b2b]">
+            <h2
+              id="agent-customer-info-title"
+              className="text-[18px] font-montserrat font-semibold text-[#2b2b2b]"
+            >
               Customer Information
             </h2>
             <button

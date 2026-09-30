@@ -16,6 +16,7 @@ import { getSellerById } from "@/utils/sellerApi";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGetSellerReviews } from "@/hooks/queries/useSellerQueries";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface SellersInfoProps {
   owner?: Owner;
@@ -75,6 +76,9 @@ export const SellersInfo: React.FC<SellersInfoProps> = ({ owner, onRefresh }) =>
   const handleSeeMore = () => {
     setSeeMore(!seeMore); // See More Reviews visibility
   };
+
+  const reviewsDialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(seeMore, reviewsDialogRef, { onEscape: handleSeeMore });
 
   /**
    * Seller rating as the API reports it. Note `??` rather than `||`: a genuine
@@ -293,6 +297,10 @@ export const SellersInfo: React.FC<SellersInfoProps> = ({ owner, onRefresh }) =>
               onClick={handleSeeMore}
             >
               <motion.div
+                ref={reviewsDialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Seller reviews"
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}

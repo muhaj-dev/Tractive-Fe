@@ -114,13 +114,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [onClose]);
+  useModalA11y(isOpen && !!order, modalRef, { onEscape: onClose });
 
   if (!isOpen || !order) return null;
 
@@ -155,6 +149,9 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
       >
         <motion.div
           ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="agent-order-details-title"
           className="bg-[#fefefe] rounded-[10px] shadow-lg w-full max-w-[560px] p-6 max-h-[90vh] overflow-y-auto hide-scrollbar"
           initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -164,7 +161,10 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
           {/* Header */}
           <div className="flex justify-between items-start mb-5">
             <div className="flex flex-col gap-1">
-              <h2 className="text-[18px] font-montserrat font-semibold text-[#2b2b2b]">
+              <h2
+                id="agent-order-details-title"
+                className="text-[18px] font-montserrat font-semibold text-[#2b2b2b]"
+              >
                 Order Details
               </h2>
               {/* The raw order id was shown here. It means nothing to a seller,

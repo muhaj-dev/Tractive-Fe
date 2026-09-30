@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { useRouter } from "next/navigation";
 import { CustomerService, Customer } from "@/services/customerService";
 
@@ -34,16 +35,6 @@ export const SupportModal: React.FC<SupportModalProps> = ({
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
-
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
   }, [onClose]);
 
   // Reset form when modal opens
@@ -103,6 +94,8 @@ export const SupportModal: React.FC<SupportModalProps> = ({
     }
   };
 
+  useModalA11y(isOpen, modalRef, { onEscape: handleClose });
+
   if (!isOpen) return null;
 
   return (
@@ -116,6 +109,9 @@ export const SupportModal: React.FC<SupportModalProps> = ({
       >
         <motion.div
           ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="agent-support-title"
           className="bg-[#fefefe] rounded-[10px] shadow-lg w-[90%] max-w-[500px] p-6"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -123,7 +119,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({
           transition={{ duration: 0.3 }}
         >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-[16px] font-montserrat font-semibold text-[#2b2b2b]">
+            <h2 id="agent-support-title" className="text-[16px] font-montserrat font-semibold text-[#2b2b2b]">
               {customer ? `Contact ${customer.name}` : "Customer Support"}
             </h2>
             <button

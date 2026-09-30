@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { AgentsProps, TransportersProps } from "@/utils/Approvals";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 export type UserKind = "agent" | "transporter";
 
@@ -81,13 +82,12 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   onApprove,
   onReject,
 }) => {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !isSubmitting) onClose();
-    };
-    if (isOpen) document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isSubmitting, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen && !!user, dialogRef, {
+    onEscape: () => {
+      if (!isSubmitting) onClose();
+    },
+  });
 
   const badge = user?.approvalStatus
     ? statusBadge[user.approvalStatus]
@@ -109,6 +109,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           onClick={() => !isSubmitting && onClose()}
         >
           <motion.div
+            ref={dialogRef}
             className="relative bg-[#fefefe] rounded-[10px] w-full max-w-[560px] max-h-[90vh] overflow-y-auto shadow-xl"
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

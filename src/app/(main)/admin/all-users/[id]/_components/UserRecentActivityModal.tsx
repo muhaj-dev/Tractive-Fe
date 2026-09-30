@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AdminUserHistoryItem,
@@ -13,6 +13,7 @@ import {
 } from "@/services/adminUserService";
 import { UserHistoryTable } from "./UserHistoryTable";
 import { getHistoryColumns } from "./historyColumns";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface UserRecentActivityModalProps {
   isOpen: boolean;
@@ -79,14 +80,8 @@ export const UserRecentActivityModal: React.FC<UserRecentActivityModalProps> = (
   onClose,
   onItemClick,
 }) => {
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [isOpen, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen && !!user, dialogRef, { onEscape: onClose });
 
   const groups = useMemo(
     () => (user ? buildGroups(user, availableRoles) : []),
@@ -104,6 +99,10 @@ export const UserRecentActivityModal: React.FC<UserRecentActivityModalProps> = (
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="user-recent-activity-title"
             className="bg-white rounded-[12px] w-full max-w-[1080px] shadow-2xl max-h-[88vh] overflow-hidden flex flex-col"
             initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -116,7 +115,10 @@ export const UserRecentActivityModal: React.FC<UserRecentActivityModalProps> = (
                 <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400 font-montserrat font-semibold">
                   Snapshot
                 </p>
-                <h2 className="font-montserrat font-semibold text-base text-[#2b2b2b]">
+                <h2
+                  id="user-recent-activity-title"
+                  className="font-montserrat font-semibold text-base text-[#2b2b2b]"
+                >
                   Recent activity
                 </h2>
               </div>

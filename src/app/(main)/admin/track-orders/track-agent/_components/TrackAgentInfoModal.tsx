@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { XModalIcon } from "@/app/(main)/transporter/_components/Icons/TransporterIcons";
 import { OrderPartyInfo } from "@/utils/TrackAgentData";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface TrackAgentInfoModalProps {
   /** The one buyer on the order. Absent on a row the list could not resolve. */
@@ -96,17 +97,9 @@ export const TrackAgentInfoModal: React.FC<TrackAgentInfoModalProps> = ({
   sellers,
   onClose,
 }) => {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
+  // Only mounted while open.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(true, dialogRef, { onEscape: onClose });
 
   return (
     <AnimatePresence>
@@ -122,6 +115,7 @@ export const TrackAgentInfoModal: React.FC<TrackAgentInfoModalProps> = ({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-label="Buyer and seller information"

@@ -1,7 +1,8 @@
 "use client";
-import React from "react";
+import React, { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { XModalIcon } from "../../_components/Icons/AgentIcons";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -22,6 +23,9 @@ export const DeleteConfirmationModal: React.FC<
   message = "Are you sure you want to delete this farmer? This action cannot be undone.",
   isLoading = false,
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, dialogRef, { onEscape: onClose });
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -32,6 +36,10 @@ export const DeleteConfirmationModal: React.FC<
           exit={{ opacity: 0 }}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-confirmation-title"
             className="bg-[#fefefe] p-6 rounded-lg w-full max-w-sm mx-auto relative shadow-xl"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
@@ -45,7 +53,10 @@ export const DeleteConfirmationModal: React.FC<
               <XModalIcon className="w-5 h-5" />
             </button>
 
-            <h2 className="text-[16px] font-montserrat font-semibold text-[#2b2b2b] mb-4">
+            <h2
+              id="delete-confirmation-title"
+              className="text-[16px] font-montserrat font-semibold text-[#2b2b2b] mb-4"
+            >
               {title}
             </h2>
 

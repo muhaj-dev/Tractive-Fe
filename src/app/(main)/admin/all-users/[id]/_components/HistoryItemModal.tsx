@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,6 +9,7 @@ import {
   HistoryResource,
   HistoryRole,
 } from "@/services/adminUserService";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface HistoryItemModalProps {
   isOpen: boolean;
@@ -265,6 +266,9 @@ export const HistoryItemModal: React.FC<HistoryItemModalProps> = ({
   item,
   onClose,
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen && !!item, dialogRef, { onEscape: onClose });
+
   const title =
     role && resource
       ? `${HISTORY_RESOURCE_LABELS[resource]} details`
@@ -298,6 +302,10 @@ export const HistoryItemModal: React.FC<HistoryItemModalProps> = ({
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
             className="bg-white rounded-[12px] w-full max-w-[680px] shadow-xl overflow-hidden max-h-[85vh] flex flex-col"
             initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

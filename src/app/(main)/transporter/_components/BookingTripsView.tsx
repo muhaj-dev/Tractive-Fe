@@ -10,6 +10,7 @@ import { CreateFleetTripModal } from "./CreateFleetTripModal";
 import { TripDetailsModal, TripTrackingDetails } from "./TripDetailsModal";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import {
   useFleetTrips,
   useFleetTripTracking,
@@ -279,17 +280,13 @@ const ConfirmAdvanceModal: React.FC<ConfirmAdvanceModalProps> = ({
 }) => {
   const next = NEXT_STATUS[tripEffectiveStatus(trip)];
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isPending) onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose, isPending]);
+  // Only mounted while open.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(!!next, dialogRef, {
+    onEscape: () => {
+      if (!isPending) onClose();
+    },
+  });
 
   if (!next) return null;
 
@@ -307,9 +304,16 @@ const ConfirmAdvanceModal: React.FC<ConfirmAdvanceModalProps> = ({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-advance-title"
           className="relative bg-[#fefefe] rounded-lg w-full max-w-[400px] p-6 flex flex-col gap-4"
         >
-          <h2 className="text-[17px] font-semibold text-center text-[#2b2b2b] font-montserrat">
+          <h2
+            id="confirm-advance-title"
+            className="text-[17px] font-semibold text-center text-[#2b2b2b] font-montserrat"
+          >
             Mark as {next.label}?
           </h2>
           <p className="text-[12px] sm:text-[13px] text-center text-[#808080] font-montserrat">

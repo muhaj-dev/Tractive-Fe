@@ -1,8 +1,9 @@
 "use client";
-import React from "react";
+import React, { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { XModalIcon } from "../../_components/Icons/TransporterIcons";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { Driver } from "@/utils/DriverData";
 import UserAvatar from "@/components/UserAvatar";
 
@@ -18,6 +19,9 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
   driver,
 }) => {
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen && !!driver, dialogRef, { onEscape: onClose });
 
   if (!isOpen || !driver) return null;
 
@@ -49,11 +53,12 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="driver-details-title"
       >
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="driver-details-title"
           className="bg-[#fefefe] p-6 sm:p-8 rounded-[12px] w-[95%] max-w-[650px] relative max-h-[90vh] overflow-y-auto"
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}

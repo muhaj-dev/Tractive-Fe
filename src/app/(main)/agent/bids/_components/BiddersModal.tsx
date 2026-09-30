@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { bidService, SingleBid } from "@/services/bidService";
 import { toast } from "sonner";
@@ -89,6 +89,36 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
     setCounterAmount("");
     setActionMessage("");
   };
+
+  // Two stacked dialogs: the bidders panel, and the "Respond to Bid" dialog
+  // that opens over it. Tab must stay inside whichever one is on top, so the
+  // outer trap reads the topmost panel live, and Escape peels one layer at a
+  // time — the same order the close buttons use.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const actionRef = useRef<HTMLDivElement>(null);
+  const topmostRef = useMemo(
+    () => ({
+      get current() {
+        return actionRef.current ?? panelRef.current;
+      },
+    }),
+    [],
+  );
+  const handleEscape = () => {
+    if (actionBid) {
+      if (processingBidId !== actionBid.id) closeAction();
+    } else if (selectedBidder) {
+      setSelectedBidder(null);
+    } else {
+      onClose();
+    }
+  };
+  // Moves focus into the action dialog and hands it back to the row button
+  // that opened it; the outer hook owns the trap and Escape. Declared first so
+  // that when both close together (an accepted bid) the outer one's cleanup
+  // runs last and focus lands back on whatever opened the whole modal.
+  useModalA11y(!!actionBid, actionRef);
+  useModalA11y(isOpen, topmostRef, { onEscape: handleEscape });
 
   const submitAction = async () => {
     if (!actionBid) return;
@@ -185,6 +215,10 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
           onClick={onClose}
         >
           <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Bidders"
             className="bg-white rounded-[10px] w-full max-w-[800px] shadow-lg overflow-hidden flex flex-col max-h-[80vh]"
             variants={modalVariants}
             initial="hidden"
@@ -222,6 +256,7 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
                     <input
                       type="text"
                       placeholder="Search"
+                      aria-label="Search bidders"
                       className="w-full pl-8 py-2 border rounded-md text-sm focus:outline-none focus:border-[#538e53]"
                     />
                     <svg
@@ -250,6 +285,7 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
                   }
                 }}
                 className="p-2 hover:bg-gray-100 rounded-full cursor-pointer"
+                aria-label={selectedBidder ? "Back to bidders" : "Close"}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -562,6 +598,10 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
                 }}
               >
                 <motion.div
+                  ref={actionRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="respond-to-bid-title"
                   className="bg-white rounded-[12px] w-full max-w-[480px] shadow-xl overflow-hidden"
                   initial={{ opacity: 0, scale: 0.95, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -573,7 +613,10 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
                   <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-montserrat font-semibold text-base text-[#2b2b2b]">
+                        <h3
+                          id="respond-to-bid-title"
+                          className="font-montserrat font-semibold text-base text-[#2b2b2b]"
+                        >
                           Respond to Bid
                         </h3>
                         <span
@@ -594,6 +637,7 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
                       onClick={closeAction}
                       disabled={processingBidId === actionBid.id}
                       className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label="Close"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"

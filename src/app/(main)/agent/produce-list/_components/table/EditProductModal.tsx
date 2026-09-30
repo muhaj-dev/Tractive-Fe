@@ -307,6 +307,9 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
     onClose();
   };
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen && !!product, dialogRef, { onEscape: handleClose });
+
   // Helper for safe image source
   const getSafeImage = (img?: string) => {
     if (!img || typeof img !== "string") return "/images/tomatoProduct.png"; // Fallback
@@ -328,6 +331,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
           onClick={handleClose}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-product-modal-title"
             className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
             variants={modalVariants}
             initial="hidden"
@@ -337,7 +344,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold font-montserrat text-[#2b2b2b]">
+              <h2
+                id="edit-product-modal-title"
+                className="text-xl font-semibold font-montserrat text-[#2b2b2b]"
+              >
                 {mode === "view" ? "Product Details" : "Edit Product"}
               </h2>
               <button

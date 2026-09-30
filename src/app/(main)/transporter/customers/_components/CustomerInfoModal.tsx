@@ -32,6 +32,8 @@ export const CustomerInfoModal: React.FC<CustomerInfoModalProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [onClose]);
 
+  useModalA11y(isOpen && !!customer, modalRef, { onEscape: onClose });
+
   if (!isOpen || !customer) return null;
 
   return (
@@ -45,6 +47,9 @@ export const CustomerInfoModal: React.FC<CustomerInfoModalProps> = ({
       >
         <motion.div
           ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="transporter-customer-info-title"
           className="bg-[#fefefe] rounded-[10px] shadow-md w-[90%] max-w-[400px] p-6"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -52,7 +57,10 @@ export const CustomerInfoModal: React.FC<CustomerInfoModalProps> = ({
           transition={{ duration: 0.3 }}
         >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-[16px] font-montserrat font-medium text-[#2b2b2b]">
+            <h2
+              id="transporter-customer-info-title"
+              className="text-[16px] font-montserrat font-medium text-[#2b2b2b]"
+            >
               Customer Information
             </h2>
             <button

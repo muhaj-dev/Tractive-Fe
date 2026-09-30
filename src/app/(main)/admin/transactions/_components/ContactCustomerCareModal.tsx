@@ -7,6 +7,7 @@ import {
   transactionService,
   ContactCustomerCareData,
 } from "@/services/transactionService";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 const MESSAGE_MAX_LENGTH = 1000;
 
@@ -17,9 +18,6 @@ const PRIORITY_OPTIONS: { value: Priority; label: string; active: string }[] = [
   { value: "medium", label: "Medium", active: "bg-[#2563eb] border-[#2563eb]" },
   { value: "high", label: "High", active: "bg-[#D32F2F] border-[#D32F2F]" },
 ];
-
-const FOCUSABLE =
-  'button:not([disabled]), textarea:not([disabled]), input:not([disabled]), [href], select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /** Prefer the server-provided message, then the thrown Error message. */
 const readErrorMessage = (error: unknown, fallback: string): string => {
@@ -64,44 +62,17 @@ export const ContactCustomerCareModal: React.FC<
     onClose();
   }, [isSubmitting, onClose, resetForm]);
 
-  // Fresh form every time the modal opens, with focus on the message field.
+  // Fresh form every time the modal opens.
   useEffect(() => {
     if (!isOpen) return;
     resetForm();
-    const id = window.setTimeout(() => textareaRef.current?.focus(), 60);
-    return () => window.clearTimeout(id);
   }, [isOpen, resetForm]);
 
-  // Escape to close + Tab focus trap.
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.stopPropagation();
-        requestClose();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const container = dialogRef.current;
-      if (!container) return;
-      const focusable = Array.from(
-        container.querySelectorAll<HTMLElement>(FOCUSABLE),
-      ).filter((el) => el.offsetParent !== null || el === document.activeElement);
-      if (focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-      if (event.shiftKey && (active === first || !container.contains(active))) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown, true);
-    return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, [isOpen, requestClose]);
+  // Focus lands on the message field; Escape closes (unless submitting).
+  useModalA11y(isOpen, dialogRef, {
+    initialFocusRef: textareaRef,
+    onEscape: requestClose,
+  });
 
   const trimmedMessage = message.trim();
   const canSubmit = !!transactionId && trimmedMessage.length > 0 && !isSubmitting;

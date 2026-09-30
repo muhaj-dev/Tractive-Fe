@@ -5,6 +5,7 @@ import { XIcon } from "@/icons/Icon1";
 import { StarIcon, YellowStarIcon } from "@/icons/Icons";
 import { useCreateReview } from "@/hooks/queries/useReviewQueries";
 import type { RevieweeType } from "@/services/reviewService";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 const MAX_COMMENT_LENGTH = 500;
 
@@ -47,7 +48,7 @@ export const LeaveReviewButton: React.FC<Props> = ({
 
   const createReview = useCreateReview();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const openerRef = useRef<HTMLButtonElement>(null);
+  const firstStarRef = useRef<HTMLButtonElement>(null);
   const titleId = `leave-review-title-${agentId}`;
 
   const close = () => {
@@ -61,56 +62,25 @@ export const LeaveReviewButton: React.FC<Props> = ({
     setIsOpen(true);
   };
 
-  // Escape closes, Tab cycles inside the dialog (focus trap).
+  // Focus into the dialog (first star), Tab trap, scroll lock, and focus back
+  // to the opener on close.
+  useModalA11y(isOpen, dialogRef, { initialFocusRef: firstStarRef });
+
+  // Escape stays a capture-phase listener that stops propagation: this button
+  // also renders inside the track-orders mobile detail sheet, whose own Escape
+  // handler would otherwise close the sheet underneath at the same time.
   useEffect(() => {
     if (!isOpen) return;
-    const node = dialogRef.current;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
         close();
-        return;
-      }
-      if (e.key !== "Tab" || !node) return;
-      const focusables = node.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), textarea, [href], input, select, [tabindex]:not([tabindex="-1"])',
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
       }
     };
     document.addEventListener("keydown", onKey, true);
     return () => document.removeEventListener("keydown", onKey, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, createReview.isPending]);
-
-  // Move focus into the dialog on open, and back to the opener on close.
-  useEffect(() => {
-    if (isOpen) {
-      dialogRef.current
-        ?.querySelector<HTMLElement>('[data-autofocus="true"]')
-        ?.focus();
-    } else {
-      openerRef.current?.focus();
-    }
-  }, [isOpen]);
-
-  // Lock body scroll while the modal is open.
-  useEffect(() => {
-    if (!isOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [isOpen]);
 
   const canSubmit =
     rating > 0 && comment.trim().length > 0 && !createReview.isPending;
@@ -163,7 +133,6 @@ export const LeaveReviewButton: React.FC<Props> = ({
   return (
     <>
       <button
-        ref={openerRef}
         type="button"
         onClick={open}
         className={
@@ -231,7 +200,7 @@ export const LeaveReviewButton: React.FC<Props> = ({
                     role="radio"
                     aria-checked={rating === value}
                     aria-label={`${value} star${value > 1 ? "s" : ""}`}
-                    data-autofocus={value === 1 ? "true" : undefined}
+                    ref={value === 1 ? firstStarRef : undefined}
                     tabIndex={rating === value || (rating === 0 && value === 1) ? 0 : -1}
                     onClick={() => setRating(value)}
                     onKeyDown={(e) => handleStarKeyDown(e, value)}

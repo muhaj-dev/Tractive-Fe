@@ -5,7 +5,8 @@ import { Navbar } from "@/components/nav/Navbar";
 import { SubNavbar } from "@/components/nav/SubNavbar";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { IoIosMenu } from "react-icons/io";
 import { IoCloseOutline } from "react-icons/io5";
 import { toast } from "sonner";
@@ -38,6 +39,13 @@ export default function BuyerProfileSettingLayout({
       return newState;
     });
   };
+
+  // On mobile the aside is a drawer over a backdrop, so while it is open it
+  // behaves as a modal: focus moves in, Tab stays inside, Escape closes it.
+  const asideRef = useRef<HTMLElement>(null);
+  useModalA11y(isAsideOpen, asideRef, {
+    onEscape: () => setIsAsideOpen(false),
+  });
 
   if (status === "loading") {
     return <div>Loading...</div>;
@@ -73,6 +81,10 @@ export default function BuyerProfileSettingLayout({
             />
           )}
           <aside
+            ref={asideRef}
+            role={isAsideOpen ? "dialog" : undefined}
+            aria-modal={isAsideOpen ? true : undefined}
+            aria-label={isAsideOpen ? "Profile menu" : undefined}
             className={`
                    w-[100%] md:w-[40%] rounded-md fixed md:static top-0 left-0 h-screen md:h-auto
                    bg-[#fefefe] md:bg-transparent transform transition-transform duration-300 ease-in-out

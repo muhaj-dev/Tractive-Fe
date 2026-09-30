@@ -17,6 +17,7 @@ import {
   SettingIcon,
 } from "@/app/(main)/admin/_components/icons/AdminIcons";
 import { Admin_ProfileDropDownMobile } from "@/components/Profile_dropdowns/AdminProfile_dropdown/Admin_ProfileDropDownMobile";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface NavSection {
   title: string;
@@ -74,6 +75,9 @@ export const AdminAsideNavMobile = ({
   const toggleModal = () => {
     setIsModalOpen((prev) => !prev);
   };
+  useModalA11y(isModalOpen, modalRef, {
+    onEscape: () => setIsModalOpen(false),
+  });
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -391,13 +395,19 @@ export const AdminAsideNavMobile = ({
           >
             <motion.div
               ref={modalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="admin-mobile-add-to-store-title"
               className="bg-[#fefefe] rounded-[8px] p-6 w-[90%] max-w-[400px] shadow-lg"
               variants={modalVariants}
               initial="initial"
               animate="animate"
               exit="exit"
             >
-              <h2 className="text-[16px] font-montserrat font-medium text-[#2b2b2b] mb-4">
+              <h2
+                id="admin-mobile-add-to-store-title"
+                className="text-[16px] font-montserrat font-medium text-[#2b2b2b] mb-4"
+              >
                 Add to Store
               </h2>
               <p className="text-[14px] font-montserrat text-[#2b2b2b] mb-6">

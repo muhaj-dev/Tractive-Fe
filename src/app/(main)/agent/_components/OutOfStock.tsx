@@ -1,13 +1,14 @@
 "use client";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   useAgentOutOfStock,
   useRestockProduct,
 } from "@/hooks/queries/useAgentDashboardQueries";
 import { OutOfStockProduct } from "@/services/agentDashboardService";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 // Inline modal for the Restock action — collects the quantity + restock date the
 // `POST /api/agents/products/{id}/restock` body needs.
@@ -21,6 +22,9 @@ const RestockModal = ({
   const [quantity, setQuantity] = useState("");
   const [restockDate, setRestockDate] = useState("");
   const { mutate, isPending } = useRestockProduct();
+  // Only mounted while open.
+  const dialogRef = useRef<HTMLFormElement>(null);
+  useModalA11y(true, dialogRef, { onEscape: onClose });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +58,18 @@ const RestockModal = ({
       onClick={onClose}
     >
       <form
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="restock-modal-title"
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
         className="w-full max-w-[320px] bg-[#fefefe] rounded-[8px] p-5 flex flex-col gap-4"
       >
-        <h3 className="font-montserrat text-[#2b2b2b] text-[14px] font-medium">
+        <h3
+          id="restock-modal-title"
+          className="font-montserrat text-[#2b2b2b] text-[14px] font-medium"
+        >
           Restock {product.name}
         </h3>
         <div className="flex flex-col gap-1.5">

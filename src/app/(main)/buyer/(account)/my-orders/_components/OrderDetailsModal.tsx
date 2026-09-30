@@ -1,10 +1,11 @@
 "use client";
-import React from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import { XIcon } from "@/icons/Icon1";
 import { StatusBadge } from "@/components/StatusBadge";
 import { OrderRecord } from "@/services/OrderService";
 import { formatUnitAfterQuantity } from "@/utils/productUnits";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface Props {
   order: OrderRecord | null;
@@ -54,6 +55,9 @@ const formatDateTime = (iso?: string) => {
 };
 
 export const OrderDetailsModal: React.FC<Props> = ({ order, onClose }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(!!order, dialogRef, { onEscape: onClose });
+
   if (!order) return null;
 
   const active = stepIndex(order.transportStatus);
@@ -73,12 +77,19 @@ export const OrderDetailsModal: React.FC<Props> = ({ order, onClose }) => {
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="buyer-order-details-title"
         className="bg-[#fefefe] rounded-[8px] w-full max-w-[520px] max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-[#e2e2e2]">
           <div>
-            <p className="font-montserrat font-semibold text-[15px] text-[#2b2b2b]">
+            <p
+              id="buyer-order-details-title"
+              className="font-montserrat font-semibold text-[15px] text-[#2b2b2b]"
+            >
               Order Details
             </p>
             <p className="font-montserrat text-[11px] text-[#808080]">

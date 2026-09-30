@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AdminUserSummary } from "@/services/adminUserService";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface UserProfileDrawerProps {
   isOpen: boolean;
@@ -26,14 +27,8 @@ export const UserProfileDrawer: React.FC<UserProfileDrawerProps> = ({
   user,
   onClose,
 }) => {
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [isOpen, onClose]);
+  const drawerRef = useRef<HTMLElement>(null);
+  useModalA11y(isOpen && !!user, drawerRef, { onEscape: onClose });
 
   if (!user) return null;
 
@@ -58,6 +53,10 @@ export const UserProfileDrawer: React.FC<UserProfileDrawerProps> = ({
             onClick={onClose}
           />
           <motion.aside
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="user-profile-drawer-title"
             className="fixed inset-y-0 right-0 z-50 w-full sm:w-[480px] bg-white shadow-2xl flex flex-col"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -69,7 +68,9 @@ export const UserProfileDrawer: React.FC<UserProfileDrawerProps> = ({
                 <p className="text-[10px] uppercase tracking-[0.15em] text-gray-400 font-montserrat">
                   Full profile
                 </p>
-                <h2 className="font-montserrat font-semibold text-base text-[#2b2b2b] truncate">
+                <h2
+                  id="user-profile-drawer-title"
+                  className="font-montserrat font-semibold text-base text-[#2b2b2b] truncate">
                   {(user.name as string) || "—"}
                 </h2>
               </div>

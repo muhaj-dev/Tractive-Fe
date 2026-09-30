@@ -1,7 +1,8 @@
 "use client";
-import React from "react";
+import React, { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { XIcon } from "@/icons/Icon1";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface PaymentSuccessModalProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
   onClose,
 }) => {
   const router = useRouter();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, dialogRef, { onEscape: onClose });
 
   if (!isOpen) return null;
 
@@ -22,6 +25,7 @@ export const PaymentSuccessModal: React.FC<PaymentSuccessModalProps> = ({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         className="bg-[#fefefe] rounded-[10px] w-[90%] max-w-[440px] max-h-[90vh] overflow-y-auto relative p-6 sm:p-8"
         onClick={(e) => e.stopPropagation()}
         role="dialog"

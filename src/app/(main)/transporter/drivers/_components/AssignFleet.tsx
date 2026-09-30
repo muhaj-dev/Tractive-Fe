@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import UserAvatar from "@/components/UserAvatar";
 import { XModalIcon } from "../../_components/Icons/TransporterIcons";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { Driver } from "@/utils/DriverData";
 import { useGetFleets } from "@/hooks/queries/useFleetQueries";
 
@@ -42,6 +43,9 @@ export const AssignFleetModal: React.FC<AssignFleetModalProps> = ({
     }
     setErrors({ truckId: "" });
   }, [isOpen, editDriver]);
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, dialogRef, { onEscape: onClose });
 
   if (!isOpen) return null;
 
@@ -97,10 +101,12 @@ export const AssignFleetModal: React.FC<AssignFleetModalProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      role="dialog"
-      aria-labelledby="assign-fleet-title"
     >
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="assign-fleet-title"
         className="bg-[#fefefe] p-8 rounded-[8px] w-full max-w-[500px] relative"
         initial={{ scale: 0.8 }}
         animate={{ scale: 1 }}

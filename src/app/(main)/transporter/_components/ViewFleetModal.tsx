@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { XModalIcon } from "./Icons/TransporterIcons";
 import { Fleet } from "@/utils/Fleet";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface ViewFleetModalProps {
   isOpen: boolean;
@@ -19,7 +20,7 @@ export const ViewFleetModal: React.FC<ViewFleetModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Close modal when clicking outside or pressing Escape
+  // Close modal when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
@@ -27,21 +28,15 @@ export const ViewFleetModal: React.FC<ViewFleetModalProps> = ({
       }
     };
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("keydown", handleKeyDown);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose]);
+
+  useModalA11y(isOpen && !!fleet, modalRef, { onEscape: onClose });
 
   if (!fleet) return null;
 
@@ -56,19 +51,27 @@ export const ViewFleetModal: React.FC<ViewFleetModalProps> = ({
         >
           <motion.div
             ref={modalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="view-fleet-title"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
             className="relative bg-[#fefefe] rounded-lg w-full max-w-[500px] overflow-y-auto max-h-[90vh] p-6"
           >
-            <div
+            <button
+              type="button"
               onClick={onClose}
               className="absolute top-[1.2rem] right-[1.2rem] cursor-pointer hover:bg-gray-100 p-1 rounded-full transition-colors"
+              aria-label="Close"
             >
               <XModalIcon />
-            </div>
+            </button>
 
-            <h2 className="text-[18px] pt-1 font-semibold text-center text-[#2b2b2b] font-montserrat mb-6">
+            <h2
+              id="view-fleet-title"
+              className="text-[18px] pt-1 font-semibold text-center text-[#2b2b2b] font-montserrat mb-6"
+            >
               Fleet Details
             </h2>
 

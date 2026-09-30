@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AdminBanner } from "@/services/bannerService";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface BannerDetailsModalProps {
   banner: AdminBanner | null;
@@ -103,13 +104,8 @@ export const BannerDetailsModal: React.FC<BannerDetailsModalProps> = ({
   onClose,
   onEdit,
 }) => {
-  useEffect(() => {
-    const onEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    if (banner) document.addEventListener("keydown", onEscape);
-    return () => document.removeEventListener("keydown", onEscape);
-  }, [banner, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(!!banner, dialogRef, { onEscape: onClose });
 
   return (
     <AnimatePresence>
@@ -122,6 +118,7 @@ export const BannerDetailsModal: React.FC<BannerDetailsModalProps> = ({
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
             className="bg-[#fefefe] rounded-[10px] shadow-xl w-full max-w-[520px] max-h-[90vh] overflow-y-auto p-6"
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -129,11 +126,15 @@ export const BannerDetailsModal: React.FC<BannerDetailsModalProps> = ({
             transition={{ duration: 0.2 }}
             role="dialog"
             aria-modal="true"
+            aria-labelledby="banner-details-title"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start gap-3 mb-4">
               <div className="min-w-0">
-                <h2 className="text-[16px] font-montserrat font-semibold text-[#2b2b2b] truncate">
+                <h2
+                  id="banner-details-title"
+                  className="text-[16px] font-montserrat font-semibold text-[#2b2b2b] truncate"
+                >
                   {banner.title || "Untitled banner"}
                 </h2>
                 <span

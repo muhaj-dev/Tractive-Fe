@@ -1,9 +1,10 @@
 "use client";
-import React from "react";
+import React, { useRef } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useSupportChannels } from "@/hooks/queries/useSupportQueries";
 import { SupportChannel } from "@/services/supportService";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface CustomerCareModalProps {
   isOpen: boolean;
@@ -41,12 +42,15 @@ export const CustomerCareModal: React.FC<CustomerCareModalProps> = ({
   onClose,
 }) => {
   const { channels, isLoading, isError, refetch } = useSupportChannels();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, dialogRef, { onEscape: onClose });
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-[#2b2b2b94] flex items-center justify-center z-50">
       <motion.div
+        ref={dialogRef}
         className="bg-white rounded-[10px] p-6 w-[90%] max-w-[400px]"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

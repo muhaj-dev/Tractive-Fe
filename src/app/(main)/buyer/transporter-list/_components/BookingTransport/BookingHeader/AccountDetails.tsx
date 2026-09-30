@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { BankAccounts } from "./BankAccounts";
 import {
   useCreateFleetPayment,
@@ -8,6 +8,7 @@ import {
 } from "@/hooks/queries/useTransporterQueries";
 import { paymentMethodMap } from "@/utils/paymentMethods";
 import { useRouter } from "next/navigation";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { DisplayProduct } from "./TruckDetailsAndShipProduct";
 import { useAppDispatch } from "@/lib/hooks";
 import { clearPendingTransport } from "@/lib/features/pendingTransport/pendingTransportSlice";
@@ -25,12 +26,21 @@ interface AccountDetailsProps {
 const SuccessModal: React.FC<{
   shipmentCount: number;
   onClose: () => void;
-}> = ({ shipmentCount, onClose }) => (
+}> = ({ shipmentCount, onClose }) => {
+  // Only mounted while open.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(true, dialogRef, { onEscape: onClose });
+
+  return (
   <div
     className="fixed inset-0 bg-[#2b2b2bd4] flex items-center justify-center z-50 p-4"
     onClick={onClose}
   >
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payment-submitted-title"
       className="bg-[#fefefe] rounded-[8px] w-full max-w-[380px] p-6 flex flex-col items-center text-center"
       onClick={(e) => e.stopPropagation()}
     >
@@ -52,7 +62,10 @@ const SuccessModal: React.FC<{
           <circle cx="12" cy="12" r="9.5" stroke="#155724" strokeWidth="2" />
         </svg>
       </div>
-      <p className="font-montserrat font-semibold text-[16px] text-[#2b2b2b] mb-1">
+      <p
+        id="payment-submitted-title"
+        className="font-montserrat font-semibold text-[16px] text-[#2b2b2b] mb-1"
+      >
         Payment Submitted
       </p>
       <p className="font-montserrat text-[12px] text-[#808080] mb-5">
@@ -71,7 +84,8 @@ const SuccessModal: React.FC<{
       </button>
     </div>
   </div>
-);
+  );
+};
 
 export const AccountDetails: React.FC<AccountDetailsProps> = ({
   fleetBidId,

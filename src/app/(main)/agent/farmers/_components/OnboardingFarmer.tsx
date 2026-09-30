@@ -1,9 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { XModalIcon } from "../../_components/Icons/AgentIcons";
 import { FarmerFormFields } from "./FarmerFormFields";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface OnboardingFarmersProps {
   isOpen: boolean;
@@ -74,6 +75,15 @@ export const OnboardingFarmers: React.FC<OnboardingFarmersProps> = ({
       resetForm();
     }
   }, [editFarmer, isOpen]);
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Escape does what the X does: close and clear the form.
+  useModalA11y(isOpen, dialogRef, {
+    onEscape: () => {
+      onClose();
+      resetForm();
+    },
+  });
 
   if (!isOpen) return null;
 
@@ -190,10 +200,12 @@ export const OnboardingFarmers: React.FC<OnboardingFarmersProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      role="dialog"
-      aria-labelledby="onboard-farmer-title"
     >
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="onboard-farmer-title"
         className="bg-[#fefefe] p-4 md:p-6 rounded-lg w-full max-w-md mx-auto relative max-h-[90vh] overflow-y-auto"
         initial={{ scale: 0.8 }}
         animate={{ scale: 1 }}

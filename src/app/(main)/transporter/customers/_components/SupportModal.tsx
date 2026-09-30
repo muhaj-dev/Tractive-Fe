@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import {
   transporterService,
   TransporterCustomer,
@@ -84,6 +85,8 @@ export const SupportModal: React.FC<SupportModalProps> = ({
     if (!isSubmitting) onClose();
   };
 
+  useModalA11y(isOpen, modalRef, { onEscape: handleClose });
+
   if (!isOpen) return null;
 
   return (
@@ -97,6 +100,9 @@ export const SupportModal: React.FC<SupportModalProps> = ({
       >
         <motion.div
           ref={modalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="transporter-support-title"
           className="bg-[#fefefe] rounded-[10px] shadow-md w-[90%] max-w-[500px] p-6"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -104,7 +110,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({
           transition={{ duration: 0.3 }}
         >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-[16px] font-montserrat font-medium text-[#2b2b2b]">
+            <h2 id="transporter-support-title" className="text-[16px] font-montserrat font-medium text-[#2b2b2b]">
               {customer ? `Contact ${customer.name}` : "Support Contact"}
             </h2>
             <button

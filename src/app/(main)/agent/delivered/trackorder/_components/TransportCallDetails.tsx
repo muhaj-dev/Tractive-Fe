@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import { CopyIcon, XIcon } from "@/icons/Icon1";
 import { StarIcon, YellowStarIcon } from "@/icons/Icons";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 
 type TransportCallDetailsProps = {
@@ -27,6 +28,9 @@ export const TransportCallDetails = ({
   copiedStates,
   handleCopy,
 }: TransportCallDetailsProps) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, dialogRef, { onEscape: onClose });
+
   if (!isOpen) return null;
 
   const {
@@ -41,7 +45,13 @@ export const TransportCallDetails = ({
 
   return (
     <div className="fixed inset-0 bg-[#2b2b2b94] bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-[#fefefe] flex flex-col items-center justify-center gap-4 rounded-[10px] p-6 w-[90%] max-w-[400px] relative">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={company ? `${company} contact details` : "Transporter contact details"}
+        className="bg-[#fefefe] flex flex-col items-center justify-center gap-4 rounded-[10px] p-6 w-[90%] max-w-[400px] relative"
+      >
         <button
           className="absolute top-2 right-2 text-[#2b2b2b] text-[20px] cursor-pointer"
           onClick={onClose}

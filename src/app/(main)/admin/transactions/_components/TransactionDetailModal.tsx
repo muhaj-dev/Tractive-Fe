@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,10 +72,27 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   >(null);
 
   const panelRef = useRef<HTMLDivElement>(null);
+  // The approve/reject confirmation opens on top of this panel. The trap
+  // follows whichever is on top, and Escape peels one layer at a time — the
+  // confirmation handles its own Escape, so this one only closes the panel
+  // when no confirmation is showing (it used to close both at once).
+  const confirmPanelRef = useRef<HTMLDivElement>(null);
+  const topmostRef = useMemo(
+    () => ({
+      get current() {
+        return confirmPanelRef.current ?? panelRef.current;
+      },
+    }),
+    [],
+  );
   // 15g: this dialog had no role, no focus management and did not close on
   // Escape — the overlay stayed up and swallowed the next click, so the tester
   // had to reload between rows.
-  useModalA11y(isOpen, panelRef, { onEscape: onClose });
+  useModalA11y(isOpen, topmostRef, {
+    onEscape: () => {
+      if (!confirmStatus) onClose();
+    },
+  });
 
   useEffect(() => {
     if (!isOpen || !transactionId) return;
@@ -441,6 +458,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 
           <ConfirmActionModal
             isOpen={!!confirmStatus}
+            panelRef={confirmPanelRef}
             title={
               confirmStatus === "approved"
                 ? "Approve transaction?"

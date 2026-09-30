@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { XIcon } from "@/icons/Icon1";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface CounterBackModalProps {
   isOpen: boolean;
@@ -35,6 +36,13 @@ export const CounterBackModal: React.FC<CounterBackModalProps> = ({
     }
   }, [isOpen]);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, dialogRef, {
+    onEscape: () => {
+      if (!isSubmitting) onClose();
+    },
+  });
+
   if (!isOpen) return null;
 
   const handleSubmit = () => {
@@ -57,11 +65,18 @@ export const CounterBackModal: React.FC<CounterBackModalProps> = ({
       onClick={isSubmitting ? undefined : onClose}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="counter-back-title"
         className="bg-[#fefefe] rounded-[8px] w-[90%] max-w-[440px] overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#f1f1f1]">
-          <p className="font-montserrat font-medium text-[14px] text-[#2b2b2b]">
+          <p
+            id="counter-back-title"
+            className="font-montserrat font-medium text-[14px] text-[#2b2b2b]"
+          >
             {title}
           </p>
           <button

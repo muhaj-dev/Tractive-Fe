@@ -5,6 +5,7 @@ import { bidService } from "@/services/bidService";
 import { productService, ApiProduct } from "@/services/productService";
 import { toast } from "sonner";
 import { SearchIcon } from "@/icons/Icons";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface CreateBidModalProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ export const CreateBidModal: React.FC<CreateBidModalProps> = ({
   const [showResults, setShowResults] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, dialogRef, { onEscape: onClose });
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -131,6 +134,10 @@ export const CreateBidModal: React.FC<CreateBidModalProps> = ({
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-bid-title"
             className="bg-white rounded-[10px] w-full max-w-[500px] shadow-lg overflow-hidden flex flex-col min-h-[400px]"
             variants={modalVariants}
             initial="hidden"
@@ -140,12 +147,17 @@ export const CreateBidModal: React.FC<CreateBidModalProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h3 className="text-lg font-montserrat font-medium text-[#2b2b2b]">
+              <h3
+                id="create-bid-title"
+                className="text-lg font-montserrat font-medium text-[#2b2b2b]"
+              >
                 Create Bid Listing
               </h3>
               <button
+                type="button"
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 rounded-full"
+                aria-label="Close"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

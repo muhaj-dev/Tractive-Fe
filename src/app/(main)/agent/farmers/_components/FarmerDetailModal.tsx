@@ -1,9 +1,10 @@
 "use client";
-import React from "react";
+import React, { useRef } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { XModalIcon } from "../../_components/Icons/AgentIcons"; // Adjust path if needed
 import { Farmer } from "@/services/FarmerService";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface FarmerDetailModalProps {
   isOpen: boolean;
@@ -18,6 +19,11 @@ export const FarmerDetailModal: React.FC<FarmerDetailModalProps> = ({
   farmer,
   isLoading,
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen && (!!isLoading || !!farmer), dialogRef, {
+    onEscape: onClose,
+  });
+
   if (!isOpen) return null;
 
   if (isLoading) {
@@ -28,7 +34,13 @@ export const FarmerDetailModal: React.FC<FarmerDetailModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
-        <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Loading farmer details"
+          className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center"
+        >
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#538e53] mb-2"></div>
           <p className="text-sm text-gray-500 font-montserrat">
             Loading details...
@@ -64,11 +76,13 @@ export const FarmerDetailModal: React.FC<FarmerDetailModalProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      role="dialog"
-      aria-labelledby="farmer-detail-title"
       onClick={onClose}
     >
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="farmer-detail-title"
         className="bg-[#fefefe] rounded-lg w-full max-w-lg mx-auto relative max-h-[90vh] overflow-y-auto shadow-xl"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

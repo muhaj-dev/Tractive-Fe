@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { FrontendTransaction } from "@/services/transactionService";
@@ -56,6 +56,9 @@ const InfoRow = ({ label, value }: { label: string; value?: string }) => (
 export const TransactionDetailsModal: React.FC<
   TransactionDetailsModalProps
 > = ({ transaction, onClose }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(!!transaction, dialogRef, { onEscape: onClose });
+
   return (
     <AnimatePresence>
       {transaction && (
@@ -67,6 +70,10 @@ export const TransactionDetailsModal: React.FC<
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="agent-transaction-details-title"
             className="bg-white rounded-[10px] w-full max-w-[480px] max-h-[90vh] overflow-y-auto"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -75,7 +82,10 @@ export const TransactionDetailsModal: React.FC<
           >
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 border-b border-[#e2e2e2] sticky top-0 bg-white rounded-t-[10px]">
-              <h2 className="text-[16px] font-montserrat font-semibold text-[#2b2b2b]">
+              <h2
+                id="agent-transaction-details-title"
+                className="text-[16px] font-montserrat font-semibold text-[#2b2b2b]"
+              >
                 Transaction Details
               </h2>
               <button

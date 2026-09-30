@@ -1,7 +1,8 @@
 "use client";
-import React from "react";
+import React, { useRef } from "react";
 import { motion } from "framer-motion";
 import { XModalIcon } from "../../_components/Icons/TransporterIcons";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface DeleteModalProps {
   isOpen: boolean;
@@ -16,6 +17,9 @@ export const DeleteDriverModal: React.FC<DeleteModalProps> = ({
   onConfirm,
   driverName,
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, dialogRef, { onEscape: onClose });
+
   if (!isOpen) return null;
 
   return (
@@ -24,10 +28,12 @@ export const DeleteDriverModal: React.FC<DeleteModalProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      role="dialog"
-      aria-labelledby="delete-driver-title"
     >
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-driver-title"
         className="bg-[#fefefe] p-8 rounded-[8px] w-full max-w-[400px] relative flex flex-col items-center text-center"
         initial={{ scale: 0.8 }}
         animate={{ scale: 1 }}

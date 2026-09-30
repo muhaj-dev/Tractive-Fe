@@ -12,6 +12,7 @@ import {
   AddAccountModalSchemaType,
 } from "@/schemas/addAccountModalSchema";
 import { nigerianStates, lgaData } from "@/utils/state&LGA";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 type RoleType = "agent" | "transporter" | "buyer";
 
@@ -132,28 +133,16 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
         handleClose();
       }
     };
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") handleClose();
-    };
 
     document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isPending, onClose]);
 
-  // Stop the page behind the overlay from scrolling.
-  useEffect(() => {
-    if (!isOpen) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [isOpen]);
+  // Focus into the dialog, Tab trap, scroll lock, Escape (unless saving).
+  useModalA11y(isOpen, modalRef, { onEscape: handleClose });
 
   const onSubmit = async (data: AddAccountModalSchemaType) => {
     if (!session?.user) {

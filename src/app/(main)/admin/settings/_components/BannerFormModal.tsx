@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useCloudinaryUpload } from "@/hooks/useCloudinaryUpload";
 import { useCreateBanner, useUpdateBanner } from "@/hooks/queries/useBannerQueries";
 import type { AdminBanner, BannerPayload } from "@/services/bannerService";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface BannerFormModalProps {
   /** null = create a new banner; a banner = edit it. */
@@ -66,13 +67,12 @@ export const BannerFormModal: React.FC<BannerFormModalProps> = ({
     setError(null);
   }, [isOpen, banner]);
 
-  useEffect(() => {
-    const onEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isBusy) onClose();
-    };
-    if (isOpen) document.addEventListener("keydown", onEscape);
-    return () => document.removeEventListener("keydown", onEscape);
-  }, [isOpen, isBusy, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, dialogRef, {
+    onEscape: () => {
+      if (!isBusy) onClose();
+    },
+  });
 
   const handlePickImage = async (file?: File) => {
     if (!file) return;
@@ -150,6 +150,7 @@ export const BannerFormModal: React.FC<BannerFormModalProps> = ({
         onClick={() => !isBusy && onClose()}
       >
         <motion.div
+          ref={dialogRef}
           className="bg-[#fefefe] rounded-[10px] shadow-xl w-full max-w-[560px] max-h-[90vh] overflow-y-auto p-6"
           initial={{ scale: 0.92, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -157,10 +158,14 @@ export const BannerFormModal: React.FC<BannerFormModalProps> = ({
           transition={{ duration: 0.2 }}
           role="dialog"
           aria-modal="true"
+          aria-labelledby="banner-form-title"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex justify-between items-center mb-5">
-            <h2 className="text-[16px] font-montserrat font-semibold text-[#2b2b2b]">
+            <h2
+              id="banner-form-title"
+              className="text-[16px] font-montserrat font-semibold text-[#2b2b2b]"
+            >
               {isEdit ? "Edit banner" : "New banner"}
             </h2>
             <button

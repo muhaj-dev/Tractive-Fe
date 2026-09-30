@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { XModalIcon } from "@/app/(main)/transporter/_components/Icons/TransporterIcons";
@@ -113,17 +113,9 @@ const weightLabel = (trip: FleetTripSummary): string => {
 export const TrackTransporterDetailModal: React.FC<
   TrackTransporterDetailModalProps
 > = ({ trip, onClose }) => {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
+  // Only mounted while open.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(true, dialogRef, { onEscape: onClose });
 
   const fleet = tripFleetObject(trip);
   const transporter = tripTransporterObject(trip);
@@ -155,12 +147,19 @@ export const TrackTransporterDetailModal: React.FC<
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="track-transporter-detail-title"
           className="relative bg-[#fefefe] rounded-lg w-full max-w-[640px] lg:max-w-[960px] xl:max-w-[1040px] max-h-[92vh] overflow-y-auto my-auto"
         >
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-[#fefefe] px-4 py-3 border-b border-[#e0e0e0] rounded-t-lg">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-montserrat font-medium text-[15px] sm:text-[16px] text-[#2b2b2b] mr-1">
+              <h2
+                id="track-transporter-detail-title"
+                className="font-montserrat font-medium text-[15px] sm:text-[16px] text-[#2b2b2b] mr-1"
+              >
                 Trip Details
               </h2>
               <StatusBadge status={trip.status} />

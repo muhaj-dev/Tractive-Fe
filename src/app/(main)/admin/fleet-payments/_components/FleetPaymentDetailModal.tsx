@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import {
 } from "@/services/fleetService";
 import { ConfirmActionModal } from "../../_components/ConfirmActionModal";
 import Avatar from "@/components/ui/Avatar";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface FleetPaymentDetailModalProps {
   isOpen: boolean;
@@ -149,6 +150,25 @@ export const FleetPaymentDetailModal: React.FC<
     onClose();
   };
 
+  // Two stacked dialogs: this panel and the approve/reject confirmation over
+  // it. The trap follows whichever is on top, and Escape peels one layer at a
+  // time (the confirmation handles its own Escape).
+  const panelRef = useRef<HTMLDivElement>(null);
+  const confirmPanelRef = useRef<HTMLDivElement>(null);
+  const topmostRef = useMemo(
+    () => ({
+      get current() {
+        return confirmPanelRef.current ?? panelRef.current;
+      },
+    }),
+    [],
+  );
+  useModalA11y(isOpen, topmostRef, {
+    onEscape: () => {
+      if (!confirmStatus) closeAndReset();
+    },
+  });
+
   const openRefundForm = () => {
     setRefundAmount(
       typeof payment?.amount === "number" ? String(payment.amount) : "",
@@ -284,6 +304,10 @@ export const FleetPaymentDetailModal: React.FC<
           onClick={closeAndReset}
         >
           <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="fleet-payment-detail-title"
             className="bg-white rounded-[12px] w-full max-w-[760px] shadow-xl overflow-hidden max-h-[90vh] flex flex-col"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -292,7 +316,10 @@ export const FleetPaymentDetailModal: React.FC<
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h3 className="font-montserrat font-semibold text-base text-[#2b2b2b]">
+              <h3
+                id="fleet-payment-detail-title"
+                className="font-montserrat font-semibold text-base text-[#2b2b2b]"
+              >
                 Fleet Payment Details
               </h3>
               <button
@@ -733,6 +760,7 @@ export const FleetPaymentDetailModal: React.FC<
             }
             onCancel={() => !isBusy && setConfirmStatus(null)}
             onConfirm={runStatusUpdate}
+            panelRef={confirmPanelRef}
           />
         </motion.div>
       )}

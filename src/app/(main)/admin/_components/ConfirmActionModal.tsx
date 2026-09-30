@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { RefObject, useId, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 export type ConfirmActionTone = "success" | "danger" | "info";
 
@@ -20,6 +21,12 @@ interface ConfirmActionModalProps {
   onReasonChange?: (value: string) => void;
   reasonLabel?: string;
   reasonPlaceholder?: string;
+  /**
+   * Optional handle on the dialog panel, for a parent modal that stacks this
+   * dialog over its own: the parent points its focus trap at this panel while
+   * it is open (see BiddersModal for the pattern).
+   */
+  panelRef?: RefObject<HTMLDivElement | null>;
 }
 
 const toneStyles: Record<
@@ -111,14 +118,16 @@ export const ConfirmActionModal: React.FC<ConfirmActionModalProps> = ({
   onReasonChange,
   reasonLabel = "Reason",
   reasonPlaceholder = "Add a reason (optional)",
+  panelRef,
 }) => {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !isSubmitting) onCancel();
-    };
-    if (isOpen) document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isSubmitting, onCancel]);
+  const localRef = useRef<HTMLDivElement>(null);
+  const dialogRef = panelRef ?? localRef;
+  const titleId = useId();
+  useModalA11y(isOpen, dialogRef, {
+    onEscape: () => {
+      if (!isSubmitting) onCancel();
+    },
+  });
 
   const config = toneStyles[tone];
   const Icon = config.icon;
@@ -134,6 +143,7 @@ export const ConfirmActionModal: React.FC<ConfirmActionModalProps> = ({
           onClick={() => !isSubmitting && onCancel()}
         >
           <motion.div
+            ref={dialogRef}
             className="relative bg-[#fefefe] rounded-[10px] w-full max-w-[440px] p-6 shadow-xl"
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -141,6 +151,7 @@ export const ConfirmActionModal: React.FC<ConfirmActionModalProps> = ({
             transition={{ duration: 0.2 }}
             role="dialog"
             aria-modal="true"
+            aria-labelledby={titleId}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-4">
@@ -150,7 +161,10 @@ export const ConfirmActionModal: React.FC<ConfirmActionModalProps> = ({
                 <Icon className={`w-6 h-6 ${config.iconStroke}`} />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="font-montserrat font-semibold text-[16px] sm:text-[17px] text-[#2b2b2b] mb-1">
+                <h2
+                  id={titleId}
+                  className="font-montserrat font-semibold text-[16px] sm:text-[17px] text-[#2b2b2b] mb-1"
+                >
                   {title}
                 </h2>
                 {description && (

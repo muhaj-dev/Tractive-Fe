@@ -1,7 +1,8 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import { PhoneCallFill } from "@/app/(main)/transporter/_components/Icons/TransporterIcons";
 import { useSupportHotlines } from "@/hooks/queries/useSupportQueries";
 
@@ -22,14 +23,8 @@ export const LiveChatModal: React.FC<Props> = ({
   const { hotlines: supportHotlines, isLoading: isLoadingHotlines } =
     useSupportHotlines();
   const numbers = hotlines ?? supportHotlines;
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(open, dialogRef, { onEscape: onClose });
 
   return (
     <AnimatePresence>
@@ -41,11 +36,12 @@ export const LiveChatModal: React.FC<Props> = ({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={onClose}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Live chat"
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Live chat"
             className="relative bg-[#fefefe] rounded-[12px] shadow-lg w-full max-w-[360px] px-6 pt-6 pb-5"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

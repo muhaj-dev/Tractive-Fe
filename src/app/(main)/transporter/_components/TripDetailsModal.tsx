@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Avatar } from "@/components/ui/Avatar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,6 +10,7 @@ import {
   useFleetTripTracking,
   useUpdateFleetTripStatus,
 } from "@/hooks/queries/useTransporterQueries";
+import { useModalA11y } from "@/hooks/useModalA11y";
 import {
   FleetTripBuyer,
   FleetTripPackage,
@@ -594,17 +595,9 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     refetchInterval: 5 * 60 * 1000, // poll tracking every 5 minutes
   });
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
+  // Mounted only while open, so it is always "open" from the hook's view.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(true, dialogRef, { onEscape: onClose });
 
   return (
     <AnimatePresence>
@@ -620,10 +613,17 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="trip-details-modal-title"
           className="relative bg-[#f1f1f1] rounded-lg w-full max-w-[680px] max-h-[92vh] overflow-y-auto my-auto"
         >
           <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-[#fefefe] px-4 py-3 border-b border-[#e0e0e0] rounded-t-lg">
-            <h2 className="font-montserrat font-medium text-[15px] sm:text-[16px] text-[#2b2b2b]">
+            <h2
+              id="trip-details-modal-title"
+              className="font-montserrat font-medium text-[15px] sm:text-[16px] text-[#2b2b2b]"
+            >
               Trip Details
             </h2>
             <button

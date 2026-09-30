@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { XIcon } from "@/icons/Icon1";
 import { toast } from "sonner";
 import { AccountDetails, TransferDetails } from "./AccountDetails";
@@ -8,14 +8,20 @@ import { PaymentSuccessModal } from "./PaymentSuccessModal";
 import { useCreateTransaction } from "@/hooks/queries/useTransactionQueries";
 import { useConfirmPayment } from "@/hooks/queries/usePaymentQueries";
 import { paymentMethodMap } from "@/utils/paymentMethods";
+import { useModalA11y } from "@/hooks/useModalA11y";
 
 interface ShellProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Accessible name for the dialog. */
+  label: string;
   children: React.ReactNode;
 }
 
-const Shell: React.FC<ShellProps> = ({ isOpen, onClose, children }) => {
+const Shell: React.FC<ShellProps> = ({ isOpen, onClose, label, children }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalA11y(isOpen, dialogRef, { onEscape: onClose });
+
   if (!isOpen) return null;
   return (
     <div
@@ -23,6 +29,10 @@ const Shell: React.FC<ShellProps> = ({ isOpen, onClose, children }) => {
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
         className="bg-[#fefefe] rounded-[8px] w-[90%] max-w-[400px] max-h-[90vh] overflow-y-auto relative z-60"
         onClick={(e) => e.stopPropagation()}
       >
@@ -147,14 +157,22 @@ export const OrderPaymentModal: React.FC<OrderPaymentModalProps> = ({
 
   return (
     <>
-      <Shell isOpen={isOpen && step === "payment"} onClose={close}>
+      <Shell
+        isOpen={isOpen && step === "payment"}
+        onClose={close}
+        label="Delivery details and payment method"
+      >
         <DeliveryDetailsAndPaymentMethod
           totalAmount={totalAmount}
           onContinue={handleContinue}
         />
       </Shell>
 
-      <Shell isOpen={isOpen && step === "bank-details"} onClose={close}>
+      <Shell
+        isOpen={isOpen && step === "bank-details"}
+        onClose={close}
+        label="Bank transfer details"
+      >
         <AccountDetails
           onBack={() => setStep("payment")}
           onConfirm={handleConfirm}
