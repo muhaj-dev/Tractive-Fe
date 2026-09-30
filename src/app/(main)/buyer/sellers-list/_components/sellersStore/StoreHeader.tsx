@@ -236,12 +236,15 @@ export const StoreHeader = ({
               <div className="flex gap-2 items-center bg-[#CCE5CC8C] p-2 rounded-[100px] cursor-pointer">
                 <MessageIcon />
               </div>
-              <div
+              <button
+                type="button"
+                aria-label="Show phone numbers"
+                aria-expanded={openCallLog}
                 className="relative flex gap-2 items-center bg-[#CCE5CC8C] p-2 rounded-[100px] cursor-pointer"
                 onClick={handleCallLog}
               >
                 <CallIcon />
-              </div>
+              </button>
               {openCallLog && (
                 <motion.div
                   className="absolute -bottom-[4.5rem] left-0 bg-[#fefefe] p-4 rounded-[5px] flex flex-col items-end shadow-[0px_4px_4px_0px_rgba(0,0,0,0.15)] gap-3 z-10"
@@ -250,9 +253,9 @@ export const StoreHeader = ({
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="cursor-pointer" onClick={handleCallLog}>
+                  <button type="button" aria-label="Close phone numbers" className="cursor-pointer" onClick={handleCallLog}>
                     <XIcon />
-                  </div>
+                  </button>
                   <div className="flex items-start gap-2 w-full">
                     {phoneNumbers.length === 0 ? (
                       <span className="font-montserrat font-normal text-[12px] text-[#808080] whitespace-nowrap">
@@ -260,7 +263,9 @@ export const StoreHeader = ({
                       </span>
                     ) : (
                       phoneNumbers.map((number: string) => (
-                        <div
+                        <button
+                          type="button"
+                          aria-label={copiedStates[number] ? `${number} copied` : `Copy ${number}`}
                           key={number}
                           className="flex items-center gap-2 cursor-pointer"
                           onClick={() => handleCopy(number)}
@@ -279,7 +284,7 @@ export const StoreHeader = ({
                               </span>
                             </>
                           )}
-                        </div>
+                        </button>
                       ))
                     )}
                   </div>
@@ -368,7 +373,8 @@ export const StoreHeader = ({
                     variant="inline"
                   />
                 )}
-                <div
+                <button
+                  type="button"
                   className="flex items-center gap-1 cursor-pointer"
                   onClick={handleReviewsToggle} // Add click handler
                 >
@@ -379,7 +385,7 @@ export const StoreHeader = ({
                     stroke="#538e53"
                     className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]"
                   />
-                </div>
+                </button>
               </div>
             </div>
           </div>

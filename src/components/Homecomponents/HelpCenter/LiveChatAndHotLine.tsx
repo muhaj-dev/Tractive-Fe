@@ -10,9 +10,10 @@ export const LiveChatAndHotLine = ({ onOpen }: Props) => {
     <div className="w-full flex flex-col">
       <div className="w-[90%] mx-auto flex gap-4 justify-start lg:justify-center p-2">
         {/* Live Chat */}
-        <div
+        <button
+          type="button"
           onClick={onOpen}
-          className="flex gap-4 items-center lg:py-[3px] rounded-[4px] lg:px-[20px] lg:bg-[#1414140d] md:h-[63px] cursor-pointer"
+          className="flex gap-4 items-center text-left lg:py-[3px] rounded-[4px] lg:px-[20px] lg:bg-[#1414140d] md:h-[63px] cursor-pointer"
         >
           <div className="hidden md:block">
             <Image
@@ -30,7 +31,7 @@ export const LiveChatAndHotLine = ({ onOpen }: Props) => {
               Live Chat with us
             </p>
           </div>
-        </div>
+        </button>
 
         {/* Hotline */}
         <div className="flex gap-4 items-center rounded-[4px] lg:py-[3px] lg:px-[20px] lg:bg-[#1414140d] md:h-[63px]">

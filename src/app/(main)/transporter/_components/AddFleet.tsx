@@ -348,12 +348,14 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
             exit={{ scale: 0.8, opacity: 0 }}
             className="relative bg-[#fefefe] rounded-lg w-full max-w-[500px] overflow-y-auto max-h-[90vh] p-4 sm:p-6"
           >
-            <div
+            <button
+              type="button"
+              aria-label="Close"
               onClick={onClose}
-              className="absolute top-[1.2rem] right-[1.2rem] cursor-pointer hover:bg-gray-100 p-1 rounded-full transition-colors"
+              className="absolute top-[1.2rem] right-[1.2rem] cursor-pointer hover:bg-gray-100 p-1 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-[#538e53]"
             >
               <XModalIcon />
-            </div>
+            </button>
             <h2 className="text-[16px] pt-2 font-medium text-center text-[#2b2b2b] font-montserrat mb-6">
               {editFleetData ? "Edit Fleet" : "Upload Fleet"}
             </h2>
@@ -433,25 +435,29 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
                   <label className="text-[12px] font-medium text-[#2b2b2b] font-montserrat mb-1 block">
                     Route: From
                   </label>
-                  <div
+                  <button
+                    type="button"
+                    aria-expanded={isFromOpen}
+                    aria-disabled={!!editFleetData}
                     onClick={() => !editFleetData && setIsFromOpen(!isFromOpen)}
-                    className={`flex items-center justify-between w-full border border-[#d9d9d9] rounded-[4px] px-3 py-2 ${editFleetData ? 'bg-gray-100 cursor-not-allowed' : 'bg-white cursor-pointer focus-within:border-[#538e53]'} transition-colors`}
+                    className={`flex items-center justify-between w-full border border-[#d9d9d9] rounded-[4px] px-3 py-2 focus-visible:outline-2 focus-visible:outline-[#538e53] ${editFleetData ? 'bg-gray-100 cursor-not-allowed' : 'bg-white cursor-pointer focus-within:border-[#538e53]'} transition-colors`}
                   >
                     <span className={`text-[13px] font-montserrat ${formData.fromState ? 'text-[#2b2b2b]' : 'text-[#a0a0a0]'}`}>
                       {formData.fromState || "Select Origin"}
                     </span>
                     {isFromOpen ? <ArrowUpIcon /> : <ArrowDownIcon />}
-                  </div>
+                  </button>
                   {isFromOpen && (
                     <div className="absolute z-20 w-full bg-[#fefefe] border border-[#d9d9d9] rounded-[4px] mt-1 max-h-[150px] overflow-y-auto shadow-md">
                       {nigerianStates.map((state) => (
-                        <div
+                        <button
+                          type="button"
                           key={`from-${state}`}
                           onClick={() => handleFromSelect(state)}
-                          className="px-3 py-2 text-[12px] font-montserrat hover:bg-[#f1f1f1] cursor-pointer"
+                          className="block w-full text-left px-3 py-2 text-[12px] font-montserrat hover:bg-[#f1f1f1] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
                         >
                           {state}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -461,25 +467,29 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
                   <label className="text-[12px] font-medium text-[#2b2b2b] font-montserrat mb-1 block">
                     Route: To
                   </label>
-                  <div
+                  <button
+                    type="button"
+                    aria-expanded={isToOpen}
+                    aria-disabled={!!editFleetData}
                     onClick={() => !editFleetData && setIsToOpen(!isToOpen)}
-                    className={`flex items-center justify-between w-full border border-[#d9d9d9] rounded-[4px] px-3 py-2 ${editFleetData ? 'bg-gray-100 cursor-not-allowed' : 'bg-white cursor-pointer focus-within:border-[#538e53]'} transition-colors`}
+                    className={`flex items-center justify-between w-full border border-[#d9d9d9] rounded-[4px] px-3 py-2 focus-visible:outline-2 focus-visible:outline-[#538e53] ${editFleetData ? 'bg-gray-100 cursor-not-allowed' : 'bg-white cursor-pointer focus-within:border-[#538e53]'} transition-colors`}
                   >
                     <span className={`text-[13px] font-montserrat ${formData.toState ? 'text-[#2b2b2b]' : 'text-[#a0a0a0]'}`}>
                       {formData.toState || "Select Destination"}
                     </span>
                     {isToOpen ? <ArrowUpIcon /> : <ArrowDownIcon />}
-                  </div>
+                  </button>
                   {isToOpen && (
                     <div className="absolute z-20 w-full bg-[#fefefe] border border-[#d9d9d9] rounded-[4px] mt-1 max-h-[150px] overflow-y-auto shadow-md">
                       {nigerianStates.map((state) => (
-                        <div
+                        <button
+                          type="button"
                           key={`to-${state}`}
                           onClick={() => handleToSelect(state)}
-                          className="px-3 py-2 text-[12px] font-montserrat hover:bg-[#f1f1f1] cursor-pointer"
+                          className="block w-full text-left px-3 py-2 text-[12px] font-montserrat hover:bg-[#f1f1f1] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
                         >
                           {state}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -538,25 +548,29 @@ export const AddFleet: React.FC<AddFleetProps> = ({ isOpen, onClose, editFleetDa
                   <label className="text-[12px] font-medium text-[#2b2b2b] font-montserrat mb-1 block">
                     Fleet Status
                   </label>
-                  <div
+                  <button
+                    type="button"
+                    aria-expanded={isFleetStateOpen}
+                    aria-disabled={!!editFleetData}
                     onClick={() => !editFleetData && setIsFleetStateOpen(!isFleetStateOpen)}
-                    className={`flex items-center justify-between w-full border border-[#d9d9d9] rounded-[4px] px-3 py-2 transition-colors ${editFleetData ? 'bg-gray-100 cursor-not-allowed' : 'bg-white cursor-pointer focus-within:border-[#538e53]'}`}
+                    className={`flex items-center justify-between w-full border border-[#d9d9d9] rounded-[4px] px-3 py-2 transition-colors focus-visible:outline-2 focus-visible:outline-[#538e53] ${editFleetData ? 'bg-gray-100 cursor-not-allowed' : 'bg-white cursor-pointer focus-within:border-[#538e53]'}`}
                   >
                     <span className="text-[13px] font-normal text-[#2b2b2b] font-montserrat">
                       {formData.fleetStates}
                     </span>
                     {isFleetStateOpen ? <ArrowUpIcon /> : <ArrowDownIcon />}
-                  </div>
+                  </button>
                   {isFleetStateOpen && (
                     <div className="absolute z-20 w-full bg-[#fefefe] border border-[#d9d9d9] rounded-[4px] mt-1 shadow-md">
                       {fleetStatesOptions.map((state) => (
-                        <div
+                        <button
+                          type="button"
                           key={`status-${state}`}
                           onClick={() => handleFleetStateSelect(state)}
-                          className="px-3 py-2 text-[12px] font-montserrat hover:bg-[#f1f1f1] cursor-pointer"
+                          className="block w-full text-left px-3 py-2 text-[12px] font-montserrat hover:bg-[#f1f1f1] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
                         >
                           {state}
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}

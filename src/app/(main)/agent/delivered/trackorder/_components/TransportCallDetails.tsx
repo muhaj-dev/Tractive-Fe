@@ -95,10 +95,12 @@ export const TransportCallDetails = ({
               </span>
             )}
             {phoneNumbers.map((number) => (
-              <div
+              <button
+                type="button"
                 key={number}
                 className="flex items-center gap-2 cursor-pointer"
                 onClick={() => handleCopy(number)}
+                aria-label={copiedStates[number] ? `${number} copied` : `Copy ${number}`}
               >
                 {copiedStates[number] ? (
                   <span className="font-montserrat font-normal text-[12px] text-[#538e53]">
@@ -112,7 +114,7 @@ export const TransportCallDetails = ({
                     </span>
                   </div>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         </div>

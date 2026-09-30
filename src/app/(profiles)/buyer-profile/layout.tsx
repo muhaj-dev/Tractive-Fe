@@ -70,6 +70,13 @@ export default function BuyerProfileSettingLayout({
               className="md:hidden w-8 h-8 text-[#2b2b2b] absolute -top-[10rem] right-3 z-50 p-1 bg-white rounded-md shadow-md cursor-pointer"
               onClick={toggleAside}
               role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsAsideOpen((prev) => !prev);
+                }
+              }}
               aria-label="Close menu"
             />
           ) : (
@@ -77,6 +84,13 @@ export default function BuyerProfileSettingLayout({
               className="md:hidden w-8 h-8 text-[#2b2b2b] absolute top-4 right-3 p-1 bg-white rounded-md shadow-md cursor-pointer"
               onClick={toggleAside}
               role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsAsideOpen((prev) => !prev);
+                }
+              }}
               aria-label="Open menu"
             />
           )}

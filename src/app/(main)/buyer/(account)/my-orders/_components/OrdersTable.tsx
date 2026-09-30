@@ -71,6 +71,21 @@ export const OrdersTable: React.FC<Props> = ({
               transition={{ delay: i * 0.04 }}
               className={`bg-[#fefefe] ${onOpen ? "cursor-pointer" : ""}`}
               onClick={onOpen ? () => onOpen(row) : undefined}
+              tabIndex={onOpen ? 0 : undefined}
+              role={onOpen ? "button" : undefined}
+              onKeyDown={
+                onOpen
+                  ? (e) => {
+                    // Only when the row itself has focus, so Enter on a control inside the
+                    // row does not also open it.
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onOpen(row);
+                    }
+                  }
+                  : undefined
+              }
             >
               <td className="py-3 px-4 border-y border-l border-[#eeeeee] rounded-l-[6px]">
                 <div className="flex items-center gap-2">

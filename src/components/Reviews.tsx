@@ -232,9 +232,14 @@ export const Reviews: React.FC<ReviewsProps> = ({
 
   return (
     <div className="relative bg-[#fefefe] flex flex-col items-center w-full max-w-[600px] md:max-w-[721px] overflow-y-auto max-h-[90vh] hide-scrollbar px-6 py-6 gap-3 rounded-[7px] shadow-[0px_4px_20px_rgba(0,0,0,0.1)]">
-      <div className="absolute top-3 right-3 cursor-pointer" onClick={onClose}>
+      <button
+        type="button"
+        className="absolute top-3 right-3 cursor-pointer"
+        onClick={onClose}
+        aria-label="Close reviews"
+      >
         <XIcon />
-      </div>
+      </button>
       <div className="flex items-center w-full flex-col sm:flex-row gap-3 pt-3.5">
         <div className="flex flex-col w-[100%] bg-[#f1f1f1] p-1.5">
           <div className="flex items-center gap-[4px]">
@@ -393,15 +398,20 @@ export const Reviews: React.FC<ReviewsProps> = ({
                       </span>
                     </div>
                   )}
-                  <div
+                  <button
+                    type="button"
                     className={`flex items-center gap-[6px] cursor-pointer hover:opacity-80 transition-opacity ${likeMutation.isPending && likeMutation.variables === String(review.id) ? "opacity-50 pointer-events-none" : ""}`}
                     onClick={() => likeMutation.mutate(String(review.id))}
+                    disabled={
+                      likeMutation.isPending &&
+                      likeMutation.variables === String(review.id)
+                    }
                   >
                     <LikeIcon />
                     <span className="font-montserrat font-normal text-[11px] text-[#2b2b2b]">
                       {review.likes} Likes
                     </span>
-                  </div>
+                  </button>
                 </div>
 
                 {canReply && openReplyId === String(review.id) && (

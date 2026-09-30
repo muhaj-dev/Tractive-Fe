@@ -106,8 +106,19 @@ export const ReportForm = () => {
 
               {/* Image Upload */}
               <div className="w-full md:w-[70%] px-4">
+                {/* Stays a div: it wraps the hidden file input. */}
                 <div
                   onClick={handleClick}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={preview ? "Change image" : "Upload image"}
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleClick();
+                    }
+                  }}
                   className="relative w-full max-w-[184px] h-[90px] rounded-md cursor-pointer flex items-center justify-center bg-[#f1f1f1] hover:bg-gray-100 transition"
                 >
                   {preview ? (

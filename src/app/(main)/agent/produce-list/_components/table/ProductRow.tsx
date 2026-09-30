@@ -140,6 +140,17 @@ export const ProductRow: React.FC<ProductRowProps> = ({
       animate="visible"
       transition={{ delay: index * 0.05 }}
       onClick={() => handleView(product.id)}
+      tabIndex={0}
+      role="button"
+      onKeyDown={(e) => {
+        // Only when the row itself has focus, so Enter on a control inside the
+        // row does not also open it.
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleView(product.id);
+        }
+      }}
     >
       {/* Checkbox */}
       <td

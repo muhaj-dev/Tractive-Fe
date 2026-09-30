@@ -188,12 +188,15 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
               <div className="flex gap-2 items-center bg-[#CCE5CC8C] p-2 rounded-[100px] cursor-pointer">
                 <MessageIcon />
               </div>
-              <div
-                className="relative flex gap-2 items-center bg-[#CCE5CC8C] p-2 rounded-[100px] cursor-pointer"
+              <button
+                type="button"
+                aria-label="Show contact numbers"
+                aria-expanded={openCallLog}
+                className="relative flex gap-2 items-center bg-[#CCE5CC8C] p-2 rounded-[100px] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
                 onClick={handleCallLog}
               >
                 <CallIcon />
-              </div>
+              </button>
               {openCallLog && (
                 <motion.div
                   className="absolute -bottom-[4.5rem] left-0 bg-[#fefefe] p-4 rounded-[5px] flex flex-col items-end shadow-[0px_4px_4px_0px_rgba(0,0,0,0.15)] gap-3 z-10"
@@ -202,9 +205,14 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="cursor-pointer" onClick={handleCallLog}>
+                  <button
+                    type="button"
+                    aria-label="Close contact numbers"
+                    className="cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
+                    onClick={handleCallLog}
+                  >
                     <XIcon />
-                  </div>
+                  </button>
                   <div className="flex items-start gap-2 w-full">
                     {phoneNumbers.length === 0 && (
                       <span className="font-montserrat font-normal text-[12px] text-[#808080] whitespace-nowrap">
@@ -212,9 +220,10 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
                       </span>
                     )}
                     {phoneNumbers.map((number) => (
-                      <div
+                      <button
+                        type="button"
                         key={number}
-                        className="flex items-center gap-2 cursor-pointer"
+                        className="flex items-center gap-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
                         onClick={() => handleCopy(number)}
                       >
                         {copiedStates[number] ? (
@@ -231,7 +240,7 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
                             </span>
                           </>
                         )}
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </motion.div>
@@ -342,8 +351,10 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
                       variant="inline"
                     />
                   )}
-                  <div
-                    className="flex items-center gap-1 cursor-pointer"
+                  <button
+                    type="button"
+                    aria-expanded={showReviews}
+                    className="flex items-center gap-1 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
                     onClick={handleReviewsToggle} // Add click handler
                   >
                     <span className="font-montserrat font-normal text-[10px] sm:text-[11px] text-[#538e53]">
@@ -353,7 +364,7 @@ export const TransporterHeader = ({ transporterId }: { transporterId: string }) 
                       stroke="#538e53"
                       className="w-[12px] h-[12px] sm:w-[14px] sm:h-[14px]"
                     />
-                  </div>
+                  </button>
                 </div>
               </div>
             </div>

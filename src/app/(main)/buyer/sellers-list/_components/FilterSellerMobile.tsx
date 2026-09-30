@@ -207,7 +207,9 @@ export const FilterSellerMobile: React.FC<FilterSellerMobileProps> = ({
       <div className="flex sm:hidden w-full sm:w-2/3 lg:w-[95%] gap-4">
         <div className="flex flex-col gap-4 w-full">
           {/* Filter Header */}
-          <div
+          <button
+            type="button"
+            aria-expanded={isFilterOpen}
             className="flex justify-start w-[25%] items-center gap-2 cursor-pointer py-2"
             onClick={handleFilterToggle}
           >
@@ -215,7 +217,7 @@ export const FilterSellerMobile: React.FC<FilterSellerMobileProps> = ({
             <p className="font-montserrat text-[14px] font-medium text-[#2b2b2b]">
               Filter
             </p>
-          </div>
+          </button>
 
           {/* Filter Content */}
           <AnimatePresence>
@@ -254,9 +256,25 @@ export const FilterSellerMobile: React.FC<FilterSellerMobileProps> = ({
                       </span>
                     </div>
                     {openRating ? (
-                      <ArrowUpIcon onClick={handleRatingToggle} />
+                      <button
+                        type="button"
+                        onClick={handleRatingToggle}
+                        aria-label="Filter by rating"
+                        aria-expanded={true}
+                        className="flex cursor-pointer"
+                      >
+                        <ArrowUpIcon />
+                      </button>
                     ) : (
-                      <ArrowDownIcon onClick={handleRatingToggle} />
+                      <button
+                        type="button"
+                        onClick={handleRatingToggle}
+                        aria-label="Filter by rating"
+                        aria-expanded={false}
+                        className="flex cursor-pointer"
+                      >
+                        <ArrowDownIcon />
+                      </button>
                     )}
                   </div>
                   <AnimatePresence>
@@ -269,7 +287,9 @@ export const FilterSellerMobile: React.FC<FilterSellerMobileProps> = ({
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                       >
                         {ratings.map((rating) => (
-                          <div
+                          <button
+                            type="button"
+                            aria-pressed={pendingRatings.includes(rating)}
                             key={rating}
                             className={`flex items-center gap-1 border-[1.5px] border-[#808080] py-1.5 px-3 rounded-full cursor-pointer ${
                               pendingRatings.includes(rating)
@@ -282,7 +302,7 @@ export const FilterSellerMobile: React.FC<FilterSellerMobileProps> = ({
                             <span className="font-montserrat text-[12px] font-medium">
                               {rating.toFixed(1)}
                             </span>
-                          </div>
+                          </button>
                         ))}
                       </motion.div>
                     )}
@@ -299,9 +319,25 @@ export const FilterSellerMobile: React.FC<FilterSellerMobileProps> = ({
                       </span>
                     </div>
                     {openLocation ? (
-                      <ArrowUpIcon onClick={handleLocationToggle} />
+                      <button
+                        type="button"
+                        onClick={handleLocationToggle}
+                        aria-label="Filter by location"
+                        aria-expanded={true}
+                        className="flex cursor-pointer"
+                      >
+                        <ArrowUpIcon />
+                      </button>
                     ) : (
-                      <ArrowDownIcon onClick={handleLocationToggle} />
+                      <button
+                        type="button"
+                        onClick={handleLocationToggle}
+                        aria-label="Filter by location"
+                        aria-expanded={false}
+                        className="flex cursor-pointer"
+                      >
+                        <ArrowDownIcon />
+                      </button>
                     )}
                   </div>
                   <AnimatePresence>
@@ -314,7 +350,9 @@ export const FilterSellerMobile: React.FC<FilterSellerMobileProps> = ({
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                       >
                         {locations.map((location) => (
-                          <div
+                          <button
+                            type="button"
+                            aria-pressed={pendingLocations.includes(location)}
                             key={location}
                             className={`flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer ${
                               pendingLocations.includes(location)
@@ -329,7 +367,7 @@ export const FilterSellerMobile: React.FC<FilterSellerMobileProps> = ({
                             <span className="font-montserrat text-[12px] font-medium">
                               {location}
                             </span>
-                          </div>
+                          </button>
                         ))}
                       </motion.div>
                     )}
@@ -359,9 +397,25 @@ export const FilterSellerMobile: React.FC<FilterSellerMobileProps> = ({
                       </span>
                     </div>
                     {openYears ? (
-                      <ArrowUpIcon onClick={handleYearsToggle} />
+                      <button
+                        type="button"
+                        onClick={handleYearsToggle}
+                        aria-label="Filter by years"
+                        aria-expanded={true}
+                        className="flex cursor-pointer"
+                      >
+                        <ArrowUpIcon />
+                      </button>
                     ) : (
-                      <ArrowDownIcon onClick={handleYearsToggle} />
+                      <button
+                        type="button"
+                        onClick={handleYearsToggle}
+                        aria-label="Filter by years"
+                        aria-expanded={false}
+                        className="flex cursor-pointer"
+                      >
+                        <ArrowDownIcon />
+                      </button>
                     )}
                   </div>
                   <AnimatePresence>

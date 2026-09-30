@@ -163,13 +163,14 @@ export const BankAccountForm: React.FC<BankAccountFormProps> = ({
             {isDropdownOpen && (
               <div className="absolute z-10 w-full mt-1 bg-[#fefefe] border-[1px] border-[#e2e2e2] rounded-[4px] shadow-md max-h-[200px] overflow-y-auto">
                 {nigerianBanks.map((bank) => (
-                  <div
+                  <button
+                    type="button"
                     key={bank}
                     onClick={() => handleBankSelect(bank)}
-                    className="p-2 text-[13px] font-montserrat text-[#2b2b2b] hover:bg-[#f0f0f0] cursor-pointer"
+                    className="block w-full text-left p-2 text-[13px] font-montserrat text-[#2b2b2b] hover:bg-[#f0f0f0] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
                   >
                     {bank}
-                  </div>
+                  </button>
                 ))}
               </div>
             )}

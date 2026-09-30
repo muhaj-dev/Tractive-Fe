@@ -87,13 +87,14 @@ export const Categories: React.FC<CategoriesProps> = ({
               >
                 {categories.map((category, index) => (
                   <li key={index} className="relative w-[100%]">
-                    <div
+                    <button
+                      type="button"
                       onMouseEnter={() => handleCategoryHover(category)}
                       onClick={() => {
                         handleCategoryClick(category);
                         setSelectedCategory(category); // Update selected category
                       }}
-                      className="flex w-[100%] items-center justify-between text-[#2B2B2B] text-[0.6rem] sm:text-[0.7rem]  md:text-[0.89rem] font-normal hover:text-[#538E53] transition cursor-pointer"
+                      className="flex w-[100%] items-center justify-between text-left text-[#2B2B2B] text-[0.6rem] sm:text-[0.7rem]  md:text-[0.89rem] font-normal hover:text-[#538E53] transition cursor-pointer"
                     >
                       <span className="flex-1">{category}</span>
                       <svg
@@ -114,7 +115,7 @@ export const Categories: React.FC<CategoriesProps> = ({
                       >
                         <path d="M9 5l7 7-7 7" />
                       </svg>
-                    </div>
+                    </button>
                     {/* Hover Subcategories (appears to the side on hover) */}
                     {activeDropdown === category &&
                       subCategories[category].length > 0 && (

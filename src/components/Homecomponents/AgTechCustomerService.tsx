@@ -94,8 +94,10 @@ export const AgTechCustomerService = ({ onClose, onChatWithRep }: Props) => {
 
                     return (
                       <div key={id} className="flex flex-col w-full">
-                        <div
-                          className="flex items-center justify-between py-1.5 cursor-pointer"
+                        <button
+                          type="button"
+                          aria-expanded={isOpen}
+                          className="flex w-full items-center justify-between text-left py-1.5 cursor-pointer"
                           onClick={() => toggleQuestion(id)}
                         >
                           <h4 className="text-[#fefefe] font-montserrat font-medium text-[12px]">
@@ -106,7 +108,7 @@ export const AgTechCustomerService = ({ onClose, onChatWithRep }: Props) => {
                               isOpen ? "rotate-90" : ""
                             }`}
                           />
-                        </div>
+                        </button>
 
                         <AnimatePresence initial={false}>
                           {isOpen && (

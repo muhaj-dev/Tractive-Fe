@@ -158,7 +158,9 @@ export const TransporterProfileNavbar = () => {
 
               {/* User Info and Dropdown */}
               <div className="hidden md:flex relative" ref={profileRef}>
-                <div
+                <button
+                  type="button"
+                  aria-expanded={isDropdownOpen}
                   className="flex items-center gap-2 cursor-pointer bg-[#f1f1f1] p-1.5 rounded-[4px] hover:bg-[#f6f6f6] transition"
                   onClick={handleUserDropdownClick}
                 >
@@ -185,7 +187,7 @@ export const TransporterProfileNavbar = () => {
                       d="M19 9l-7 7-7-7"
                     />
                   </svg>
-                </div>
+                </button>
                 {isDropdownOpen && <ProfileDropDown onLogout={handleLogout} />}
               </div>
             </>

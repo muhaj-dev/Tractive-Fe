@@ -255,26 +255,28 @@ export const ActiveProduct: React.FC<ActiveProductProps> = ({
                   animate="open"
                   exit="closed"
                 >
-                  <div
+                  <button
+                    type="button"
                     onClick={() => {
                       setSelectedCategory("");
                       setIsCategoryOpen(false);
                     }}
-                    className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 text-gray-500"
+                    className="block w-full text-left px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 text-gray-500 focus-visible:outline-2 focus-visible:outline-[#538e53]"
                   >
                     All Categories
-                  </div>
+                  </button>
                   {categories.map((cat) => (
-                    <div
+                    <button
+                      type="button"
                       key={cat}
                       onClick={() => {
                         setSelectedCategory(cat);
                         setIsCategoryOpen(false);
                       }}
-                      className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 ${selectedCategory === cat ? "bg-gray-100 font-medium" : ""}`}
+                      className={`block w-full text-left px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#538e53] ${selectedCategory === cat ? "bg-gray-100 font-medium" : ""}`}
                     >
                       {cat}
-                    </div>
+                    </button>
                   ))}
                 </motion.div>
               )}

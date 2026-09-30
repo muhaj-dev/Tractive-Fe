@@ -33,8 +33,9 @@ export const SubCategories: React.FC<SubCategoriesProps> = ({
       >
         {subCategories.map((subCat, subIndex) => (
           <li key={subIndex} className="py-1">
-            <div
-              className="flex w-full items-center justify-between text-[#2B2B2B] text-[0.89rem] font-normal hover:text-[#538E53] transition cursor-pointer"
+            <button
+              type="button"
+              className="flex w-full items-center justify-between text-left text-[#2B2B2B] text-[0.89rem] font-normal hover:text-[#538E53] transition cursor-pointer"
               onClick={() => handleSubCatClick(subCat)}
             >
               <span className="text-[#2B2B2B] text-[0.6rem] sm:text-[0.7rem] mdtext-[0.89rem] font-normal hover:text-[#538E53] transition cursor-pointer">
@@ -54,7 +55,7 @@ export const SubCategories: React.FC<SubCategoriesProps> = ({
               >
                 <path d="M9 5l7 7-7 7" />
               </svg>
-            </div>
+            </button>
           </li>
         ))}
       </ul>

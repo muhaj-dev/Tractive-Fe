@@ -63,7 +63,18 @@ export const FilterProduct = ({
                 <label
                   key={interest}
                   onClick={() => toggleInterest(interest)}
-                  className={`flex items-center cursor-pointer border rounded-full px-2 py-1 min-w-[10px] h-[1.7rem] gap-1 text-[12px] font-montserrat font-normal transition-all ${
+                  // The checkbox inside is display:none, so the chip itself
+                  // carries the keyboard path.
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleInterest(interest);
+                    }
+                  }}
+                  className={`flex items-center cursor-pointer border rounded-full px-2 py-1 min-w-[10px] h-[1.7rem] gap-1 text-[12px] font-montserrat font-normal transition-all focus-visible:outline-2 focus-visible:outline-[#538e53] ${
                     isSelected
                       ? "bg-[#538e53] text-[#fefefe] border-[#538e53]"
                       : "text-[#808080] border-[#808080]"
@@ -100,28 +111,38 @@ export const FilterProduct = ({
           </span>
           <div className="flex items-center gap-2 border-[1px] border-[#808080] rounded-[5px] px-1.5 py-0.5 ">
             <div className="flex flex-col justify-center">
-              <ArrowUpIcon
-                className={`w-3 h-3 ${
-                  switchSide === "low-to-high"
-                    ? "opacity-50 cursor-not-allowed"
-                    : "cursor-pointer"
-                }`}
-                onClick={() =>
-                  switchSide !== "low-to-high" &&
-                  handleSortToggle("low-to-high")
-                }
-              />
-              <ArrowDownIcon
-                className={`w-3 h-3 ${
-                  switchSide === "high-to-low"
-                    ? "opacity-50 cursor-not-allowed"
-                    : "cursor-pointer"
-                }`}
-                onClick={() =>
-                  switchSide !== "high-to-low" &&
-                  handleSortToggle("high-to-low")
-                }
-              />
+              <button
+                type="button"
+                className="flex"
+                onClick={() => handleSortToggle("low-to-high")}
+                disabled={switchSide === "low-to-high"}
+                aria-label="Sort low to high"
+                aria-pressed={switchSide === "low-to-high"}
+              >
+                <ArrowUpIcon
+                  className={`w-3 h-3 ${
+                    switchSide === "low-to-high"
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
+                  }`}
+                />
+              </button>
+              <button
+                type="button"
+                className="flex"
+                onClick={() => handleSortToggle("high-to-low")}
+                disabled={switchSide === "high-to-low"}
+                aria-label="Sort high to low"
+                aria-pressed={switchSide === "high-to-low"}
+              >
+                <ArrowDownIcon
+                  className={`w-3 h-3 ${
+                    switchSide === "high-to-low"
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
+                  }`}
+                />
+              </button>
             </div>
             <span className="text-[12px] font-montserrat font-normal text-[#2b2b2b]">
               {switchSide === "high-to-low" ? "High to Low" : "Low to High"}

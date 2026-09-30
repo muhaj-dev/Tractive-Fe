@@ -39,7 +39,10 @@ export const TruckShowCase: React.FC<TruckShowCaseProps> = ({
           ref={scrollContainerRef}
         >
           {images.map((src, index) => (
-            <div
+            <button
+              type="button"
+              aria-label={`Show truck image ${index + 1}`}
+              aria-pressed={index === currentIndex}
               key={index}
               className={`relative flex-shrink-0 w-[150px] sm:w-[200px] md:w-[220px] lg:w-[241px] h-[100px] sm:h-[120px] md:h-[140px] snap-start transition-all duration-200 cursor-pointer rounded-md overflow-hidden ${
                 index === currentIndex
@@ -54,17 +57,18 @@ export const TruckShowCase: React.FC<TruckShowCaseProps> = ({
                 fill
                 className="rounded-md object-cover"
               />
-            </div>
+            </button>
           ))}
         </div>
         {images.length > 1 && (
-          <div
+          <button
+            type="button"
             className="flex-shrink-0 flex items-center justify-center w-8 h-8 bg-[#fefefe] rounded-full cursor-pointer hover:bg-gray-200 transition-colors duration-200"
             onClick={handleNext}
             aria-label="Next truck image"
           >
             <ArrowRightIcon className="w-4 h-4" />
-          </div>
+          </button>
         )}
       </div>
     </div>

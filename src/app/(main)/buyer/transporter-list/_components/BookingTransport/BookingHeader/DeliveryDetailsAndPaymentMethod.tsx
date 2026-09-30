@@ -168,12 +168,19 @@ export const DeliveryDetailsAndPaymentMethod: React.FC<
             Select a Payment Method
           </span>
         </div>
-        <div className="flex flex-col gap-2 sm:gap-3">
+        {/* The native radio inside each card is the keyboard control (Tab in,
+            arrow keys to change); the card click only widens the mouse target.
+            The outline makes that tiny radio's focus visible on the card. */}
+        <div
+          className="flex flex-col gap-2 sm:gap-3"
+          role="radiogroup"
+          aria-label="Payment method"
+        >
           {paymentMethods.map((method) => (
             <div
               key={method.id}
               onClick={() => handlePaymentMethodToggle(method.id)}
-              className={`flex items-center border-[1px] border-[#808080] px-2 sm:px-3 py-2 sm:py-3 cursor-pointer rounded-md transition-colors ${
+              className={`flex items-center border-[1px] border-[#808080] px-2 sm:px-3 py-2 sm:py-3 cursor-pointer rounded-md transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[#538e53] ${
                 selectedPaymentMethod === method.id
                   ? "bg-[#538e53]"
                   : "hover:bg-[#f5f5f5]"
@@ -186,6 +193,7 @@ export const DeliveryDetailsAndPaymentMethod: React.FC<
                   checked={selectedPaymentMethod === method.id}
                   onChange={() => handlePaymentMethodToggle(method.id)}
                   className="custom-radio"
+                  aria-label={method.name}
                 />
               </div>
               <div className="flex items-center gap-1 sm:gap-2 w-[100%]">

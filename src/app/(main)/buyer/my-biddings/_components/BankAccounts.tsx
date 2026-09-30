@@ -96,6 +96,8 @@ export const BankAccounts: React.FC<BankAccountsProps> = ({
                 onKeyDown={
                   selectable
                     ? (event) => {
+                        // Leave keys aimed at the copy button inside alone.
+                        if (event.target !== event.currentTarget) return;
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
                           onSelectBank!(account.bank);
@@ -131,7 +133,9 @@ export const BankAccounts: React.FC<BankAccountsProps> = ({
                       {account.accountNumber}
                     </p>
 
-                    <motion.div
+                    <motion.button
+                      type="button"
+                      aria-label="Copy account number"
                       onMouseEnter={() => setHoverIndex(index)}
                       onMouseLeave={() => setHoverIndex(null)}
                       onClick={() => handleCopy(account.accountNumber, index)}
@@ -194,7 +198,7 @@ export const BankAccounts: React.FC<BankAccountsProps> = ({
                           </motion.div>
                         )}
                       </AnimatePresence>
-                    </motion.div>
+                    </motion.button>
                   </div>
                 </div>
               </div>

@@ -52,9 +52,11 @@ export const LiveChatIpad = ({ onOpen }: Props) => {
         Live Chat
       </h1>
 
-      <div
+      <button
+        type="button"
+        aria-label="Open live chat"
         onClick={onOpen}
-        className="bg-[#f9f9f9] w-[330px] h-[170px] flex flex-col gap-[0.3rem] rounded-[10px] cursor-pointer pt-[20px]"
+        className="text-left bg-[#f9f9f9] w-[330px] h-[170px] flex flex-col gap-[0.3rem] rounded-[10px] cursor-pointer pt-[20px]"
       >
         <AnimatePresence>
           {chatMessages.slice(0, visibleCount).map((msg) => (
@@ -98,7 +100,7 @@ export const LiveChatIpad = ({ onOpen }: Props) => {
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
+      </button>
     </div>
   );
 };

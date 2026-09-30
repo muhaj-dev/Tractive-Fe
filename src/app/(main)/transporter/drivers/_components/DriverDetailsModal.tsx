@@ -134,15 +134,18 @@ export const DriverDetailsModal: React.FC<DriverDetailsModalProps> = ({
                 {truck.images.length > 1 && (
                   <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                     {truck.images.map((img: string, idx: number) => (
-                      <div
+                      <button
+                        type="button"
                         key={idx}
                         onClick={() => setSelectedImageIndex(idx)}
+                        aria-label={`Show fleet image ${idx + 1}`}
+                        aria-pressed={selectedImageIndex === idx}
                         className={`relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
                           selectedImageIndex === idx ? "border-[#538e53] scale-95" : "border-transparent opacity-60 hover:opacity-100"
                         }`}
                       >
                         <Image src={img} alt={`Fleet thumb ${idx + 1}`} fill className="object-cover" />
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}

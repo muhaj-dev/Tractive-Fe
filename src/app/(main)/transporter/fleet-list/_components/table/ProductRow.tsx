@@ -115,6 +115,17 @@ export const ProductRow: React.FC<ProductRowProps> = ({
       animate="visible"
       transition={{ delay: index * 0.1 }}
       onClick={handleClick}
+      tabIndex={0}
+      role="button"
+      onKeyDown={(e) => {
+        // Only when the row itself has focus, so Enter on a control inside the
+        // row does not also open it.
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onRowClick?.(fleet);
+        }
+      }}
     >
       <td className="py-2.5 pl-4 border-y border-l border-gray-200 rounded-l-[8px]">
         <div className="flex items-center gap-2">

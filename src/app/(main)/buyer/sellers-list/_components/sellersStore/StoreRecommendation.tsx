@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { RecommendationProduct } from "@/services/productService";
 
 // Map product names to local fallback images
@@ -36,7 +36,6 @@ const getProductImage = (name: string, index: number): string => {
 };
 
 export const StoreRecommendation = ({ recommendations = [], isLoading = false }: { recommendations?: RecommendationProduct[], isLoading?: boolean }) => {
-  const router = useRouter();
 
   return (
     <div className="flex flex-col w-full rounded-lg mt-4">
@@ -51,10 +50,10 @@ export const StoreRecommendation = ({ recommendations = [], isLoading = false }:
             ))
           ) : recommendations.length > 0 ? (
             recommendations.slice(0, 6).map((product: RecommendationProduct, index: number) => (
-              <div
+              <Link
                 key={product.id || product._id}
-                onClick={() => router.push(`/buyer/product/${product.id || product._id}`)}
-                className="cursor-pointer transition-transform hover:scale-105 rounded-lg overflow-hidden"
+                href={`/buyer/product/${product.id || product._id}`}
+                className="block cursor-pointer transition-transform hover:scale-105 rounded-lg overflow-hidden"
               >
                 <div
                   className="w-full aspect-[2/1] bg-cover bg-center relative"
@@ -65,7 +64,7 @@ export const StoreRecommendation = ({ recommendations = [], isLoading = false }:
                     {product.name}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))
           ) : (
             <p className="text-gray-500 text-sm font-montserrat col-span-full py-4 text-center">

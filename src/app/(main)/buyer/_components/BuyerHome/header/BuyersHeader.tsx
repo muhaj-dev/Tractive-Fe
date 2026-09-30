@@ -139,7 +139,12 @@ export const BuyersHeader: React.FC = () => {
       <div className="flex items-center gap-[0.15rem] mb-2">
         {quickAccessPath.map((item, index) => (
           <React.Fragment key={index}>
-            <span
+            <button
+              type="button"
+              disabled={index === quickAccessPath.length - 1}
+              aria-current={
+                index === quickAccessPath.length - 1 ? "page" : undefined
+              }
               className={`cursor-pointer text-[#2B2B2B] text-[0.6rem] sm:text-[0.7rem] md:text-[0.89rem] font-normal ${
                 index === quickAccessPath.length - 1
                   ? "pointer-events-none text-[#2B2B2B]" // Disable click on the current item
@@ -148,7 +153,7 @@ export const BuyersHeader: React.FC = () => {
               onClick={() => handlePathItemClick(item)}
             >
               {item}
-            </span>
+            </button>
             {index < quickAccessPath.length - 1 && (
               <svg
                 xmlns="http://www.w3.org/2000/svg"

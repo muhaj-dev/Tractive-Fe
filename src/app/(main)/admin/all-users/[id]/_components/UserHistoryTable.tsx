@@ -84,6 +84,21 @@ export const UserHistoryTable: React.FC<UserHistoryTableProps> = ({
               animate="visible"
               transition={{ delay: Math.min(index * 0.03, 0.3) }}
               onClick={onRowClick ? () => onRowClick(item) : undefined}
+              tabIndex={onRowClick ? 0 : undefined}
+              role={onRowClick ? "button" : undefined}
+              onKeyDown={
+                onRowClick
+                  ? (e) => {
+                    // Only when the row itself has focus, so Enter on a control inside the
+                    // row does not also open it.
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onRowClick(item);
+                    }
+                  }
+                  : undefined
+              }
             >
               {columns.map((col) => {
                 const raw = col.render ? col.render(item) : "—";

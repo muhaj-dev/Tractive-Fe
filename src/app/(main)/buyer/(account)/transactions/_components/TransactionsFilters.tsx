@@ -98,30 +98,36 @@ export const TransactionsFilters: React.FC<Props> = ({
                 exit="closed"
                 transition={{ duration: 0.2 }}
               >
-                <div
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selectedYear === ""}
                   onClick={() => {
                     onYearChange("");
                     setIsYearOpen(false);
                   }}
-                  className={`px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 ${
+                  className={`block w-full text-left px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#538e53] ${
                     selectedYear === "" ? "bg-gray-200" : ""
                   }`}
                 >
                   Year
-                </div>
+                </button>
                 {YEARS.map((y) => (
-                  <div
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={selectedYear === String(y)}
                     key={y}
                     onClick={() => {
                       onYearChange(String(y));
                       setIsYearOpen(false);
                     }}
-                    className={`px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 ${
+                    className={`block w-full text-left px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#538e53] ${
                       selectedYear === String(y) ? "bg-gray-200" : ""
                     }`}
                   >
                     {y}
-                  </div>
+                  </button>
                 ))}
               </motion.div>
             )}
@@ -156,30 +162,36 @@ export const TransactionsFilters: React.FC<Props> = ({
                 exit="closed"
                 transition={{ duration: 0.2 }}
               >
-                <div
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selectedMonth === ""}
                   onClick={() => {
                     onMonthChange("");
                     setIsMonthOpen(false);
                   }}
-                  className={`px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 ${
+                  className={`block w-full text-left px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#538e53] ${
                     selectedMonth === "" ? "bg-gray-200" : ""
                   }`}
                 >
                   Month
-                </div>
+                </button>
                 {MONTHS.map((m) => (
-                  <div
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={selectedMonth === m}
                     key={m}
                     onClick={() => {
                       onMonthChange(m);
                       setIsMonthOpen(false);
                     }}
-                    className={`px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 ${
+                    className={`block w-full text-left px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#538e53] ${
                       selectedMonth === m ? "bg-gray-200" : ""
                     }`}
                   >
                     {m}
-                  </div>
+                  </button>
                 ))}
               </motion.div>
             )}

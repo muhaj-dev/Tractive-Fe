@@ -210,9 +210,25 @@ export const FilterSeller: React.FC<FilterSellerProps> = ({
                 Filter by Rating
               </span>
               {openRating ? (
-                <ArrowUpIcon onClick={handleRatingToggle} />
+                <button
+                  type="button"
+                  onClick={handleRatingToggle}
+                  aria-label="Filter by rating"
+                  aria-expanded={true}
+                  className="flex cursor-pointer"
+                >
+                  <ArrowUpIcon />
+                </button>
               ) : (
-                <ArrowDownIcon onClick={handleRatingToggle} />
+                <button
+                  type="button"
+                  onClick={handleRatingToggle}
+                  aria-label="Filter by rating"
+                  aria-expanded={false}
+                  className="flex cursor-pointer"
+                >
+                  <ArrowDownIcon />
+                </button>
               )}
             </div>
             <AnimatePresence>
@@ -225,7 +241,9 @@ export const FilterSeller: React.FC<FilterSellerProps> = ({
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                 >
                   {ratings.map((rating) => (
-                    <div
+                    <button
+                      type="button"
+                      aria-pressed={pendingRatings.includes(rating)}
                       key={rating}
                       className={`flex items-center justify-center gap-1 border-[1.5px] border-[#808080] py-2 rounded-[4px] cursor-pointer ${
                         pendingRatings.includes(rating)
@@ -241,7 +259,7 @@ export const FilterSeller: React.FC<FilterSellerProps> = ({
                       <span className="font-montserrat text-[10.5px] font-normal">
                         Rating
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </motion.div>
               )}
@@ -255,9 +273,25 @@ export const FilterSeller: React.FC<FilterSellerProps> = ({
                 Filter by Location
               </span>
               {openLocation ? (
-                <ArrowUpIcon onClick={handleLocationToggle} />
+                <button
+                  type="button"
+                  onClick={handleLocationToggle}
+                  aria-label="Filter by location"
+                  aria-expanded={true}
+                  className="flex cursor-pointer"
+                >
+                  <ArrowUpIcon />
+                </button>
               ) : (
-                <ArrowDownIcon onClick={handleLocationToggle} />
+                <button
+                  type="button"
+                  onClick={handleLocationToggle}
+                  aria-label="Filter by location"
+                  aria-expanded={false}
+                  className="flex cursor-pointer"
+                >
+                  <ArrowDownIcon />
+                </button>
               )}
             </div>
             <AnimatePresence>
@@ -270,7 +304,9 @@ export const FilterSeller: React.FC<FilterSellerProps> = ({
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                 >
                   {locations.map((location) => (
-                    <div
+                    <button
+                      type="button"
+                      aria-pressed={pendingLocations.includes(location)}
                       key={location}
                       className={`flex items-center gap-1 py-2 pl-1.5 rounded-[4px] w-[90%] cursor-pointer ${
                         pendingLocations.includes(location)
@@ -282,7 +318,7 @@ export const FilterSeller: React.FC<FilterSellerProps> = ({
                       <span className="font-montserrat text-[10px] sm:text-[10.5px] font-normal">
                         {location}
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </motion.div>
               )}
@@ -296,9 +332,25 @@ export const FilterSeller: React.FC<FilterSellerProps> = ({
                 Filter by Years
               </span>
               {openYears ? (
-                <ArrowUpIcon onClick={handleYearsToggle} />
+                <button
+                  type="button"
+                  onClick={handleYearsToggle}
+                  aria-label="Filter by years"
+                  aria-expanded={true}
+                  className="flex cursor-pointer"
+                >
+                  <ArrowUpIcon />
+                </button>
               ) : (
-                <ArrowDownIcon onClick={handleYearsToggle} />
+                <button
+                  type="button"
+                  onClick={handleYearsToggle}
+                  aria-label="Filter by years"
+                  aria-expanded={false}
+                  className="flex cursor-pointer"
+                >
+                  <ArrowDownIcon />
+                </button>
               )}
             </div>
             <AnimatePresence>

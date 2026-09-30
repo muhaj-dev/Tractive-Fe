@@ -182,32 +182,34 @@ export const FarmerList: React.FC<FarmerListProps> = ({
                       animate="open"
                       exit="closed"
                     >
-                      <div
+                      <button
+                        type="button"
                         onClick={() => {
                           onYearChange("");
                           setIsYearOpen(false);
                         }}
-                        className={`px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 ${
+                        className={`block w-full text-left px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#538e53] ${
                           !filters.year ? "bg-gray-200" : ""
                         }`}
                       >
                         All Years
-                      </div>
+                      </button>
                       {years.map((year) => (
-                        <div
+                        <button
+                          type="button"
                           key={year}
                           onClick={() => {
                             onYearChange(year.toString());
                             setIsYearOpen(false);
                           }}
-                          className={`px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 ${
+                          className={`block w-full text-left px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#538e53] ${
                             filters.year === year.toString()
                               ? "bg-gray-200"
                               : ""
                           }`}
                         >
                           {year}
-                        </div>
+                        </button>
                       ))}
                     </motion.div>
                   )}
@@ -233,19 +235,21 @@ export const FarmerList: React.FC<FarmerListProps> = ({
                       animate="open"
                       exit="closed"
                     >
-                      <div
+                      <button
+                        type="button"
                         onClick={() => {
                           onMonthChange("");
                           setIsMonthOpen(false);
                         }}
-                        className={`px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 ${
+                        className={`block w-full text-left px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#538e53] ${
                           !filters.month ? "bg-gray-200" : ""
                         }`}
                       >
                         All Months
-                      </div>
+                      </button>
                       {months.map((month, index) => (
-                        <div
+                        <button
+                          type="button"
                           key={month}
                           onClick={() => {
                             // API expects integer month probably? Or just month number string.
@@ -253,14 +257,14 @@ export const FarmerList: React.FC<FarmerListProps> = ({
                             onMonthChange((index + 1).toString());
                             setIsMonthOpen(false);
                           }}
-                          className={`px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 ${
+                          className={`block w-full text-left px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#538e53] ${
                             filters.month === (index + 1).toString()
                               ? "bg-gray-200"
                               : ""
                           }`}
                         >
                           {month}
-                        </div>
+                        </button>
                       ))}
                     </motion.div>
                   )}

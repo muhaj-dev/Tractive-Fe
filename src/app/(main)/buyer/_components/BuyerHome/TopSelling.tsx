@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useGetTopSellingProducts } from "@/hooks/queries/useProductQueries";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { TopSellingProduct } from "@/services/productService";
 import Image from "next/image";
 
@@ -38,7 +38,6 @@ const getProductImage = (name: string, index: number): string => {
 
 
 export const TopSelling: React.FC = () => {
-  const router = useRouter();
   const { data: topSellingResponse, isLoading } = useGetTopSellingProducts();
   const topSelling = topSellingResponse?.data || [];
 
@@ -55,10 +54,10 @@ export const TopSelling: React.FC = () => {
             ))
           ) : topSelling.length > 0 ? (
             topSelling.slice(0, 6).map((product: TopSellingProduct, index: number) => (
-              <div
+              <Link
                 key={product.productId}
-                onClick={() => router.push(`/buyer/product/${product.productId}`)}
-                className="cursor-pointer transition-transform hover:scale-105 rounded-lg overflow-hidden"
+                href={`/buyer/product/${product.productId}`}
+                className="block cursor-pointer transition-transform hover:scale-105 rounded-lg overflow-hidden"
               >
                 <div
                   className="w-full aspect-[2/1] bg-cover bg-center relative"
@@ -69,7 +68,7 @@ export const TopSelling: React.FC = () => {
                     {product.name}
                   </span>
                 </div>
-              </div>
+              </Link>
               
             ))
           ) : (

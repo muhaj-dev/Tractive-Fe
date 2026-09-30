@@ -142,7 +142,10 @@ export default function AddAccountPage() {
               const isSelected = selectedRole === role.id;
 
               return (
-                <div
+                <button
+                  type="button"
+                  disabled={isOwned}
+                  aria-pressed={isSelected}
                   key={role.id}
                   onClick={() => !isOwned && setSelectedRole(role.id)}
                   className={`
@@ -169,7 +172,7 @@ export default function AddAccountPage() {
                       Already Exist
                     </div>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>

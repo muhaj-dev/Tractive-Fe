@@ -115,7 +115,10 @@ export const ImgShowCase: React.FC<ImgShowCaseProps> = ({
           ref={scrollContainerRef}
         >
           {mediaItems.map((item, index) => (
-            <div
+            <button
+              type="button"
+              aria-label={`Show ${item.type === "video" ? "video" : "image"} ${index + 1}`}
+              aria-pressed={index === currentIndex}
               key={index}
               className={`flex-shrink-0 w-[100px] sm:w-[150px] md:w-[180px] snap-start transition-all duration-200 cursor-pointer ${
                 index === currentIndex
@@ -141,16 +144,17 @@ export const ImgShowCase: React.FC<ImgShowCaseProps> = ({
                     className="w-full h-[60px] sm:h-[100px] object-cover"
                   />
               )}
-            </div>
+            </button>
           ))}
         </div>
-        <div
+        <button
+          type="button"
           className="flex-shrink-0 flex items-center justify-center w-8 h-8 bg-[#fefefe] rounded-full cursor-pointer hover:bg-gray-200 transition-colors duration-200 shadow-md"
           onClick={handleNext}
           aria-label="Next content"
         >
           <ArrowRightIcon className="w-4 h-4" />
-        </div>
+        </button>
       </div>
     </div>
   );

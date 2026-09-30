@@ -106,12 +106,14 @@ export const TransportInfoAndPackageProduct = ({ order }: Props) => {
               <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 p-2 bg-[#cce5cc] rounded-full cursor-pointer">
                 <MessageFill />
               </div>
-              <div
+              <button
+                type="button"
+                aria-label="Call transporter"
                 className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 p-2 bg-[#cce5cc] rounded-full cursor-pointer"
                 onClick={openModal}
               >
                 <PhoneCallFill />
-              </div>
+              </button>
             </div>
             {t.yearsOfService > 0 && (
               <div className="flex items-center gap-0.5">

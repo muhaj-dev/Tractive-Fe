@@ -443,8 +443,21 @@ export const BiddersModal: React.FC<BiddersModalProps> = ({
                           return (
                             <div
                               key={bidder.id}
-                              className="flex items-center px-6 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
+                              className="flex items-center px-6 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus-visible:bg-gray-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#538e53]"
                               onClick={() => setSelectedBidder(bidder)}
+                              // The row holds its own action button, so it
+                              // stays a div but is made keyboard-operable.
+                              // Keys pressed on that inner button are left to it.
+                              role="button"
+                              tabIndex={0}
+                              aria-label={`View bid from ${bidder?.bidderName || "bidder"}`}
+                              onKeyDown={(e) => {
+                                if (e.target !== e.currentTarget) return;
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  setSelectedBidder(bidder);
+                                }
+                              }}
                             >
                               {/* Name & Avatar */}
                               <div className="w-1/5 flex items-center gap-3">

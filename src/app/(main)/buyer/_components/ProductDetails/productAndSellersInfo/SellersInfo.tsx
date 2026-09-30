@@ -276,15 +276,16 @@ export const SellersInfo: React.FC<SellersInfoProps> = ({ owner, onRefresh }) =>
           );
         })()}
         
-        <div
-          className="cursor-pointer flex text-[#538e53] items-center justify-end gap-[4px]"
+        <button
+          type="button"
+          className="w-full cursor-pointer flex text-[#538e53] items-center justify-end gap-[4px]"
           onClick={handleSeeMore}
         >
           <span className="font-montserrat font-normal text-[12px] text-[#538e53]">
             See more
           </span>
           <ArrowRightIcon stroke="#538e53" className="w-4 h-4" />
-        </div>
+        </button>
         {/* Conditionally render Reviews component with animation */}
         <AnimatePresence>
           {seeMore && (

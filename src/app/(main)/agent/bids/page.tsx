@@ -307,16 +307,17 @@ const BidsListPage: React.FC = () => {
                       >
                         {/* Options */}
                         {years.map((y) => (
-                          <div
+                          <button
+                            type="button"
                             key={y}
                             onClick={() => {
                               setSelectedYear(String(y));
                               setIsYearOpen(false);
                             }}
-                            className="px-3 py-1 hover:bg-gray-100 cursor-pointer"
+                            className="block w-full text-left px-3 py-1 hover:bg-gray-100 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
                           >
                             {y}
-                          </div>
+                          </button>
                         ))}
                       </motion.div>
                     )}
@@ -348,16 +349,17 @@ const BidsListPage: React.FC = () => {
                         exit="closed"
                       >
                         {months.map((m) => (
-                          <div
+                          <button
+                            type="button"
                             key={m}
                             onClick={() => {
                               setSelectedMonth(m);
                               setIsMonthOpen(false);
                             }}
-                            className="px-3 py-1 hover:bg-gray-100 cursor-pointer text-sm"
+                            className="block w-full text-left px-3 py-1 hover:bg-gray-100 cursor-pointer text-sm focus-visible:outline-2 focus-visible:outline-[#538e53]"
                           >
                             {m}
-                          </div>
+                          </button>
                         ))}
                       </motion.div>
                     )}

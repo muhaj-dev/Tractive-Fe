@@ -203,10 +203,11 @@ export const CreateBidModal: React.FC<CreateBidModalProps> = ({
                 {showResults && searchResults.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto z-50">
                     {searchResults.map((prod) => (
-                      <div
+                      <button
+                        type="button"
                         key={prod.id}
                         onClick={() => handleSelectProduct(prod)}
-                        className="px-4 py-2 hover:bg-gray-50 cursor-pointer flex flex-col border-b border-gray-50 last:border-none"
+                        className="w-full text-left px-4 py-2 hover:bg-gray-50 cursor-pointer flex flex-col border-b border-gray-50 last:border-none"
                       >
                         <span className="font-medium text-sm text-[#2b2b2b]">
                           {prod.name}
@@ -215,7 +216,7 @@ export const CreateBidModal: React.FC<CreateBidModalProps> = ({
                           Qty: {prod?.quantity} • Price: ₦
                           {prod?.price?.toLocaleString()}
                         </span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}

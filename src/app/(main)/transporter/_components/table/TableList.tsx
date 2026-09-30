@@ -183,6 +183,21 @@ export const TableList = <T extends BaseData>({
               initial="hidden"
               animate="visible"
               transition={{ delay: index * 0.1 }}
+              // The data cells open the details on click; give the row the
+              // keyboard equivalent.
+              tabIndex={handleViewDetails ? 0 : undefined}
+              role={handleViewDetails ? "button" : undefined}
+              onKeyDown={
+                handleViewDetails
+                  ? (e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleViewDetails(item.id);
+                      }
+                    }
+                  : undefined
+              }
             >
               {isCheckboxTable && (
                 <td className="py-2.5 pl-4 border-y border-l border-gray-200 rounded-l-[8px] whitespace-nowrap">

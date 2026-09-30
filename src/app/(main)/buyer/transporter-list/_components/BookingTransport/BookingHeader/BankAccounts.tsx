@@ -86,7 +86,9 @@ export const BankAccounts = () => {
                       {account.accountNumber}
                     </p>
 
-                    <motion.div
+                    <motion.button
+                      type="button"
+                      aria-label="Copy account number"
                       onMouseEnter={() => setHoverIndex(index)}
                       onMouseLeave={() => setHoverIndex(null)}
                       onClick={() => handleCopy(account.accountNumber, index)}
@@ -149,7 +151,7 @@ export const BankAccounts = () => {
                           </motion.div>
                         )}
                       </AnimatePresence>
-                    </motion.div>
+                    </motion.button>
                   </div>
                 </div>
               </div>

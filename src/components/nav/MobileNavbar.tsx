@@ -159,8 +159,10 @@ export const MobileNavbar = () => {
               <div className="flex flex-col gap-[1rem]">
                 {/* User Info and Dropdown */}
                 <div className="relative" ref={profileRef}>
-                  <div
-                    className="flex items-center justify-between gap-2 cursor-pointer bg-[#f1f1f1] p-1.5 rounded-[4px] hover:bg-[#f6f6f6] transition"
+                  <button
+                    type="button"
+                    aria-expanded={isDropdownOpen}
+                    className="w-full flex items-center justify-between gap-2 cursor-pointer bg-[#f1f1f1] p-1.5 rounded-[4px] hover:bg-[#f6f6f6] transition"
                     onClick={handleUserDropdownClick}
                   >
                     <div className="flex items-center gap-1">
@@ -189,7 +191,7 @@ export const MobileNavbar = () => {
                         d="M19 9l-7 7-7-7"
                       />
                     </svg>
-                  </div>
+                  </button>
                   {isDropdownOpen && (
                     <ProfileDropDown onLogout={handleLogout} />
                   )}

@@ -460,8 +460,11 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
                             : "border-[#2b2b2b] focus:border-[#538e53]"
                         }`}
                       />
-                      <div
-                        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                      <button
+                        type="button"
+                        aria-label={isFarmerOpen ? "Hide farmers" : "Show farmers"}
+                        aria-expanded={isFarmerOpen}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
                         onClick={() => setIsFarmerOpen(!isFarmerOpen)}
                       >
                         {isFarmerOpen ? (
@@ -469,7 +472,7 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
                         ) : (
                           <ArrowDownIcon className="w-4 h-4" />
                         )}
-                      </div>
+                      </button>
                     </div>
 
                     {isFarmerOpen && (
@@ -488,13 +491,14 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
                           </div>
                         ) : (
                           filteredFarmers.map((farmer) => (
-                            <div
+                            <button
+                              type="button"
                               key={farmer.id}
                               onClick={() => handleFarmerSelect(farmer.id)}
-                              className={`px-3 py-2 text-sm font-normal font-montserrat hover:bg-[#f1f1f1] cursor-pointer ${selectedFarmerId === farmer.id ? "bg-[#f1f1f1]" : ""}`}
+                              className={`block w-full text-left px-3 py-2 text-sm font-normal font-montserrat hover:bg-[#f1f1f1] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53] ${selectedFarmerId === farmer.id ? "bg-[#f1f1f1]" : ""}`}
                             >
                               {farmer.name} ({farmer.mobile})
-                            </div>
+                            </button>
                           ))
                         )}
                       </div>
@@ -540,9 +544,11 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
                     ref={categoryDropdownRef}
                     className="relative w-full md:w-1/2"
                   >
-                    <div
+                    <button
+                      type="button"
+                      aria-expanded={isCategoryOpen}
                       onClick={() => setIsCategoryOpen((prev) => !prev)}
-                      className={`flex items-center justify-between w-full border rounded px-3 py-2 cursor-pointer bg-white ${
+                      className={`flex items-center justify-between w-full border rounded px-3 py-2 cursor-pointer bg-white focus-visible:outline-2 focus-visible:outline-[#538e53] ${
                         errors.category ? "border-red-500" : "border-[#2b2b2b]"
                       }`}
                     >
@@ -554,17 +560,18 @@ export const AddToStore: React.FC<AddToStoreProps> = ({ isOpen, onClose }) => {
                       ) : (
                         <ArrowDownIcon className="w-4 h-4" />
                       )}
-                    </div>
+                    </button>
                     {isCategoryOpen && (
                       <div className="absolute z-10 w-full bg-[#fefefe] border border-[#2b2b2b] rounded mt-1 max-h-[200px] overflow-y-auto shadow-lg">
                         {categories.map((category) => (
-                          <div
+                          <button
+                            type="button"
                             key={category}
                             onClick={() => handleCategorySelect(category)}
-                            className="px-3 py-2 text-sm font-normal text-[#2b2b2b] font-montserrat hover:bg-[#f1f1f1] cursor-pointer"
+                            className="block w-full text-left px-3 py-2 text-sm font-normal text-[#2b2b2b] font-montserrat hover:bg-[#f1f1f1] cursor-pointer focus-visible:outline-2 focus-visible:outline-[#538e53]"
                           >
                             {category}
-                          </div>
+                          </button>
                         ))}
                       </div>
                     )}

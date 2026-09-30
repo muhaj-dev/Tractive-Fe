@@ -20,12 +20,13 @@ export const MobileCookiesAgTechLiveChat = ({ onOpen }: Props) => {
                 Connecting farmers, buyers and transporters
               </p>
             </div>
-            <p
+            <button
+              type="button"
               onClick={onOpen}
               className="z-10 text-[#f9f9f9] text-right pr-6 font-montserrat font-normal text-[12px] leading-[25px] cursor-pointer"
             >
               Customer Service 24/7
-            </p>
+            </button>
           </div>
           <div className="z-0 flex flex-col items-start justify-start w-[200px] absolute bottom-0 left-0 right-0">
             <Image

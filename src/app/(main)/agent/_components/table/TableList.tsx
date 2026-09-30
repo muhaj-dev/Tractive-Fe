@@ -177,6 +177,21 @@ export const TableList = <T extends BaseData>({
               animate="visible"
               transition={{ delay: index * 0.1 }}
               onClick={() => handleView && handleView(item.id)}
+              tabIndex={handleView ? 0 : undefined}
+              role={handleView ? "button" : undefined}
+              onKeyDown={
+                handleView
+                  ? (e) => {
+                    // Only when the row itself has focus, so Enter on a control inside the
+                    // row does not also open it.
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleView(item.id);
+                    }
+                  }
+                  : undefined
+              }
             >
               {isProductTable && (
                 <td

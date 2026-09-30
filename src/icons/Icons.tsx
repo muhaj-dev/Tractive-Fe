@@ -347,8 +347,11 @@ export const WishIcon = ({ title }: WishIconProps) => {
   };
 
   return (
-    <div
-      className="absolute top-2 right-2 bg-[#ffffff80] rounded-full p-1 cursor-pointer hover:scale-110 transition-transform"
+    <button
+      type="button"
+      aria-label={title}
+      aria-pressed={isWished(title)}
+      className="absolute top-2 right-2 bg-[#ffffff80] rounded-full p-1 cursor-pointer hover:scale-110 transition-transform focus-visible:outline-2 focus-visible:outline-[#538e53]"
       onClick={handleWishToggle}
     >
       <svg
@@ -366,7 +369,7 @@ export const WishIcon = ({ title }: WishIconProps) => {
           strokeLinejoin="round"
         />
       </svg>
-    </div>
+    </button>
   );
 };
 
@@ -385,6 +388,17 @@ export const WishIcon1 = ({ title, className = "" }: WishIconProps) => {
       viewBox="0 0 22 21"
       fill={isWished(title) ? "#2A942A" : "none"}
       onClick={handleWishToggle}
+      // An svg has no button semantics; give it the keyboard path a click has.
+      role="button"
+      tabIndex={0}
+      aria-label={title}
+      aria-pressed={isWished(title)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          handleWishToggle();
+        }
+      }}
       className={className}
     >
       <path

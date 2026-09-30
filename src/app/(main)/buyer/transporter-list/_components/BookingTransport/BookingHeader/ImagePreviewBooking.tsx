@@ -118,7 +118,10 @@ export const ImagePreviewBooking: React.FC<ImagePreviewBookingProps> = ({
             <div className="flex items-center">
               {steps.map((step, index) => (
                 <React.Fragment key={index}>
-                  <span
+                  <button
+                    type="button"
+                    aria-label={step}
+                    aria-current={index + 1 === currentStep ? "step" : undefined}
                     className={`relative rounded-full w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 transition-colors flex items-center justify-center cursor-pointer ${
                       index + 1 <= currentStep
                         ? "bg-[#538e53] border-2 border-[#538e53]"
@@ -130,7 +133,7 @@ export const ImagePreviewBooking: React.FC<ImagePreviewBookingProps> = ({
                     {index + 1 <= currentStep && (
                       <FaCheck className="w-1.5 h-1.5 sm:w-2 sm:h-2 text-white" />
                     )}
-                  </span>
+                  </button>
                   {index < steps.length - 1 && (
                     <span
                       className={`w-4 h-[2px] sm:w-5 sm:h-[2px] transition-colors ${

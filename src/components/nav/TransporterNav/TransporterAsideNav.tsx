@@ -283,9 +283,10 @@ export const TransporterAsideNav = () => {
         </div>
         <ul className="mb-[2rem]">
           <li>
-            <div
+            <button
+              type="button"
               onClick={handleLogout}
-              className={`flex items-center gap-3 py-2 px-4 rounded-md hover:bg-[#f1f1f1] transition-colors duration-200 lg:flex-row flex-col cursor-pointer`}
+              className={`w-full flex items-center gap-3 py-2 px-4 rounded-md hover:bg-[#f1f1f1] transition-colors duration-200 lg:flex-row flex-col cursor-pointer`}
             >
               <LogoutIcon />
               <div className="flex items-center gap-3">
@@ -293,7 +294,7 @@ export const TransporterAsideNav = () => {
                   Logout
                 </span>
               </div>
-            </div>
+            </button>
           </li>
         </ul>
       </div>

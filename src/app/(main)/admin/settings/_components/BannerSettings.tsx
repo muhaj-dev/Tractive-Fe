@@ -122,6 +122,17 @@ export const BannerSettings = () => {
                 <tr
                   key={banner.id}
                   onClick={() => setViewing(banner)}
+                  tabIndex={0}
+                  role="button"
+                  onKeyDown={(e) => {
+                    // Only when the row itself has focus, so Enter on a control inside the
+                    // row does not also open it.
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setViewing(banner);
+                    }
+                  }}
                   className="cursor-pointer border-b border-gray-100 hover:bg-[#f9f9f9] transition-colors"
                 >
                   <td className="py-3 px-3 max-w-[280px]">
