@@ -130,8 +130,10 @@ api.interceptors.response.use(
     }
 
     // Handle other errors gracefully
-    if (error.response?.status === 500) {
-      toast.error("Server error. Please try again later.");
+    if (error.response?.status === 500 && !originalRequest?.silentServerError) {
+      // One id for every 500: several requests (or a retry) failing together
+      // update the same toast instead of stacking copies of it.
+      toast.error("Server error. Please try again later.", { id: "server-error" });
     }
 
     return Promise.reject(error);

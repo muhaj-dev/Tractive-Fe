@@ -221,28 +221,10 @@ export const farmerService = {
       }
 
       const mappedFarmer = mapBackendToFrontendFarmer(createdFarmer);
-      toast.success("Farmer onboarded successfully!");
       return mappedFarmer;
     } catch (error) {
+      // The mutation hook shows the one toast; this only logs and rethrows.
       console.error("❌ Error creating farmer:", error);
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        const message = error.response?.data?.error || error.message;
-
-        if (status === 400) {
-          toast.error(`Invalid data: ${message}`);
-        } else if (status === 401) {
-          toast.error("Authentication failed. Please log in again.");
-        } else if (status === 403) {
-          toast.error("You don't have permission to create farmers.");
-        } else {
-          toast.error(`Failed to create farmer: ${message}`);
-        }
-      } else {
-        toast.error(
-          error.message || "Failed to create farmer. Please try again.",
-        );
-      }
       throw error;
     }
   },
@@ -311,30 +293,10 @@ export const farmerService = {
       }
 
       const mappedFarmer = mapBackendToFrontendFarmer(updatedFarmer);
-      toast.success("Farmer updated successfully!");
       return mappedFarmer;
     } catch (error) {
+      // The mutation hook shows the one toast; this only logs and rethrows.
       console.error(`❌ Error updating farmer ${id}:`, error);
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        const message = error.response?.data?.error || error.message;
-
-        if (status === 400) {
-          toast.error(`Invalid data: ${message}`);
-        } else if (status === 404) {
-          toast.error("Farmer not found.");
-        } else if (status === 401) {
-          toast.error("Authentication failed. Please log in again.");
-        } else if (status === 403) {
-          toast.error("You don't have permission to update farmers.");
-        } else {
-          toast.error(`Failed to update farmer: ${message}`);
-        }
-      } else {
-        toast.error(
-          error.message || "Failed to update farmer. Please try again.",
-        );
-      }
       throw error;
     }
   },
@@ -345,27 +307,9 @@ export const farmerService = {
 
       await api.delete(`/api/farmers/${id}`);
 
-      toast.success("Farmer deleted successfully!");
     } catch (error) {
+      // The mutation hook shows the one toast; this only logs and rethrows.
       console.error("❌ Error deleting farmer:", error);
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        const message = error.response?.data?.error || error.message;
-
-        if (status === 404) {
-          toast.error("Farmer not found.");
-        } else if (status === 401) {
-          toast.error("Authentication failed. Please log in again.");
-        } else if (status === 403) {
-          toast.error("You don't have permission to delete farmers.");
-        } else {
-          toast.error(`Failed to delete farmer: ${message}`);
-        }
-      } else {
-        toast.error(
-          error.message || "Failed to delete farmer. Please try again.",
-        );
-      }
       throw error;
     }
   },

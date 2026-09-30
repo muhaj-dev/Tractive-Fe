@@ -65,8 +65,10 @@ export const useCreateFarmer = () => {
       queryClient.invalidateQueries({ queryKey: farmerKeys.lists() });
       toast.success("Farmer onboarded successfully!");
     },
-    onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
+    onError: (error: { response?: { data?: { message?: string; error?: string } }; message?: string }) => {
       const message =
+        // The farmers API reports failures as { error: "..." }.
+        error?.response?.data?.error ||
         error?.response?.data?.message ||
         error?.message ||
         "Failed to create farmer";
@@ -106,8 +108,10 @@ export const useUpdateFarmer = () => {
 
       toast.success("Farmer updated successfully!");
     },
-    onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
+    onError: (error: { response?: { data?: { message?: string; error?: string } }; message?: string }) => {
       const message =
+        // The farmers API reports failures as { error: "..." }.
+        error?.response?.data?.error ||
         error?.response?.data?.message ||
         error?.message ||
         "Failed to update farmer";
@@ -146,8 +150,10 @@ export const useDeleteFarmer = () => {
 
       toast.success("Farmer deleted successfully!");
     },
-    onError: (error: { response?: { data?: { message?: string } }; message?: string }) => {
+    onError: (error: { response?: { data?: { message?: string; error?: string } }; message?: string }) => {
       const message =
+        // The farmers API reports failures as { error: "..." }.
+        error?.response?.data?.error ||
         error?.response?.data?.message ||
         error?.message ||
         "Failed to delete farmer";

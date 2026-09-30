@@ -8,6 +8,7 @@ import { AddToStoreIcon, CalenderIcon } from "@/icons/DashboardIcons";
 import { FleetTable } from "./table/FleetTable";
 import AddFleet from "../../_components/AddFleet";
 import { ViewFleetModal } from "../../_components/ViewFleetModal";
+import { DeleteConfirmationModal } from "@/app/(main)/agent/farmers/_components/DeleteConfirmationModal";
 import { Fleet } from "@/utils/Fleet";
 import { useGetFleets, useDeleteFleet, useUpdateFleetStatus } from "@/hooks/queries/useFleetQueries";
 import { GetFleetsParams } from "@/services/fleetService";
@@ -129,14 +130,18 @@ export const AllTransit: React.FC = () => {
   }, []);
 
   // Mutations
-  const { mutate: deleteFleet } = useDeleteFleet();
+  const { mutate: deleteFleet, isPending: isDeleting } = useDeleteFleet();
   const { mutate: updateFleetStatus } = useUpdateFleetStatus();
+  const [fleetToDelete, setFleetToDelete] = useState<string | null>(null);
 
-  // Handle delete fleet
+  // Handle delete fleet — asks first in the app's own dialog, not window.confirm
   const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this fleet?")) {
-      deleteFleet(id);
-    }
+    setFleetToDelete(id);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!fleetToDelete) return;
+    deleteFleet(fleetToDelete, { onSuccess: () => setFleetToDelete(null) });
   };
 
   // Handle edit fleet
@@ -202,6 +207,15 @@ export const AllTransit: React.FC = () => {
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
         fleet={selectedFleet}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={!!fleetToDelete}
+        onClose={() => !isDeleting && setFleetToDelete(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Fleet"
+        message="Are you sure you want to delete this fleet? This action cannot be undone."
+        isLoading={isDeleting}
       />
 
       <div className="w-full bg-[#FAF7F7] mt-4 py-4">

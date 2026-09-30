@@ -329,6 +329,7 @@ export const useDeleteProduct = () => {
     onSuccess: () => {
       // Reconcile tab counts / pagination totals with the server.
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      toast.success("Product deleted");
     },
   });
 };
