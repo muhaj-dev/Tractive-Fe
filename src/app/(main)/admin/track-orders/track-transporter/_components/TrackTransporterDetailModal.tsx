@@ -2,6 +2,7 @@
 
 import React, { useRef } from "react";
 import Image from "next/image";
+import { UserAvatar } from "@/components/UserAvatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { XModalIcon } from "@/app/(main)/transporter/_components/Icons/TransporterIcons";
 import { FleetTripSummary } from "@/services/fleetTripService";
@@ -302,12 +303,10 @@ export const TrackTransporterDetailModal: React.FC<
                     className="rounded-[8px] bg-[#faf7f7] p-3 flex flex-col gap-3"
                   >
                     <div className="flex items-center gap-3">
-                      <Image
+                      <UserAvatar
                         src={buyerImage(b)}
-                        alt={b.name || "Buyer"}
-                        width={40}
-                        height={40}
-                        className="w-10 h-10 rounded-full object-cover"
+                        name={b.name || b.businessName}
+                        size={40}
                       />
                       <span className="font-montserrat text-[13px] font-medium text-[#2b2b2b]">
                         {b.businessName || b.name || "—"}

@@ -214,8 +214,9 @@ export const tripPrimaryPackage = (
   };
 };
 
-export const buyerImage = (b?: FleetTripBuyer): string =>
-  b?.image || b?.avatar || "/images/profileSettingImage.png";
+/** The buyer's real photo, or undefined so the caller shows their initials. */
+export const buyerImage = (b?: FleetTripBuyer): string | undefined =>
+  b?.image || b?.avatar || undefined;
 
 /** Resolve the trip's origin/destination from explicit fields or the fleet route. */
 export const tripRoute = (

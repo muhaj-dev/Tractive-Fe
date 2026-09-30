@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { CurrentUserAvatar } from "@/components/CurrentUserAvatar";
 import React, { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -166,13 +167,7 @@ export const AgentProfileNavbar = () => {
                   className="flex items-center gap-2 cursor-pointer bg-[#f1f1f1] p-1.5 rounded-[4px] hover:bg-[#f6f6f6] transition"
                   onClick={handleUserDropdownClick}
                 >
-                  <Image
-                    src="/images/profile_image.png" // Replace with user-uploaded image if available
-                    alt="Profile"
-                    width={27}
-                    height={27}
-                    className="rounded-full"
-                  />
+                  <CurrentUserAvatar size={27} />
                   <span className="text-[#2b2b2b] hidden lg:block text-[0.89rem] font-normal">
                     {user?.name}
                   </span>

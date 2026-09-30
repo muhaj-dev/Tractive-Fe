@@ -32,7 +32,6 @@ export const Recommendation = () => {
               title={product.name}
               description={`${product.quantity} ${formatUnitAfterQuantity(product.unit, product.quantity) || 'units'} available from ${product.owner?.name || product.farmer?.name || 'Seller'}`}
               crownImage="/images/leadingcrown.png"
-              leadingProfileImage={product.owner?.image || "/images/sellersProfiles.png"}
               quantity={`${product.quantity} ${formatUnitAfterQuantity(product.unit, product.quantity) || 'units'}`}
               amount={formatCurrency(product.price)}
               // The list price, not a bid. Labelled as the starting price.

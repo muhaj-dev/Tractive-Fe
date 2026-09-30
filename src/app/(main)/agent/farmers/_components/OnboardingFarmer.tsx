@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
+import { UserAvatar } from "@/components/UserAvatar";
 import { XModalIcon } from "../../_components/Icons/AgentIcons";
 import { FarmerFormFields } from "./FarmerFormFields";
 import { useModalA11y } from "@/hooks/useModalA11y";
@@ -46,12 +46,10 @@ export const OnboardingFarmers: React.FC<OnboardingFarmersProps> = ({
     state: "",
     lga: "",
     localMarket: "",
-    image: "/images/farmer_modal_profile.png",
+    image: "",
   });
 
-  const [image, setImage] = useState<string>(
-    "/images/farmer_modal_profile.png",
-  );
+  const [image, setImage] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,9 +65,9 @@ export const OnboardingFarmers: React.FC<OnboardingFarmersProps> = ({
         state: editFarmer.state || "",
         lga: editFarmer.lga || "",
         localMarket: editFarmer.localMarket || "",
-        image: editFarmer.image || "/images/farmer_modal_profile.png",
+        image: editFarmer.image || "",
       });
-      setImage(editFarmer.image || "/images/farmer_modal_profile.png");
+      setImage(editFarmer.image || "");
     } else if (isOpen && !editFarmer) {
       // Reset for new farmer
       resetForm();
@@ -97,9 +95,9 @@ export const OnboardingFarmers: React.FC<OnboardingFarmersProps> = ({
       state: "",
       lga: "",
       localMarket: "",
-      image: "/images/farmer_modal_profile.png",
+      image: "",
     });
-    setImage("/images/farmer_modal_profile.png");
+    setImage("");
     setErrors({});
   };
 
@@ -233,12 +231,12 @@ export const OnboardingFarmers: React.FC<OnboardingFarmersProps> = ({
         {/* Profile Image */}
         <div className="flex justify-center mb-4">
           <div className="relative w-16 h-16 md:w-20 md:h-20 group">
-            <Image
+            {/* No photo yet: the typed name's initials, never a stock portrait. */}
+            <UserAvatar
               src={image}
-              alt="Farmer profile"
-              width={80}
-              height={80}
-              className="w-full h-full rounded-full object-cover border-2 border-gray-300"
+              name={formData.name.trim() || undefined}
+              className="w-full h-full border-2 border-gray-300"
+              initialsSize={22}
             />
             <>
               <div className="absolute inset-0 bg-[#2b2b2b] bg-opacity-50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">

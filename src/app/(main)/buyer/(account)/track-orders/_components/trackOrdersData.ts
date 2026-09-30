@@ -18,7 +18,8 @@ export interface TrackOrder {
     name: string;
     logo: string;
     rating: number;
-    avatar: string;
+    /** Real photo only — undefined shows the transporter's initials. */
+    avatar?: string;
     company: string;
     location: string;
     yearsOfService: number;
@@ -214,12 +215,10 @@ export const orderToTrackOrder = (raw: OrderRecord): TrackOrder => {
         : NA,
       rating: asNumber(transporter.rating, 0),
       avatar: hasTransporter
-        ? firstString(
-            transporter.avatar,
-            transporter.image,
-            "/images/profileSettingImage.png",
-          )
-        : "/images/profileSettingImage.png",
+        ? asString(transporter.avatar, "") ||
+          asString(transporter.image, "") ||
+          undefined
+        : undefined,
       // Strictly the business name — no fallback to the personal name, so the
       // line stays empty until a real businessName exists, then shows on its own.
       company: hasTransporter

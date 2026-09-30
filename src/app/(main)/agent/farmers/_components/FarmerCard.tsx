@@ -1,5 +1,5 @@
 import React from "react";
-import Image from "next/image";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Farmer } from "@/services/FarmerService";
 
 interface FarmerCardProps {
@@ -11,12 +11,10 @@ export const FarmerCard: React.FC<FarmerCardProps> = ({ farmer, onEdit }) => {
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
       <div className="flex items-center gap-3 mb-3">
-        <Image
+        <UserAvatar
           src={farmer.image}
-          alt={farmer.name}
-          width={40}
-          height={40}
-          className="rounded-full w-10 h-10 object-cover"
+          name={farmer.name !== "-" ? farmer.name : undefined}
+          size={40}
         />
         <div>
           <h3 className="font-medium text-gray-900">{farmer.name}</h3>

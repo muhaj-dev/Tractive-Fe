@@ -1,7 +1,7 @@
 "use client";
 import React, { useRef } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
+import { UserAvatar } from "@/components/UserAvatar";
 import { XModalIcon } from "../../_components/Icons/AgentIcons"; // Adjust path if needed
 import { Farmer } from "@/services/FarmerService";
 import { useModalA11y } from "@/hooks/useModalA11y";
@@ -101,12 +101,11 @@ export const FarmerDetailModal: React.FC<FarmerDetailModalProps> = ({
 
           <div className="flex justify-center mb-3">
             <div className="w-24 h-24 rounded-full border-4 border-white/30 overflow-hidden bg-white">
-              <Image
-                src={farmer.image || "/images/farmer_modal_profile.png"}
-                alt={farmer.name}
-                width={96}
-                height={96}
-                className="w-full h-full object-cover"
+              <UserAvatar
+                src={farmer.image}
+                name={farmer.name !== "-" ? farmer.name : undefined}
+                className="w-full h-full"
+                initialsSize={30}
               />
             </div>
           </div>

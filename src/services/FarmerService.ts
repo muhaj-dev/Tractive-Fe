@@ -84,7 +84,9 @@ export const mapBackendToFrontendFarmer = (
     date: backendFarmer.createdAt
       ? new Date(backendFarmer.createdAt).toLocaleDateString()
       : new Date().toLocaleDateString(),
-    image: "/images/farmer_modal_profile.png",
+    // The farmers API returns no photo, so there is none to show — the list
+    // falls back to the farmer's initials, never a stock portrait.
+    image: "",
     // Preserve other fields for editing
     businessName: backendFarmer.businessName,
     businessCAC: backendFarmer.businessCAC,

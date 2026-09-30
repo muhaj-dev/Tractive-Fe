@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
+import { UserAvatar } from "@/components/UserAvatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowDownIcon, ArrowUpIcon, SearchIcon } from "@/icons/Icons";
 import { AddToStoreIcon, CalenderIcon } from "@/icons/DashboardIcons";
@@ -22,12 +23,11 @@ const farmerColumns: ColumnConfig<Farmer>[] = [
     minWidth: "min-w-[150px]",
     render: (farmer) => (
       <div className="flex items-center gap-2">
-        <Image
+        <UserAvatar
           src={farmer.image}
-          alt={farmer.name}
-          width={25}
-          height={25}
-          className="rounded-full w-[25px] h-[25px] sm:w-[35px] sm:h-[35px] object-cover"
+          name={farmer.name !== "-" ? farmer.name : undefined}
+          className="w-[25px] h-[25px] sm:w-[35px] sm:h-[35px]"
+          initialsSize={11}
         />
         <span className="text-[10px] sm:text-[11px] md:text-[12px] lg:text-[13px] font-normal font-montserrat text-[#2b2b2b]">
           {farmer.name}

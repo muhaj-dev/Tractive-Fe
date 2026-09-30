@@ -118,7 +118,6 @@ export const Biding = () => {
                   description={product.description}
                   timeImage="/images/redclock.png"
                   crownImage="/images/leadingcrown.png"
-                  leadingProfileImage="/images/leadingProfileImage.png"
                   quantity={`${product.quantity} ${formatUnitAfterQuantity(product.unit, product.quantity) || "Units"}`}
                   amount={formattedPrice}
                   biddingPrice="" // Hide price beside view button

@@ -1,10 +1,10 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import { CurrentUserAvatar } from "@/components/CurrentUserAvatar";
 import { SwapIcon } from "@/icons/Icon1";
 import { useSwitchRole } from "@/hooks/queries/useUserQueries";
 import { getApiError } from "@/utils/apiError";
@@ -176,13 +176,7 @@ export const AccountMenu = ({
                       className="flex items-center justify-between gap-1 p-1 rounded cursor-pointer hover:bg-[#f5f5f5] transition-colors w-full disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <div className="flex items-center gap-1">
-                        <Image
-                          src="/images/profile_image.png"
-                          alt=""
-                          width={25}
-                          height={25}
-                          className="rounded-full"
-                        />
+                        <CurrentUserAvatar size={25} />
                         <div className="flex flex-col items-start">
                           <span className="block text-[10px] text-[#2b2b2b] font-medium text-left">
                             {config.displayName}

@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { CurrentUserAvatar } from "@/components/CurrentUserAvatar";
 import React, { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -166,13 +167,7 @@ export const MobileNavbar = () => {
                     onClick={handleUserDropdownClick}
                   >
                     <div className="flex items-center gap-1">
-                      <Image
-                        src="/images/profile_image.png" // Replace with user-uploaded image if available
-                        alt="Profile"
-                        width={27}
-                        height={27}
-                        className="rounded-full"
-                      />
+                      <CurrentUserAvatar size={27} />
                       <span className="text-[#2b2b2b] text-[0.89rem] font-normal">
                         {user?.name}
                       </span>

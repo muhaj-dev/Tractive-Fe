@@ -44,7 +44,6 @@ export const SimilarProduct: React.FC<SimilarProductProps> = ({ productId }) => 
             title={product.name}
             description={product.description}
             crownImage="/images/leadingcrown.png"
-            leadingProfileImage="/images/leadingProfileImage.png"
             quantity={product.quantity ? `${product.quantity} ${formatUnitAfterQuantity(product.unit, product.quantity) || 'Units'}` : 'N/A'}
             amount={`₦${product.price.toLocaleString()}`}
             // The list price, not a bid. Labelled as the starting price.

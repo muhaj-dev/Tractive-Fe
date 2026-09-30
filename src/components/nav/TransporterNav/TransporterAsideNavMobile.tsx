@@ -15,7 +15,7 @@ import {
   Profile2UserIcon,
 } from "../../../icons/DashboardIcons";
 import { ArrowDownIcon, ArrowUpIcon } from "../../../icons/Icons";
-import Image from "next/image";
+import { CurrentUserAvatar } from "@/components/CurrentUserAvatar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useState, useEffect, useRef } from "react";
@@ -211,13 +211,7 @@ export const TransporterAsideNavMobile = ({
               className="flex items-center gap-2"
               onClick={handleUserDropdownClick}
             >
-              <Image
-                src="/images/profile_image.png"
-                alt="Profile"
-                width={32}
-                height={32}
-                className="rounded-full"
-              />
+              <CurrentUserAvatar size={32} />
               <div className="flex flex-col">
                 <span className="text-[#fefefe] text-[0.8rem] text-left font-normal">
                   {user.name}

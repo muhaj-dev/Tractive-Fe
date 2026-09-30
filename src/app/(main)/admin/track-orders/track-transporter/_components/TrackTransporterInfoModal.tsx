@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import Image from "next/image";
+import { UserAvatar } from "@/components/UserAvatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useModalA11y } from "@/hooks/useModalA11y";
 import { XModalIcon } from "@/app/(main)/transporter/_components/Icons/TransporterIcons";
@@ -43,12 +44,10 @@ const Field: React.FC<{ label: string; value?: string | null }> = ({
 const BuyerCard: React.FC<{ buyer: FleetTripBuyer }> = ({ buyer }) => (
   <div className="flex flex-col gap-3 rounded-[10px] border border-[#e0e0e0] p-4">
     <div className="flex items-center gap-3">
-      <Image
+      <UserAvatar
         src={buyerImage(buyer)}
-        alt={buyer.name || "Buyer"}
-        width={44}
-        height={44}
-        className="w-11 h-11 rounded-full object-cover"
+        name={buyer.name || buyer.businessName}
+        size={44}
       />
       <span className="font-montserrat text-[14px] font-medium text-[#2b2b2b]">
         {buyer.businessName || buyer.name || "—"}

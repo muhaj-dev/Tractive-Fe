@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Avatar } from "@/components/ui/Avatar";
+import { UserAvatar } from "@/components/UserAvatar";
 import {
   PhoneCallFill,
   MessageFill,
@@ -49,11 +49,10 @@ export const TransporterInfoPanel: React.FC<Props> = ({ order }) => {
       <p className="self-start font-montserrat text-[11px] text-[#808080]">
         Transporters info
       </p>
-      <Avatar
+      <UserAvatar
         src={t.avatar}
-        alt={t.company}
+        name={t.id ? t.name : undefined}
         size={48}
-        className="rounded-full w-12 h-12 object-cover"
       />
       <span className="font-montserrat font-medium text-[14px] text-[#2b2b2b]">
         {t.name}
