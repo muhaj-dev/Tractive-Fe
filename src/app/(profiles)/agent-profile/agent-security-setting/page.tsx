@@ -72,6 +72,7 @@ const SecuritySetting = () => {
   return (
     <div className="w-[100%] bg-[#fefefe] flex flex-col items-center shadow-md rounded-[4px] pt-[4rem]">
       <form
+        method="post"
         onSubmit={handleSubmit}
         className="flex flex-col justify-center gap-4 py-6 w-[90%] max-w-[500px]"
       >

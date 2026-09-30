@@ -99,6 +99,7 @@ export default function Signup() {
             </h1>
 
             <form
+              method="post"
               onSubmit={handleSubmit(onSubmit)}
               className="flex flex-col gap-3 pb-10"
             >
@@ -156,12 +157,14 @@ export default function Signup() {
                   placeholder="xxxxxxxxx"
                   className="font-montserrat w-full py-2 px-3 pr-10 rounded-md border border-[#ccc] text-[12px] text-[#808080] placeholder-[#808080] focus:outline-none focus:ring-[0.1px] focus:ring-[#538e53] focus:border-[#538e53]"
                 />
-                <div
+                <button
+                  type="button"
                   className="absolute top-[36px] right-3 cursor-pointer text-[#808080]"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <FaEye /> : <FaEyeSlash />}
-                </div>
+                </button>
                 {errors.password && (
                   <p className="text-red-500 text-xs mt-1">
                     {errors.password.message}

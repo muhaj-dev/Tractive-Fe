@@ -12,6 +12,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { LoginSchema, LoginSchemaType } from "../../../schemas/LoginSchema";
 import { Button } from "../../../components/Button";
+import { useEmailUser } from "../../../hooks/userEmailContext";
+import { resendOtpCode } from "../../../utils/signupAuth";
+
+// `POST /api/auth/login` answers 403 { error: "Please verify your email before
+// logging in." } for an unverified account. NextAuth passes only that string
+// through to signIn(), so the message text is the only way to tell this case
+// apart from a wrong password.
+const isUnverifiedError = (message: string) => /verify your email/i.test(message);
 
 const Spinner = () => (
   <div className="w-4 h-4 border-4 border-b-2 border-[#a0dfa0] border-t-[#538e53] rounded-full animate-spin" />
@@ -31,11 +39,15 @@ function Login() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { setEmail } = useEmailUser();
 
   // Redirect if already authenticated
   useEffect(() => {
     if (session?.user) {
-        const redirect = searchParams.get("redirect");
+        // `redirect` comes from the API client after a 401; `callbackUrl` is what
+        // the middleware adds when a logged-out user opens a protected link.
+        const redirect =
+          searchParams.get("redirect") ?? searchParams.get("callbackUrl");
         const isSafeInternalPath =
           !!redirect &&
           redirect.startsWith("/") &&
@@ -79,6 +91,17 @@ function Login() {
     }
   }, [justVerified]);
 
+  // Sent here by the API client after a 401 it could not recover from.
+  const sessionExpired = searchParams.get("reason") === "session-expired";
+  useEffect(() => {
+    if (sessionExpired) {
+      toast.info("Your session has expired. Please log in again to continue.", {
+        id: "session-expired",
+        duration: 8000,
+      });
+    }
+  }, [sessionExpired]);
+
   const onSubmit = async (data: LoginSchemaType) => {
     setLoading(true);
     const toastId = toast.loading("Logging in...");
@@ -109,6 +132,16 @@ function Login() {
         duration: 5000,
         position: "top-center",
       });
+
+      // Unverified account: send a fresh code and take them to the page where
+      // it can be entered. /email-confirmation reads the address from the
+      // email context, the same way signup hands it over.
+      if (isUnverifiedError(err.message || "")) {
+        setEmail(data.email);
+        await resendOtpCode(data.email);
+        router.push("/email-confirmation");
+        return;
+      }
       setLoading(false);
     }
   };
@@ -141,6 +174,7 @@ function Login() {
           </h1>
 
           <form
+            method="post"
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-3 pb-10"
           >
@@ -179,12 +213,14 @@ function Login() {
                 placeholder="xxxxxxxxx"
                 className="w-full py-2 px-3 pr-10 rounded-md border border-[#ccc] text-[12px] text-[#808080] placeholder-[#808080] focus:outline-none focus:ring-[0.1px] focus:ring-[#538e53] focus:border-[#538e53]"
               />
-              <div
+              <button
+                type="button"
                 className="absolute top-[36px] right-3 cursor-pointer text-[#808080]"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <FaEye /> : <FaEyeSlash />}
-              </div>
+              </button>
               {errors.password && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors.password.message}

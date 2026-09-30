@@ -31,7 +31,12 @@ interface VerifyResponse {
   user?: StoredUser;
 }
 
+/** `POST /api/auth/resend-verification` answers `{ ok, resent, emailSent,
+ * message }` (verified against the live API 30 Sep 2026). `success` is kept in
+ * case an older deployment still sends it. */
 interface ResendResponse {
+  ok?: boolean;
+  resent?: boolean;
   success?: boolean;
   message?: string;
 }
@@ -202,11 +207,11 @@ export const resendOtpCode = async (
       { email },
     );
 
-    const { success, message } = response.data;
+    const { ok, resent, success, message } = response.data;
 
     toast.dismiss(toastId);
 
-    if (success) {
+    if (ok || resent || success) {
       toast.success(message || "Code resent successfully!");
       return { success: true, message };
     } else {

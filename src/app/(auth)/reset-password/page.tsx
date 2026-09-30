@@ -77,7 +77,7 @@ function ResetPassword() {
             </h1>
             <div className="hidden lg:flex w-[80px] h-[70px] mx-auto items-center justify-center">
               <Image
-                src="/images/Lock.png"
+                src="/images/lock.png"
                 alt="Lock"
                 width={127}
                 height={127}
@@ -87,6 +87,7 @@ function ResetPassword() {
           </div>
 
           <form
+            method="post"
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-6 pb-10"
           >
@@ -108,12 +109,14 @@ function ResetPassword() {
                 } text-[13px] text-[#808080] placeholder-[#808080] placeholder:text-[12px] focus:outline-none focus:ring-[0.1px] focus:ring-[#538e53] focus:border-[#538e53]`}
                 disabled={isLoading}
               />
-              <div
+              <button
+                type="button"
                 className="absolute top-[36px] right-3 cursor-pointer text-[#808080]"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <FaEye /> : <FaEyeSlash />}
-              </div>
+              </button>
               {errors.password && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors.password.message}
@@ -139,12 +142,14 @@ function ResetPassword() {
                 } text-[13px] text-[#808080] placeholder-[#808080] placeholder:text-[12px] focus:outline-none focus:ring-[0.1px] focus:ring-[#538e53] focus:border-[#538e53]`}
                 disabled={isLoading}
               />
-              <div
+              <button
+                type="button"
                 className="absolute top-[36px] right-3 cursor-pointer text-[#808080]"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
               >
                 {showConfirmPassword ? <FaEye /> : <FaEyeSlash />}
-              </div>
+              </button>
               {errors.confirmPassword && (
                 <p className="text-red-500 text-xs mt-1">
                   {errors.confirmPassword.message}

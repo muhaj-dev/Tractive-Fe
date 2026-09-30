@@ -79,14 +79,8 @@ export default function EmailVerification() {
     setResending(true);
 
     try {
-      const result = await resendOtpCode(email);
-
-      if (result.success) {
-        toast.success("Code resent successfully!");
-      } else {
-        toast.error(result.message || "Failed to resend code");
-      }
-
+      // resendOtpCode shows its own success/error toast.
+      await resendOtpCode(email);
       setOtp(""); // Clear current OTP input
     } catch (err) {
       console.error("Resend error:", err);
@@ -169,7 +163,8 @@ export default function EmailVerification() {
             <div className="mt-3">
               <p className="text-[13px] text-center font-montserrat text-[#2b2b2b] font-normal">
                 I didn&apos;t receive any code.{" "}
-                <span
+                <button
+                  type="button"
                   className={`text-[#538e53] ${
                     !resending && !loading
                       ? "cursor-pointer hover:underline"
@@ -178,9 +173,10 @@ export default function EmailVerification() {
                   onClick={
                     !resending && !loading ? handleResendCode : undefined
                   }
+                  disabled={resending || loading}
                 >
                   {resending ? "Resending..." : "Resend"}
-                </span>
+                </button>
               </p>
             </div>
           </div>
