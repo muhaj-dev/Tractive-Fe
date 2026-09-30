@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { anchoredMenuStyle } from "@/utils/menuPosition";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThreeDotIcon } from "../../fleet-list/_components/table/ActionMenu";
 import { TransportActionMenuProps } from "../../_components/TransportActionMenuProps";
@@ -15,10 +16,10 @@ export const DriverActionMenu: React.FC<TransportActionMenuProps> = ({
 }) => {
   const isActive = activeMenu === driverId;
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [menuPosition, setMenuPosition] = useState<{
-    top: number;
-    left: number;
-  }>({ top: 0, left: 0 });
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({
+    top: 0,
+    left: 0,
+  });
 
   useEffect(() => {
     // Update position if window resizes or scrolls (optional, but good for fixed pos)
@@ -66,11 +67,9 @@ export const DriverActionMenu: React.FC<TransportActionMenuProps> = ({
       setActiveMenu(null);
     } else {
       if (buttonRef.current) {
-        const rect = buttonRef.current.getBoundingClientRect();
-        setMenuPosition({
-          top: rect.bottom + 5, // 5px gap
-          left: rect.left - 100, // Shift left to align (dropdown width approx 120px)
-        });
+        setMenuStyle(
+          anchoredMenuStyle(buttonRef.current, { width: 130, estHeight: 150, gap: 5 }),
+        );
       }
       setActiveMenu(driverId);
     }
@@ -96,7 +95,7 @@ export const DriverActionMenu: React.FC<TransportActionMenuProps> = ({
         createPortal(
           <div
             className="fixed z-[9999]"
-            style={{ top: menuPosition.top, left: menuPosition.left }}
+            style={menuStyle}
             onMouseDown={(e) => e.stopPropagation()} // Prevent closing when clicking inside menu
           >
             <AnimatePresence>

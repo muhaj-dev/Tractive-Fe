@@ -19,25 +19,25 @@ const howToItems: HowToItem[] = [
     title: "How to sell on Agric Tech",
     image: "/images/AgricTech.png",
     alt: "Sell Agric tech",
-    link: "/help-center/how-to-sell-on-agric-tech",
+    link: "/about-us/help-center/how-to-sell-on-agric-tech",
   },
   {
     title: "Payment and order",
     image: "/images/PaymentOrder.png",
     alt: "Payment and order",
-    link: "/help-center/payment-and-order",
+    link: "/about-us/help-center/payment-and-order",
   },
   {
     title: "How to register as a transporter",
     image: "/images/TransporterReg.png",
     alt: "Transporter Registration",
-    link: "/help-center/how-to-register-as-a-transporter",
+    link: "/about-us/help-center/how-to-register-as-a-transporter",
   },
   {
     title: "How to buy on Agric tech",
     image: "/images/AgricTechCart.png",
     alt: "Buy on Agric tech",
-    link: "/help-center/how-to-buy-on-agric-tech",
+    link: "/about-us/help-center/how-to-buy-on-agric-tech",
   },
 ];
 

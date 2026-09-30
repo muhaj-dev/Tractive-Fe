@@ -3,14 +3,15 @@ import Link from "next/link";
 import React from "react";
 
 interface OfficialStoreProps {
-  id: string; // Add id prop to link to specific seller
+  /** Selected subcategory. Not a seller id; the banner links to the sellers list. */
+  id: string;
 }
 
 export const OfficialStore: React.FC<OfficialStoreProps> = ({ id }) => {
   return (
     <div className="shadow-md rounded-[10px] bg-[#F1F8F1B2] w-[100%]">
       <Link
-        href={`/sellers-list/${id}`}
+        href="/buyer/sellers-list"
         className="mt-6 rounded-[5px] shadow-md block"
       >
         <div className="flex items-center justify-center w-full gap-2 rounded-tr-[7px] rounded-tl-[7px] bg-[#F1F8F1B2] py-4 px-4">

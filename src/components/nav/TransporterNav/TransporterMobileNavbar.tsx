@@ -26,7 +26,7 @@ export const TransporterMobileNavbar = () => {
   const navItems = [
     { href: "/", label: "Home" },
     { href: "/about-us", label: "About Us" },
-    { href: "/contact-us", label: "Contact Us" },
+    { href: "/about-us/help-center", label: "Contact Us" },
   ];
 
   useEffect(() => {

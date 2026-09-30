@@ -64,7 +64,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({
     setError(null);
 
     try {
-      const response = await CustomerService.initiateChat(customer.id, {
+      await CustomerService.initiateChat(customer.id, {
         subject: subject.trim(),
         message: message.trim(),
       });
@@ -73,7 +73,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({
 
       // Wait a moment to show success, then redirect
       setTimeout(() => {
-        router.push(`/chat/${response.chatId}`);
+        router.push("/agent/chat");
         onClose();
       }, 1000);
     } catch (err) {

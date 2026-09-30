@@ -2,6 +2,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
+import { anchoredMenuStyle } from "@/utils/menuPosition";
 import { DeleteConfirmationModal } from "../../../farmers/_components/DeleteConfirmationModal";
 
 // Animation variants for dropdown
@@ -95,17 +96,10 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     setActiveMenu(null);
   };
 
-  const getMenuPosition = () => {
-    if (!buttonRef.current) return { top: 0, left: 0 };
-    const rect = buttonRef.current.getBoundingClientRect();
-    return {
-      top: rect.bottom + window.scrollY + 8,
-      left: rect.right - 140,
-    };
-  };
-
-  const menuPos =
-    activeMenu === productId ? getMenuPosition() : { top: 0, left: 0 };
+  const menuStyle =
+    activeMenu === productId && buttonRef.current
+      ? anchoredMenuStyle(buttonRef.current, { width: 140, estHeight: 140 })
+      : { top: 0, left: 0 };
 
   return (
     <>
@@ -130,10 +124,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
                 <motion.div
                   ref={dropdownRef}
                   className="fixed z-999 w-[140px] px-1 bg-[#fefefe] rounded-[5px] shadow-xl border border-[#e0e0e0]"
-                  style={{
-                    top: menuPos.top - window.scrollY,
-                    left: menuPos.left,
-                  }}
+                  style={menuStyle}
                   variants={dropdownVariants}
                   initial="hidden"
                   animate="visible"

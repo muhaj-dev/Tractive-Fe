@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
+import { anchoredMenuStyle } from "@/utils/menuPosition";
 
 // Animation variants for dropdown
 const dropdownVariants = {
@@ -87,16 +88,11 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     { label: "On Transit", value: "on_transit" },
   ];
 
-  const getMenuPosition = () => {
-    if (!buttonRef.current) return { top: 0, left: 0 };
-    const rect = buttonRef.current.getBoundingClientRect();
-    return {
-      top: rect.bottom + 8,
-      left: rect.right - 140, // 140px accommodates the menu width
-    };
-  };
-
-  const menuPos = isOpen ? getMenuPosition() : { top: 0, left: 0 };
+  // Up to five items (tracking, two status changes, edit, delete).
+  const menuStyle =
+    isOpen && buttonRef.current
+      ? anchoredMenuStyle(buttonRef.current, { width: 140, estHeight: 200 })
+      : { top: 0, left: 0 };
 
   return (
     <div id={`menu-${productId}`} ref={menuRef} className="relative">
@@ -119,10 +115,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             <motion.div
               ref={dropdownRef}
               className="fixed z-999 w-[140px] py-2 px-1 bg-[#fefefe] rounded-[5px] shadow-lg flex flex-col gap-1 border border-[#e0e0e0]"
-              style={{
-                top: menuPos.top,
-                left: menuPos.left,
-              }}
+              style={menuStyle}
               variants={dropdownVariants}
               initial="hidden"
               animate="visible"

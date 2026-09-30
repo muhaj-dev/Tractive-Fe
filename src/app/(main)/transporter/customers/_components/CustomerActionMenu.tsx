@@ -51,7 +51,7 @@ export const CustomerActionMenu: React.FC<TransportActionMenuProps> = ({
             transition={{ duration: 0.2 }}
           >
             <Link
-              href={`/chat/${driverId}`}
+              href="/transporter/chat"
               className="block w-full text-left px-2 text-[12px] font-montserrat text-[#2b2b2b] hover:bg-gray-100"
             >
               Chat

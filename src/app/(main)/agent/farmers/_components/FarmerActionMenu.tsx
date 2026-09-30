@@ -6,6 +6,7 @@ import { ThreeDotIcon } from "../../produce-list/_components/table/ActionMenu";
 import { useDeleteFarmer } from "@/hooks/queries/useFarmerQueries";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { createPortal } from "react-dom";
+import { anchoredMenuStyle } from "@/utils/menuPosition";
 
 export interface FarmerActionMenuProps extends ActionMenuProps {
   handleView?: (id: string) => void;
@@ -54,16 +55,10 @@ export const FarmerActionMenu: React.FC<FarmerActionMenuProps> = ({
     }
   };
 
-  const getMenuPosition = () => {
-    if (!buttonRef.current) return { top: 0, left: 0 };
-    const rect = buttonRef.current.getBoundingClientRect();
-    return {
-      top: rect.bottom + window.scrollY + 8,
-      left: rect.right - 140, // 140 is the min-width of the menu
-    };
-  };
-
-  const menuPos = isActive ? getMenuPosition() : { top: 0, left: 0 };
+  const menuStyle =
+    isActive && buttonRef.current
+      ? anchoredMenuStyle(buttonRef.current, { width: 140, estHeight: 140 })
+      : { top: 0, left: 0 };
 
   return (
     <>
@@ -83,10 +78,7 @@ export const FarmerActionMenu: React.FC<FarmerActionMenuProps> = ({
               {isActive && (
                 <motion.div
                   className="fixed w-[140px] py-1 px-1 bg-[#fefefe] rounded-[5px] shadow-lg pointer-events-auto z-[999]"
-                  style={{
-                    top: menuPos.top - window.scrollY,
-                    left: menuPos.left,
-                  }}
+                  style={menuStyle}
                   variants={menuVariants}
                   initial="hidden"
                   animate="visible"

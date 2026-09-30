@@ -32,7 +32,7 @@ export const CustomerActionMenu: React.FC<ActionMenuProps> = ({
   };
 
   const handleChatClick = () => {
-    router.push(`/chat/${productId}`);
+    router.push("/agent/chat");
     setActiveMenu(null);
   };
 
