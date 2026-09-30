@@ -2,7 +2,9 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Avatar } from "@/components/ui/Avatar";
+import dynamic from "next/dynamic";
+import { UserAvatar } from "@/components/UserAvatar";
+import NoLiveLocation from "@/components/tracking/NoLiveLocation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { PhoneCall, TickIcon, XModalIcon } from "./Icons/TransporterIcons";
@@ -29,8 +31,18 @@ import {
   normalizeTripStatus,
   tripEffectiveStatus,
   tripCurrentCoords,
+  tripFleetName,
   tripRoute,
 } from "./tripHelpers";
+
+// Leaflet touches `window` at import time, so it must skip SSR.
+const LiveTrackingMap = dynamic(
+  () => import("@/components/tracking/LiveTrackingMap"),
+  {
+    ssr: false,
+    loading: () => <div className="w-full h-full bg-[#f1f1f1] animate-pulse" />,
+  },
+);
 
 /* --- Map + lifecycle timeline (matches DummyTrackingPanel) --------------- */
 
@@ -47,18 +59,22 @@ const TripMapTimeline: React.FC<{
 
   return (
     <div className="w-full h-fit flex flex-col gap-4 bg-[#fefefe] rounded-[10px] shadow-md">
-      <div className="relative">
-        <Image
-          src="/images/trackingMap.png"
-          alt="Map"
-          width={699}
-          height={508}
-          className={`object-cover w-full h-auto rounded-t-[10px] ${
-            compact ? "max-h-[220px]" : "max-h-[400px] sm:max-h-[500px]"
-          }`}
-        />
+      <div
+        className={`relative isolate w-full overflow-hidden rounded-t-[10px] ${
+          compact ? "h-[220px]" : "h-[300px] sm:h-[400px]"
+        }`}
+      >
+        {coords ? (
+          <LiveTrackingMap
+            lat={coords.lat}
+            lng={coords.lng}
+            label={tripFleetName(data)}
+          />
+        ) : (
+          <NoLiveLocation from={from} to={to} />
+        )}
         {coords && (
-          <span className="absolute bottom-2 left-2 bg-[#2b2b2bcc] text-[#fefefe] font-montserrat text-[10px] px-2 py-1 rounded-[4px]">
+          <span className="absolute bottom-2 left-2 z-[400] bg-[#2b2b2bcc] text-[#fefefe] font-montserrat text-[10px] px-2 py-1 rounded-[4px]">
             📍 {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
           </span>
         )}
@@ -144,11 +160,11 @@ const TripMapTimeline: React.FC<{
 
 const BuyerEntry: React.FC<{ buyer: FleetTripBuyer }> = ({ buyer }) => (
   <div className="flex flex-col gap-2 items-center justify-center">
-    <Avatar
+    <UserAvatar
       src={buyerImage(buyer)}
-      alt={buyer.name || "Buyer avatar"}
-      size={40}
-      className="rounded-full object-cover w-10 h-10 sm:w-12 sm:h-12"
+      name={buyer.name || buyer.businessName}
+      className="w-10 h-10 sm:w-12 sm:h-12"
+      initialsSize={15}
     />
     <span className="font-montserrat font-normal text-[13px] sm:text-[14px] text-[#2b2b2b] text-center">
       {buyer.businessName || buyer.name || "—"}

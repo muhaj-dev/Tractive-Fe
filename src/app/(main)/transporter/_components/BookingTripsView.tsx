@@ -105,15 +105,23 @@ const TripCard: React.FC<TripCardProps> = ({
   const delivered = isReached(status, "delivered");
   const pkg = tripPrimaryPackage(trip);
 
+  // Interactive content can't be nested in a <button>, so the select button is
+  // stretched over the whole card and the content ignores pointer events so
+  // clicks fall through to it. "Mark" is a sibling button raised above it.
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`w-full text-left flex flex-col gap-3 border-[2px] p-3 sm:p-4 rounded-[10px] transition-colors cursor-pointer ${
+    <div
+      className={`relative w-full text-left flex flex-col gap-3 border-[2px] p-3 sm:p-4 rounded-[10px] transition-colors cursor-pointer ${
         selected ? "border-[#538e53]" : "border-gray-200 hover:border-[#a8c9a8]"
       }`}
     >
-      <div className="flex flex-col border-[1px] p-3 sm:p-4 rounded-[10px] border-[#538e53]">
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={selected}
+        aria-label={`Show trip details: ${tripFleetName(trip)}, ${pkg.name}`}
+        className="absolute inset-0 w-full rounded-[10px] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#538e53]"
+      />
+      <div className="pointer-events-none flex flex-col border-[1px] p-3 sm:p-4 rounded-[10px] border-[#538e53]">
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
             <TransporterLogo
@@ -128,31 +136,19 @@ const TripCard: React.FC<TripCardProps> = ({
             </div>
           </div>
           {next && (
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isAdvancing) onAdvance();
-              }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if ((e.key === "Enter" || e.key === " ") && !isAdvancing) {
-                  e.stopPropagation();
-                  onAdvance();
-                }
-              }}
-              aria-disabled={isAdvancing}
-              className={`cursor-pointer flex items-center gap-[7px] px-4 sm:px-6 py-2 opacity-[0.9] bg-[#538e53] text-[#f9f9f9] text-[12px] sm:text-[13px] lg:text-[14px] font-normal rounded-[4px] transition-colors hover:bg-[#467a46] ${
-                isAdvancing ? "pointer-events-none opacity-60" : ""
-              }`}
+            <button
+              type="button"
+              onClick={onAdvance}
+              disabled={isAdvancing}
+              className="pointer-events-auto relative z-10 cursor-pointer flex items-center gap-[7px] px-4 sm:px-6 py-2 opacity-[0.9] bg-[#538e53] text-[#f9f9f9] text-[12px] sm:text-[13px] lg:text-[14px] font-normal rounded-[4px] transition-colors hover:bg-[#467a46] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#538e53] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isAdvancing ? "Updating…" : `Mark ${next.label}`}
-            </span>
+            </button>
           )}
         </div>
       </div>
 
-      <div className="relative w-[100%] mx-auto h-[40px] sm:h-[50px]">
+      <div className="pointer-events-none relative w-[100%] mx-auto h-[40px] sm:h-[50px]">
         <div className="absolute top-[0.5rem] left-[10%] right-[55%] h-[2px] timeline_dashed_line_1 border-dashed border-[1px] border-[#808080]" />
         <div className="absolute top-[0.5rem] left-[45%] right-[10%] h-[2px] timeline_dashed_line_2 border-dashed border-[1px] border-[#808080]" />
         <div className="absolute left-[5%] top-0 flex flex-col gap-1 justify-center items-center">
@@ -199,7 +195,7 @@ const TripCard: React.FC<TripCardProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-col border-[1px] p-3 sm:p-4 rounded-[10px] border-[#538e53]">
+      <div className="pointer-events-none flex flex-col border-[1px] p-3 sm:p-4 rounded-[10px] border-[#538e53]">
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 min-w-0">
             <div className="flex items-center justify-center w-12 h-8 sm:w-16 sm:h-10 p-2 bg-[#CCE5CC] rounded-[4px]">
@@ -242,7 +238,7 @@ const TripCard: React.FC<TripCardProps> = ({
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 };
 

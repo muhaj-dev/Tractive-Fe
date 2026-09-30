@@ -1,13 +1,13 @@
 "use client";
 import React from "react";
-import Image from "next/image";
 import dynamic from "next/dynamic";
 import { TickIcon } from "@/app/(main)/transporter/_components/Icons/TransporterIcons";
+import NoLiveLocation from "@/components/tracking/NoLiveLocation";
 import { useOrderTracking } from "@/hooks/queries/useOrderQueries";
 import type { TrackOrder } from "./trackOrdersData";
 
 // Leaflet touches `window` at import time, so it must skip SSR.
-const LiveTrackingMap = dynamic(() => import("./LiveTrackingMap"), {
+const LiveTrackingMap = dynamic(() => import("@/components/tracking/LiveTrackingMap"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-[#f1f1f1] animate-pulse rounded-[10px]" />
@@ -49,7 +49,7 @@ export const OrderTrackingMap: React.FC<Props> = ({ order }) => {
 
   return (
     <div className="w-full bg-[#fefefe] rounded-[10px] shadow-md flex flex-col gap-3 overflow-hidden">
-      <div className="relative w-full h-[260px] sm:h-[320px] shrink-0">
+      <div className="relative isolate w-full h-[260px] sm:h-[320px] shrink-0">
         {position ? (
           <LiveTrackingMap
             lat={position.lat}
@@ -59,13 +59,7 @@ export const OrderTrackingMap: React.FC<Props> = ({ order }) => {
             lastUpdatedAt={lastUpdatedAt}
           />
         ) : (
-          <Image
-            src="/images/trackingMap.png"
-            alt="Map"
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover"
-          />
+          <NoLiveLocation from={order.fromLocation} to={order.toLocation} />
         )}
       </div>
 

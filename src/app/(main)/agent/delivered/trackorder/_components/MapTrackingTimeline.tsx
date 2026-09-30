@@ -1,19 +1,16 @@
 "use client";
-import Image from "next/image";
 import dynamic from "next/dynamic";
 import React from "react";
 import { TickIcon } from "../../../_components/Icons/AgentIcons";
+import NoLiveLocation from "@/components/tracking/NoLiveLocation";
 import { useOrderTracking } from "@/hooks/queries/useOrderQueries";
 import type { TrackOrder } from "@/app/(main)/buyer/(account)/track-orders/_components/trackOrdersData";
 import "../TrackOrder.css";
 
-// Leaflet touches `window` at import time, so it must skip SSR. Reuse the
-// buyer track-orders live map so the agent view stays in sync with it.
+// Leaflet touches `window` at import time, so it must skip SSR. Shared with
+// the buyer and transporter views so they all render the same map.
 const LiveTrackingMap = dynamic(
-  () =>
-    import(
-      "@/app/(main)/buyer/(account)/track-orders/_components/LiveTrackingMap"
-    ),
+  () => import("@/components/tracking/LiveTrackingMap"),
   {
     ssr: false,
     loading: () => (
@@ -58,7 +55,7 @@ export const MapTrackingTimeline = ({ order }: Props) => {
 
   return (
     <div className="w-full h-fit flex flex-col gap-4 bg-[#fefefe] rounded-[10px] shadow-md overflow-hidden">
-      <div className="relative w-full h-[300px] sm:h-[400px]">
+      <div className="relative isolate w-full h-[300px] sm:h-[400px]">
         {position ? (
           <LiveTrackingMap
             lat={position.lat}
@@ -68,13 +65,7 @@ export const MapTrackingTimeline = ({ order }: Props) => {
             lastUpdatedAt={lastUpdatedAt}
           />
         ) : (
-          <Image
-            src="/images/trackingMap.png"
-            alt="Map"
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover"
-          />
+          <NoLiveLocation from={order.fromLocation} to={order.toLocation} />
         )}
       </div>
       <div className="relative w-[100%] mx-auto h-[50px] sm:h-[60px]">
