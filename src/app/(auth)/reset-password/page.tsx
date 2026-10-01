@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { ChangePasswordFormData, ChangePasswordSchema } from "../../../schemas/changePasswordSchema";
 import { resetPassword } from "../../../utils/resetPasswordAuthApi";
+import { useHydrated } from "@/hooks/useHydrated";
 
 export default function ResetPasswordPage() {
   return (
@@ -22,6 +23,7 @@ function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const hydrated = useHydrated();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
 
@@ -161,8 +163,8 @@ function ResetPassword() {
             <Button
               text={isLoading ? "Submitting..." : "Done"}
               className="w-full justify-center"
-              onClick={() => handleSubmit(onSubmit)()}
-              disabled={isLoading}
+              type="submit"
+              disabled={isLoading || !hydrated}
             />
           </form>
         </div>

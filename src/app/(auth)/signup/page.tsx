@@ -14,10 +14,12 @@ import { useEmailUser } from "../../../hooks/userEmailContext";
 import { SignupFormData, SignupSchema } from "../../../schemas/SignupSchemas";
 import { registerUserWithOtp } from "../../../utils/signupAuth";
 import { Button } from "../../../components/Button";
+import { useHydrated } from "@/hooks/useHydrated";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const hydrated = useHydrated();
   const router = useRouter();
   const { setEmail } = useEmailUser();
 
@@ -172,7 +174,7 @@ export default function Signup() {
                 className="w-full justify-center"
                 type="submit"
                 text={loading ? "Signing up..." : "Sign up"}
-                disabled={loading}
+                disabled={loading || !hydrated}
               />
 
               <div className="flex flex-col gap-4 mt-2">

@@ -2,9 +2,11 @@
 import { useChangePassword } from "@/hooks/queries/useUserQueries";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { useHydrated } from "@/hooks/useHydrated";
 
 const SecuritySetting = () => {
   const changePassword = useChangePassword();
+  const hydrated = useHydrated();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -183,7 +185,7 @@ const SecuritySetting = () => {
 
         <button
           type="submit"
-          disabled={changePassword.isPending}
+          disabled={changePassword.isPending || !hydrated}
           className="bg-[#538E53] text-[#FEFEFE] p-2 rounded-[4px] w-full font-montserrat font-medium text-[14px] hover:bg-[#214821] transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {changePassword.isPending ? (

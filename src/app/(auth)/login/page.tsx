@@ -14,6 +14,7 @@ import { LoginSchema, LoginSchemaType } from "../../../schemas/LoginSchema";
 import { Button } from "../../../components/Button";
 import { useEmailUser } from "../../../hooks/userEmailContext";
 import { resendOtpCode } from "../../../utils/signupAuth";
+import { useHydrated } from "@/hooks/useHydrated";
 
 // `POST /api/auth/login` answers 403 { error: "Please verify your email before
 // logging in." } for an unverified account. NextAuth passes only that string
@@ -36,6 +37,7 @@ export default function LoginPage() {
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const hydrated = useHydrated();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -252,7 +254,7 @@ function Login() {
                     "Login"
                   )
                 }
-                disabled={loading}
+                disabled={loading || !hydrated}
                 className="w-full justify-center"
               />
             </div>
