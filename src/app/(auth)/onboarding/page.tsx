@@ -17,6 +17,7 @@ import { Button } from "../../../components/Button";
 import {
   useUpdateProfile,
   useAddAccount,
+  useAvailableRoles,
   ContentPayload,
 } from "@/hooks/queries/useUserQueries";
 
@@ -39,6 +40,7 @@ function OnboardingFormInner() {
     useUpdateProfile(); // Use updateProfile instead of addAccount
   const { mutateAsync: addAccount, isPending: loadingAdd } = useAddAccount();
   const loading = loadingProfile || loadingAdd;
+  const { data: rolesData, isError: rolesError } = useAvailableRoles();
 
   // Get active role directly from session.
   // Register-As page updates this before redirecting here.
@@ -113,6 +115,19 @@ function OnboardingFormInner() {
       return () => clearTimeout(timer);
     }
   }, [session, targetRole, router, loading]);
+
+  // Onboarding is only for a user creating their first role. Opened directly
+  // (e.g. /onboarding?role=buyer) by someone who already has accounts, send
+  // them to that dashboard if the role exists, or to add-role if it is new.
+  useEffect(() => {
+    if (!rolesData || !targetRole || loading) return;
+    const existing = rolesData.availableRoles ?? [];
+    if (existing.includes(targetRole)) {
+      router.replace(`/${targetRole}`);
+    } else if (existing.length > 0) {
+      router.replace(`/add-role?role=${targetRole}`);
+    }
+  }, [rolesData, targetRole, loading, router]);
 
   // Load saved draft data from localStorage (Feature preservation)
   useEffect(() => {
@@ -246,6 +261,18 @@ function OnboardingFormInner() {
   };
 
   if (!session || !targetRole) return null; // Or skeleton
+
+  if (rolesError) {
+    return (
+      <p role="alert" className="min-h-screen flex items-center justify-center text-center text-[13px] text-red-500 font-montserrat px-4">
+        We couldn&apos;t load your accounts. Refresh the page to try again.
+      </p>
+    );
+  }
+
+  // Hold the form until we know this is a first-time user, and keep it hidden
+  // while an existing user is being redirected away.
+  if (!rolesData || (!loading && rolesData.availableRoles?.length > 0)) return null;
 
   return (
     <>
